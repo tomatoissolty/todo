@@ -964,7 +964,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const autoPushItem = async (todo, dateStr) => {
     setSyncIcon(true);
     try {
-      const r = await fetch('/api/notion', {
+      const r = await fetch('/api/notion?app=todo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: [toItemPayload(todo, dateStr)] })
@@ -987,7 +987,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const autoDeleteItem = async (notionPageId) => {
     setSyncIcon(true);
     try {
-      await fetch('/api/notion', {
+      await fetch('/api/notion?app=todo', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pageId: notionPageId })
@@ -1009,7 +1009,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 노션에서 생기거나 바뀐 내용을 앱으로 가져와요. silent=true면 알림창 없이 조용히 처리돼요
   // (백그라운드 자동 동기화용), false면 결과를 alert로 알려줘요 (수동 버튼용).
   const pullFromNotion = async (silent) => {
-    const pullRes = await fetch('/api/notion');
+    const pullRes = await fetch('/api/notion?app=todo');
     const pullData = await pullRes.json();
     if (!pullRes.ok) throw new Error(pullData.error || '다운로드 실패');
 
@@ -1057,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const flat = flattenTodos();
       if (flat.length > 0) {
         const pushItems = flat.map(({ dateStr, todo }) => toItemPayload(todo, dateStr));
-        const pushRes = await fetch('/api/notion', {
+        const pushRes = await fetch('/api/notion?app=todo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ items: pushItems })

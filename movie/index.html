@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>REEL — 영화 아카이브</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{
+  --bg:#0c0c0c;--surface:#161616;--surface2:#1e1e1e;--border:#2a2a2a;
+  --text:#f0f0f0;--text-dim:#555;--text-mid:#888;
+  --gold:#d4a843;--gold-dim:rgba(212,168,67,0.12);
+  --star-fill:#d4a843;--star-empty:#3a3a3a;
+  --card-w:178px;--card-h:267px;--r-card:12px;--r-modal:24px;
+}
+.light{
+  --bg:#f4f2ee;--surface:#ffffff;--surface2:#ebebeb;--border:#d4d4d4;
+  --text:#111;--text-dim:#bbb;--text-mid:#777;
+  --gold:#b8890f;--gold-dim:rgba(184,137,15,0.09);
+  --star-fill:#d4a843;--star-empty:#d0d0d0;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:'Outfit','Noto Sans KR',sans-serif;font-weight:300;min-height:100vh;transition:background .3s,color .3s;overflow-x:hidden}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* HEADER */
+header{position:fixed;top:0;left:0;right:0;z-index:200;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--bg);border-bottom:1px solid var(--border)}
+.logo{font-family:'DM Serif Display',serif;font-size:20px;letter-spacing:5px;color:var(--text);user-select:none}
+.hdr-r{display:flex;gap:8px}
+.icon-btn{width:36px;height:36px;border:1px solid var(--border);background:transparent;color:var(--text-mid);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s,color .2s;flex-shrink:0}
+.icon-btn:hover{border-color:var(--text-mid);color:var(--text)}
+.icon-btn svg{width:15px;height:15px;pointer-events:none}
+.icon-btn-o{width:32px;height:32px;border:1px solid var(--border);background:transparent;color:var(--text-mid);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s,color .2s;flex-shrink:0}
+.icon-btn-o:hover{border-color:var(--text-mid);color:var(--text)}
+.icon-btn-o svg{width:13px;height:13px;pointer-events:none}
+
+/* STATS */
+.stats-bar{margin-top:54px;padding:14px 24px;border-bottom:1px solid var(--border);display:flex;gap:0;align-items:stretch;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.stats-bar::-webkit-scrollbar{display:none}
+.stat-item{display:flex;flex-direction:column;gap:3px;padding:0 20px;white-space:nowrap;border-right:1px solid var(--border);flex-shrink:0}
+.stat-item:first-child{padding-left:0}
+.stat-item:last-child{border-right:none}
+.stat-btn-item{cursor:pointer;transition:opacity .2s}
+.stat-btn-item:hover{opacity:0.7}
+.stat-btn-item .stat-num svg{stroke:var(--text)}
+.stat-num{font-family:'DM Serif Display',serif;font-size:26px;color:var(--text);line-height:1}
+.stat-lbl{font-size:10px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase}
+
+/* SEARCH BAR */
+.search-bar{padding:12px 24px;border-bottom:1px solid var(--border);background:var(--bg)}
+.search-wrap{position:relative;max-width:600px;margin:0 auto}
+.search-main{width:100%;padding:10px 40px 10px 15px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:'Outfit','Noto Sans KR',sans-serif;outline:none;transition:border-color .2s}
+.search-main:focus{border-color:var(--gold)}
+.search-main::placeholder{color:var(--text-dim)}
+.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:24px;height:24px;border:none;background:transparent;color:var(--text-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .2s}
+.search-clear:hover{background:var(--surface2)}
+.search-clear svg{width:14px;height:14px}
+
+/* CONTROLS */
+.controls{padding:11px 24px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.filter-row{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+.filter-row::-webkit-scrollbar{display:none}
+.sort-row{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+.sort-row::-webkit-scrollbar{display:none}
+.filter-btn{padding:6px 14px;border:1px solid var(--border);background:transparent;color:var(--text-mid);border-radius:20px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif;white-space:nowrap;flex-shrink:0}
+.filter-btn:hover,.filter-btn.active{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
+.sort-pill{padding:6px 12px;background:transparent;border:1px solid var(--border);border-radius:20px;color:var(--text-dim);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.sort-pill.active{color:var(--gold);background:var(--gold-dim);border-color:var(--gold)}
+.sort-pill:hover:not(.active){color:var(--text-mid);border-color:var(--text-mid)}
+
+/* GRID */
+.grid{padding:26px 24px 80px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
+
+/* CARD */
+.card-wrapper{width:var(--card-w);flex-shrink:0;perspective:1000px;cursor:pointer}
+.card-inner{width:100%;height:var(--card-h);position:relative;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.4,.2,.2,1)}
+.card-wrapper.flipped .card-inner{transform:rotateY(180deg)}
+.card-face{position:absolute;inset:0;border-radius:var(--r-card);overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+
+/* FRONT */
+.card-front{background:var(--surface2)}
+.card-front img{width:100%;height:100%;object-fit:cover;display:block}
+.card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.93) 0%,rgba(0,0,0,0.25) 45%,transparent 100%)}
+.card-front-btm{position:absolute;bottom:0;left:0;right:0;padding:12px 11px 11px}
+.card-title-front{font-family:'Outfit','Noto Sans KR',sans-serif;font-size:13px;font-weight:500;color:#fff;line-height:1.35;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:.1px}
+
+/* ★★★ 별점 스타일 - Overflow 방식 ★★★ */
+.stars{display:flex;gap:2px;align-items:center;font-size:14px;line-height:1}
+.star-item{position:relative;display:inline-block;color:var(--star-empty)}
+.star-fill{position:absolute;top:0;left:0;overflow:hidden;color:var(--star-fill)}
+
+.year-badge{position:absolute;top:9px;right:9px;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:2px 7px;border-radius:4px;font-size:10px;color:rgba(255,255,255,.7);letter-spacing:1px;font-family:'Outfit',sans-serif}
+.status-dot{position:absolute;top:9px;left:9px;width:7px;height:7px;border-radius:50%}
+.status-dot.plan{background:#5b8dee}.status-dot.watching{background:#f0a500}.status-dot.watched{background:#2ecc71}.status-dot.wishlist{background:#e74c3c}
+.no-poster{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--text-dim);background:var(--surface2)}
+
+/* BACK */
+.card-back{transform:rotateY(180deg);background:var(--surface);border:1px solid var(--border);display:flex;flex-direction:column;padding:13px}
+.card-back-hdr{display:flex;gap:9px;align-items:flex-start;margin-bottom:9px}
+.cb-poster{width:30px;height:45px;border-radius:4px;object-fit:cover;flex-shrink:0;background:var(--surface2)}
+.cb-title{font-family:'DM Serif Display',serif;font-size:13px;color:var(--text);line-height:1.3;margin-bottom:2px}
+.cb-meta{font-size:10px;color:var(--text-dim);letter-spacing:.7px;line-height:1.5}
+.genre-badge{display:inline-block;padding:1px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;font-size:9px;color:var(--text-mid);margin-right:3px;margin-top:3px}
+.cb-divider{height:1px;background:var(--border);margin-bottom:9px}
+.cb-review{flex:1;font-size:11px;color:var(--text-mid);font-style:italic;line-height:1.65;overflow:hidden;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;white-space:pre-wrap;word-wrap:break-word}
+.cb-review-empty{flex:1;font-size:11px;color:var(--text-dim);opacity:.45;font-style:italic}
+.cb-footer{display:flex;align-items:center;justify-content:space-between;margin-top:9px;padding-top:9px;border-top:1px solid var(--border)}
+.cb-actions{display:flex;gap:5px}
+.card-act{width:24px;height:24px;border:1px solid var(--border);background:transparent;color:var(--text-dim);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.card-act:hover{border-color:var(--text-mid);color:var(--text)}
+.card-act svg{width:11px;height:11px;pointer-events:none}
+
+/* ADD CARD */
+.add-card{width:var(--card-w);height:var(--card-h);border:1px dashed var(--border);border-radius:var(--r-card);background:transparent;color:var(--text-dim);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:all .2s;flex-shrink:0}
+.add-card:hover{border-color:var(--gold);color:var(--gold)}
+.add-card svg{width:22px;height:22px}
+.add-card span{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;font-family:'Outfit',sans-serif}
+
+/* EMPTY */
+.empty-state{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:10px;color:var(--text-dim)}
+.empty-state svg{width:38px;height:38px;opacity:.2}
+.empty-state p{font-size:11px;letter-spacing:2.5px;text-transform:uppercase}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+@media(min-width:600px){.modal-overlay{align-items:center;padding:20px}}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-modal) var(--r-modal) 0 0;width:100%;max-width:460px;max-height:92vh;overflow-y:auto;overflow-x:hidden;transform:translateY(30px);transition:transform .35s cubic-bezier(.4,.2,.2,1);padding:24px 22px 32px;-webkit-overflow-scrolling:touch}
+@media(min-width:600px){.modal{border-radius:var(--r-modal);transform:translateY(20px)}}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.modal-title{font-family:'DM Serif Display',serif;font-size:17px;letter-spacing:2px;color:var(--text)}
+
+/* Search */
+.srch-wrap{position:relative;margin-bottom:12px}
+.srch-input{width:100%;padding:12px 42px 12px 15px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:15px;font-family:'Outfit','Noto Sans KR',sans-serif;font-weight:300;outline:none;transition:border-color .2s;-webkit-appearance:none}
+.srch-input:focus{border-color:var(--gold)}
+.srch-input::placeholder{color:var(--text-dim)}
+.srch-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--text-dim);cursor:pointer;padding:4px;display:flex;align-items:center}
+.srch-icon svg{width:16px;height:16px}
+.srch-results{display:flex;flex-direction:column;gap:7px;margin-bottom:4px}
+.srch-item{display:flex;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all .2s}
+.srch-item:hover{border-color:var(--gold);background:var(--gold-dim)}
+.srch-poster{width:36px;height:54px;border-radius:5px;object-fit:cover;flex-shrink:0;background:var(--surface2)}
+.srch-title{font-size:14px;font-weight:500;color:var(--text)}
+.srch-meta{font-size:11px;color:var(--text-dim);margin-top:3px}
+.searching{text-align:center;padding:18px;color:var(--text-dim);font-size:12px;letter-spacing:1px}
+
+/* Selected chip */
+.sel-chip{display:flex;gap:14px;align-items:flex-start;padding:13px;background:var(--surface2);border-radius:14px;margin-bottom:18px}
+.sel-chip img{width:44px;height:66px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--border)}
+.sel-title{font-size:15px;font-weight:500;color:var(--text);margin-bottom:4px}
+.sel-meta{font-size:11px;color:var(--text-dim);line-height:1.6}
+
+/* Form */
+.form-sec{margin-bottom:18px}
+.form-lbl{display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:9px}
+.form-ta{width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:'Outfit','Noto Sans KR',sans-serif;font-weight:300;outline:none;resize:none;line-height:1.65;transition:border-color .2s;-webkit-appearance:none}
+.form-ta:focus{border-color:var(--gold)}
+.form-ta::placeholder{color:var(--text-dim)}
+
+/* Star input - 유니코드 별 사용 */
+.star-inp{display:flex;gap:3px;font-size:32px;line-height:1}
+.star-btn{background:none;border:none;cursor:pointer;padding:0;transition:transform .1s;-webkit-tap-highlight-color:transparent;line-height:1}
+.star-btn:active{transform:scale(1.2)}
+
+/* Status buttons */
+.status-grp{display:flex;gap:7px;flex-wrap:wrap}
+.status-opt{flex:1;min-width:80px;padding:9px 4px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text-mid);font-size:12px;font-family:'Outfit','Noto Sans KR',sans-serif;cursor:pointer;text-align:center;transition:all .2s;white-space:nowrap}
+.status-opt.active.plan{border-color:#5b8dee;color:#5b8dee;background:rgba(91,141,238,.1)}
+.status-opt.active.watching{border-color:#f0a500;color:#f0a500;background:rgba(240,165,0,.1)}
+.status-opt.active.watched{border-color:#2ecc71;color:#2ecc71;background:rgba(46,204,113,.1)}
+.status-opt.active.wishlist{border-color:#e74c3c;color:#e74c3c;background:rgba(231,76,60,.1)}
+
+/* Save btn */
+.save-btn{width:100%;padding:11px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text-mid);font-size:11px;letter-spacing:2px;text-transform:uppercase;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .2s;margin-top:4px}
+.save-btn:hover{border-color:var(--text-mid);color:var(--text)}
+
+/* Capture hidden */
+.cap-wrap{position:fixed;top:-9999px;left:-9999px;width:400px;height:600px;border-radius:16px;overflow:hidden}
+
+/* Toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 22px;font-size:12px;color:var(--text);letter-spacing:1px;z-index:999;transition:transform .3s;white-space:nowrap;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Stats Modal */
+.stat-section{margin-bottom:24px}
+.stat-section-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px}
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat-card-num{font-family:'DM Serif Display',serif;font-size:28px;color:var(--text);margin-bottom:4px}
+.stat-card-lbl{font-size:10px;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase}
+.genre-bar{margin-bottom:10px}
+.genre-bar-top{display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px}
+.genre-bar-name{color:var(--text)}
+.genre-bar-count{color:var(--text-mid)}
+.genre-bar-fill{height:6px;background:var(--gold);border-radius:3px;transition:width .3s}
+.top-list{display:flex;flex-direction:column;gap:8px}
+.top-item{display:flex;gap:10px;align-items:center;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px}
+.top-item-rank{font-family:'DM Serif Display',serif;font-size:16px;color:var(--gold);min-width:24px;text-align:center}
+.top-item-poster{width:28px;height:42px;border-radius:4px;object-fit:cover;background:var(--border);flex-shrink:0}
+.top-item-info{flex:1;min-width:0}
+.top-item-title{font-size:12px;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-item-meta{font-size:10px;color:var(--text-dim);margin-top:2px}
+
+/* Animations */
+.fade-in{animation:fi .35s ease forwards}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* Responsive */
+@media(max-width:399px){
+  :root{--card-w:142px;--card-h:213px}
+  .grid{padding:18px 14px 80px;gap:12px}
+  header,.stats-bar,.controls{padding-left:14px;padding-right:14px}
+}
+@media(min-width:400px) and (max-width:599px){
+  :root{--card-w:155px;--card-h:233px}
+  .grid{padding:20px 16px 80px;gap:14px}
+}
+@media(min-width:900px){
+  :root{--card-w:185px;--card-h:278px}
+  .grid{padding:30px 28px 80px;gap:22px}
+  header{padding:0 28px}
+  .stats-bar{padding:16px 28px}
+  .controls{padding:11px 28px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">REEL</div>
+  <div class="hdr-r">
+    <button class="icon-btn" id="exportBtn" title="데이터 백업">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </button>
+    <button class="icon-btn" id="importBtn" title="데이터 복원">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </button>
+    <button class="icon-btn" id="notionSyncAllBtn" title="노션 동기화 (새 항목·수정분만)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+    </button>
+    <button class="icon-btn" id="themeBtn" title="테마 전환">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    </button>
+    <button class="icon-btn" id="openAddBtn" title="작품 추가">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </div>
+</header>
+
+<input type="file" id="importFile" accept=".json" style="display:none">
+
+<div class="stats-bar">
+  <div class="stat-item"><span class="stat-num" id="sTotal">0</span><span class="stat-lbl">Total</span></div>
+  <div class="stat-item"><span class="stat-num" id="sWatched">0</span><span class="stat-lbl">Watched</span></div>
+  <div class="stat-item"><span class="stat-num" id="sWatching">0</span><span class="stat-lbl">Watching</span></div>
+  <div class="stat-item"><span class="stat-num" id="sPlan">0</span><span class="stat-lbl">Plan</span></div>
+  <div class="stat-item"><span class="stat-num" id="sWish">0</span><span class="stat-lbl">Wishlist</span></div>
+  <div class="stat-item"><span class="stat-num" id="sAvg">—</span><span class="stat-lbl">Avg ★</span></div>
+  <div class="stat-item stat-btn-item" id="statsBtn">
+    <span class="stat-num">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:24px;height:24px">
+        <line x1="18" y1="20" x2="18" y2="10"/>
+        <line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+    </span>
+    <span class="stat-lbl">Stats</span>
+  </div>
+</div>
+
+<div class="search-bar">
+  <div class="search-wrap">
+    <input type="text" class="search-main" id="mainSearch" placeholder="내 기록 검색...">
+    <button class="search-clear" id="clearSearch" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="filter-row">
+    <button class="filter-btn active" data-filter="all">ALL</button>
+    <button class="filter-btn" data-filter="watched">봤음</button>
+    <button class="filter-btn" data-filter="watching">보는 중</button>
+    <button class="filter-btn" data-filter="plan">볼 예정</button>
+    <button class="filter-btn" data-filter="wishlist">위시리스트</button>
+  </div>
+  <div class="sort-row">
+    <button class="sort-pill active" data-sort="newest">최신</button>
+    <button class="sort-pill" data-sort="rating_high">★ 높은순</button>
+    <button class="sort-pill" data-sort="rating_low">★ 낮은순</button>
+    <button class="sort-pill" data-sort="year">연도</button>
+    <button class="sort-pill" data-sort="title">제목</button>
+  </div>
+</div>
+
+<div class="grid" id="grid"></div>
+<div class="toast" id="toast"></div>
+<div class="cap-wrap" id="capWrap"></div>
+
+<!-- STATS MODAL -->
+<div class="modal-overlay" id="statsModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <span class="modal-title">STATISTICS</span>
+      <button class="icon-btn-o" id="closeStatsBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div id="statsContent"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-hdr">
+      <span class="modal-title" id="modalTitle">NEW</span>
+      <button class="icon-btn-o" id="closeModalBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div id="searchSection">
+      <div class="srch-wrap">
+        <input class="srch-input" id="searchInput" placeholder="영화 / 드라마 / 애니 검색..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <button class="srch-icon" id="searchBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+      </div>
+      <div class="srch-results" id="srchResults"></div>
+    </div>
+
+    <div id="selectedSection" style="display:none">
+      <div class="sel-chip" id="selChip"></div>
+
+      <div class="form-sec">
+        <label class="form-lbl">상태</label>
+        <div class="status-grp">
+          <button class="status-opt plan"     data-status="plan">볼 예정</button>
+          <button class="status-opt watching"  data-status="watching">보는 중</button>
+          <button class="status-opt watched"   data-status="watched">봤음</button>
+          <button class="status-opt wishlist"  data-status="wishlist">위시리스트</button>
+        </div>
+      </div>
+
+      <div class="form-sec">
+        <label class="form-lbl">별점 <span style="opacity:0.5">(선택)</span></label>
+        <div class="star-inp" id="starInp"></div>
+      </div>
+
+      <div class="form-sec">
+        <label class="form-lbl">소감 <span style="opacity:0.5">(선택)</span></label>
+        <textarea class="form-ta" id="reviewInput" rows="4" placeholder="이 작품에 대한 소감을 남겨보세요..."></textarea>
+      </div>
+
+      <button class="save-btn" id="saveBtn">저장 <span style="opacity:0.5;font-size:9px">(Ctrl+Enter)</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════ CONFIG ════ */
+const TMDB_KEY  = '53de90959b3a0e2aea311571af89595a';
+const TMDB_BASE = 'https://api.themoviedb.org/3';
+const IMG_W500  = 'https://image.tmdb.org/t/p/w500';
+
+const GENRE_MAP = {28:'액션',12:'모험',16:'애니메이션',35:'코미디',80:'범죄',99:'다큐',18:'드라마',10751:'가족',14:'판타지',36:'역사',27:'공포',10402:'음악',9648:'미스터리',10749:'로맨스',878:'SF',53:'스릴러',10752:'전쟁',37:'서부',10759:'액션&모험',10765:'SF&판타지'};
+
+const STATUS_KO = { plan: '볼 예정', watching: '보는 중', watched: '봤음', wishlist: '위시리스트' };
+
+/* ════════════════════════════════════════
+   NOTION SYNC — Daily 앱과 같은 공용 서버리스 프록시(/api/notion?app=movie)를 사용.
+   Claude를 열 필요 없이, 저장/삭제할 때마다 자동으로 조용히 동기화된다.
+════════════════════════════════════════ */
+const NOTION_ENDPOINT = '/api/notion?app=movie';
+
+function movieToPayload(rec) {
+  return {
+    appId: rec.id,
+    notionPageId: rec.notionPageId || null,
+    name: rec.title,
+    poster: rec.poster ? (IMG_W500 + rec.poster) : null,
+    rating: rec.rating || 0,
+    status: STATUS_KO[rec.status] || '봤음',
+    genre: (rec.genres || []).join(', '),
+    year: rec.year || null,
+    type: rec.type === 'tv' ? '시리즈' : '영화',
+    review: rec.review || '',
+    updatedAt: new Date(rec.updatedAt || rec.addedAt || Date.now()).toISOString()
+  };
+}
+
+let syncActivityCount = 0;
+function setSyncIcon(active) {
+  syncActivityCount = Math.max(0, syncActivityCount + (active ? 1 : -1));
+  const icon = document.querySelector('#notionSyncAllBtn svg');
+  if (icon) icon.style.animation = syncActivityCount > 0 ? 'spin 1s linear infinite' : '';
+}
+
+// 영화 카드 하나가 저장될 때마다 조용히 노션으로 보낸다. 실패해도 알림창은 안 띄우고
+// (다음 저장이나 "지금 바로 동기화" 버튼으로 다시 시도되니까) 콘솔에만 남긴다.
+async function autoPushMovie(rec) {
+  setSyncIcon(true);
+  try {
+    const r = await fetch(NOTION_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: [movieToPayload(rec)] })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || '업로드 실패');
+    const result = (data.results || [])[0];
+    if (result && result.notionPageId) {
+      rec.notionPageId = result.notionPageId;
+      save();
+    }
+  } catch (err) {
+    console.warn('노션 자동 동기화 실패(조용히 재시도됨):', err.message);
+  } finally {
+    setSyncIcon(false);
+  }
+}
+
+// 카드가 삭제되면 노션 쪽 페이지도 자동으로 보관 처리(삭제)된다.
+async function autoDeleteMovie(notionPageId) {
+  if (!notionPageId) return;
+  setSyncIcon(true);
+  try {
+    await fetch(NOTION_ENDPOINT, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pageId: notionPageId })
+    });
+  } catch (err) {
+    console.warn('노션 자동 삭제 실패(조용히 재시도됨):', err.message);
+  } finally {
+    setSyncIcon(false);
+  }
+}
+
+// 헤더의 "지금 바로 동기화" 버튼 — 로컬에 있는 모든 기록을 한 번에 밀어넣는다 (수동 보조 기능).
+async function syncAllToNotion() {
+  if (!records.length) { toast('동기화할 기록이 없어요'); return; }
+  setSyncIcon(true);
+  toast(`노션 동기화 중... (0/${records.length})`);
+  let done = 0, failed = 0;
+  for (const rec of records) {
+    try {
+      const r = await fetch(NOTION_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: [movieToPayload(rec)] })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || '업로드 실패');
+      const result = (data.results || [])[0];
+      if (result && result.notionPageId) rec.notionPageId = result.notionPageId;
+      done++;
+    } catch (err) {
+      console.error(err);
+      failed++;
+    }
+    toast(`노션 동기화 중... (${done + failed}/${records.length})`);
+  }
+  save();
+  renderGrid();
+  setSyncIcon(false);
+  toast(failed ? `동기화 완료 (${done}개 성공, ${failed}개 실패)` : `${done}개 동기화 완료`);
+}
+
+/* ════ STATE ════ */
+let records = JSON.parse(localStorage.getItem('reel_v3') || '[]');
+// 기존 기록에 updatedAt(마지막 수정 시각)이 없으면 채워넣는다 — 동기화 충돌 해결에 필요한 필드.
+records.forEach(r => { if (!r.updatedAt) r.updatedAt = r.addedAt || Date.now(); });
+let flt='all', srt='newest', editId=null, film=null, rating=0, curStatus='watched', srchTimer=null, searchQuery='';
+
+/* ════ THEME ════ */
+let dark = localStorage.getItem('reel_theme') !== 'light';
+function applyTheme(){ document.body.classList.toggle('light',!dark); localStorage.setItem('reel_theme',dark?'dark':'light'); }
+applyTheme();
+document.getElementById('themeBtn').onclick = () => { dark=!dark; applyTheme(); renderGrid(); };
+
+/* ════════════════════════════════════════
+   ★★★ 별점 렌더링 - Overflow 방식 (반개 단위 지원) ★★★
+   빈 별(☆) 위에 채워진 별(★)을 position으로 겹쳐서 반개는 50%만 보이게!
+════════════════════════════════════════ */
+function renderStars(r) {
+  r = r || 0;
+  let html = '<div class="stars">';
+  for (let i = 1; i <= 5; i++) {
+    if (i <= r) {
+      // 완전히 채워진 별
+      html += '<span class="star-item"><span class="star-fill" style="width:100%">★</span>☆</span>';
+    } else if (i - 0.5 === r) {
+      // 반개 별 - 50%만 채움
+      html += '<span class="star-item"><span class="star-fill" style="width:50%">★</span>☆</span>';
+    } else {
+      // 빈 별
+      html += '<span class="star-item">☆</span>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+/* ════ STAR INPUT WIDGET ════ */
+function buildStarInp() {
+  const c = document.getElementById('starInp');
+  c.innerHTML = '';
+  
+  const fillColor = '#d4a843';
+  const emptyColor = dark ? '#3a3a3a' : '#d0d0d0';
+  
+  // 0.5 단위로 10개 버튼 생성 (0.5, 1, 1.5, 2, ..., 5)
+  for (let i = 0.5; i <= 5; i += 0.5) {
+    const b = document.createElement('button');
+    b.className = 'star-btn';
+    b.type = 'button';
+    b.dataset.v = i;
+    
+    const isHalf = i % 1 !== 0;
+    const width = isHalf ? '50%' : '100%';
+    
+    if (i <= rating) {
+      b.innerHTML = `<span style="position:relative;display:inline-block;color:${emptyColor};"><span style="position:absolute;top:0;left:0;width:${width};overflow:hidden;color:${fillColor};">★</span>☆</span>`;
+    } else {
+      b.innerHTML = `☆`;
+      b.style.color = emptyColor;
+    }
+    
+    b.addEventListener('mouseover', () => updateStarInput(i));
+    b.addEventListener('mouseout', () => updateStarInput(rating));
+    b.addEventListener('click', () => { rating = i; updateStarInput(i); });
+    b.addEventListener('touchend', e => { e.preventDefault(); rating = i; updateStarInput(i); });
+    
+    c.appendChild(b);
+  }
+}
+
+function updateStarInput(v) {
+  const fillColor = '#d4a843';
+  const emptyColor = dark ? '#3a3a3a' : '#d0d0d0';
+  
+  document.querySelectorAll('.star-btn').forEach((b) => {
+    const btnVal = parseFloat(b.dataset.v);
+    const isHalf = btnVal % 1 !== 0;
+    const width = isHalf ? '50%' : '100%';
+    
+    if (btnVal <= v) {
+      b.innerHTML = `<span style="position:relative;display:inline-block;color:${emptyColor};"><span style="position:absolute;top:0;left:0;width:${width};overflow:hidden;color:${fillColor};">★</span>☆</span>`;
+    } else {
+      b.innerHTML = `☆`;
+      b.style.color = emptyColor;
+    }
+  });
+}
+
+/* ════ STATS ════ */
+function updateStats() {
+  const tot = records.length;
+  const wa  = records.filter(r => r.status === 'watched').length;
+  const wi  = records.filter(r => r.status === 'watching').length;
+  const pl  = records.filter(r => r.status === 'plan').length;
+  const wl  = records.filter(r => r.status === 'wishlist').length;
+  const rt  = records.filter(r => r.rating > 0);
+  const avg = rt.length ? (rt.reduce((s,r)=>s+r.rating,0)/rt.length).toFixed(1) : '—';
+  document.getElementById('sTotal').textContent    = tot;
+  document.getElementById('sWatched').textContent  = wa;
+  document.getElementById('sWatching').textContent = wi;
+  document.getElementById('sPlan').textContent     = pl;
+  document.getElementById('sWish').textContent     = wl;
+  document.getElementById('sAvg').textContent      = avg;
+}
+
+function save() { 
+  localStorage.setItem('reel_v3', JSON.stringify(records));
+  console.log('💾 저장됨:', records);
+}
+
+/* ════ RENDER GRID ════ */
+function getList() {
+  let l = [...records];
+  
+  // 검색 필터
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    l = l.filter(r => 
+      (r.title||'').toLowerCase().includes(q) ||
+      (r.overview||'').toLowerCase().includes(q) ||
+      (r.genres||[]).some(g => g.toLowerCase().includes(q))
+    );
+  }
+  
+  // 상태 필터
+  if (flt !== 'all') l = l.filter(r => r.status === flt);
+  
+  // 정렬
+  if (srt === 'newest')           l.sort((a,b) => b.addedAt - a.addedAt);
+  else if (srt === 'rating_high') l.sort((a,b) => (b.rating || 0) - (a.rating || 0));
+  else if (srt === 'rating_low')  l.sort((a,b) => (a.rating || 0) - (b.rating || 0));
+  else if (srt === 'year')        l.sort((a,b) => (b.year||0)-(a.year||0));
+  else if (srt === 'title')       l.sort((a,b) => (a.title||'').localeCompare(b.title||'', 'ko'));
+  
+  return l;
+}
+
+function renderGrid() {
+  const g = document.getElementById('grid');
+  const list = getList();
+  g.innerHTML = '';
+
+  /* Add button */
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-card';
+  addBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>추가</span>`;
+  addBtn.onclick = openAdd;
+  g.appendChild(addBtn);
+
+  if (!list.length) {
+    const e = document.createElement('div'); 
+    e.className='empty-state fade-in';
+    e.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="2" width="20" height="20" rx="3"/><line x1="2" y1="9" x2="22" y2="9"/><circle cx="7" cy="5.5" r="1.2"/><circle cx="11" cy="5.5" r="1.2"/></svg><p>기록이 없습니다</p>`;
+    g.appendChild(e); 
+    updateStats(); 
+    return;
+  }
+
+  list.forEach(rec => {
+    const w = document.createElement('div');
+    w.className = 'card-wrapper fade-in';
+    w.dataset.id = rec.id;
+
+    const genbadges = (rec.genres||[]).slice(0,2).map(g=>`<span class="genre-badge">${esc(g)}</span>`).join('');
+    const meta = [rec.year, rec.type==='tv'?'시리즈':'필름', rec.runtime?rec.runtime+'min':''].filter(Boolean).join(' · ');
+
+    // 별점 HTML
+    const starsHTML = renderStars(rec.rating);
+
+    w.innerHTML = `
+    <div class="card-inner">
+      <div class="card-face card-front">
+        ${rec.poster ? `<img src="${IMG_W500}${rec.poster}" alt="${esc(rec.title)}" loading="lazy" crossorigin="anonymous">` : `<div class="no-poster">🎬</div>`}
+        <div class="card-overlay"></div>
+        <div class="status-dot ${rec.status||'watched'}"></div>
+        ${rec.year ? `<div class="year-badge">${rec.year}</div>` : ''}
+        <div class="card-front-btm">
+          <div class="card-title-front">${esc(rec.title)}</div>
+          ${starsHTML}
+        </div>
+      </div>
+      <div class="card-face card-back">
+        <div class="card-back-hdr">
+          ${rec.poster ? `<img class="cb-poster" src="${IMG_W500}${rec.poster}" alt="" crossorigin="anonymous">` : ''}
+          <div style="min-width:0;flex:1">
+            <div class="cb-title">${esc(rec.title)}</div>
+            <div class="cb-meta">${meta}</div>
+            ${genbadges || rec.notionPageId ? `<div style="margin-top:4px">${genbadges}${rec.notionPageId ? `<span class="genre-badge" style="border-color:var(--gold);color:var(--gold)">Notion ✓</span>` : ''}</div>` : ''}
+          </div>
+        </div>
+        <div class="cb-divider"></div>
+        ${rec.review ? `<div class="cb-review">"${esc(rec.review)}"</div>` : `<div class="cb-review-empty">소감 없음</div>`}
+        <div class="cb-footer">
+          ${starsHTML}
+          <div class="cb-actions">
+            <button class="card-act" data-a="capture" data-id="${rec.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+            <button class="card-act" data-a="edit"    data-id="${rec.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+            <button class="card-act" data-a="delete"  data-id="${rec.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+    w.querySelector('.card-inner').addEventListener('click', e => {
+      if (e.target.closest('.card-act')) return;
+      w.classList.toggle('flipped');
+    });
+    
+    // 더블클릭으로 빠른 수정
+    w.querySelector('.card-inner').addEventListener('dblclick', e => {
+      if (e.target.closest('.card-act')) return;
+      e.preventDefault();
+      openEdit(rec.id);
+    });
+    
+    w.querySelectorAll('.card-act').forEach(b => b.addEventListener('click', e => {
+      e.stopPropagation();
+      if (b.dataset.a === 'delete')  del(b.dataset.id);
+      if (b.dataset.a === 'edit')    openEdit(b.dataset.id);
+      if (b.dataset.a === 'capture') capture(b.dataset.id);
+    }));
+    
+    g.appendChild(w);
+  });
+
+  updateStats();
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ════ DELETE ════ */
+function del(id) {
+  if (!confirm('삭제할까요?')) return;
+  const rec = records.find(r => r.id === id);
+  records = records.filter(r => r.id !== id);
+  save(); 
+  renderGrid(); 
+  toast('삭제되었습니다');
+  if (rec && rec.notionPageId) autoDeleteMovie(rec.notionPageId);
+}
+
+/* ════ CAPTURE ════ */
+async function capture(id) {
+  const rec = records.find(r => r.id === id); 
+  if (!rec) return;
+  
+  toast('이미지 저장 중...');
+  const cap = document.getElementById('capWrap');
+  const bg=dark?'#161616':'#ffffff', tx=dark?'#f0f0f0':'#111', dm=dark?'#555':'#bbb', md=dark?'#888':'#666', sf=dark?'#1e1e1e':'#ebebeb', bd=dark?'#2a2a2a':'#d4d4d4';
+  const gs = (rec.genres||[]).map(g=>`<span style="display:inline-block;padding:2px 7px;background:${sf};border:1px solid ${bd};border-radius:3px;font-size:14px;color:${md};margin-right:4px;margin-top:4px;">${g}</span>`).join('');
+  
+  // 캡처용 별점 (Overflow 방식 - 반개 단위 지원)
+  let capStars = '';
+  const r = rec.rating || 0;
+  const fillColor = '#d4a843';
+  const emptyColor = dark ? '#3a3a3a' : '#d0d0d0';
+  
+  for(let i=1; i<=5; i++) {
+    if (i <= r) {
+      // 완전히 채워진 별
+      capStars += `<span style="position:relative;display:inline-block;color:${emptyColor};font-size:20px;"><span style="position:absolute;top:0;left:0;width:100%;overflow:hidden;color:${fillColor};">★</span>☆</span>`;
+    } else if (i - 0.5 === r) {
+      // 반개 별 - 50%만 채움
+      capStars += `<span style="position:relative;display:inline-block;color:${emptyColor};font-size:20px;"><span style="position:absolute;top:0;left:0;width:50%;overflow:hidden;color:${fillColor};">★</span>☆</span>`;
+    } else {
+      // 빈 별
+      capStars += `<span style="color:${emptyColor};font-size:20px;">☆</span>`;
+    }
+  }
+
+  cap.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:400px;height:600px;background:${bg}`;
+  cap.innerHTML=`
+  <div style="width:400px;height:600px;display:flex;position:relative;overflow:hidden;background:${bg};font-family:sans-serif;">
+    ${rec.poster?`<img src="${IMG_W500}${rec.poster}" crossorigin="anonymous" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:${dark?.13:.07};">`:''}
+    <div style="position:absolute;inset:0;background:linear-gradient(135deg,${bg} 25%,${dark?'rgba(16,16,16,.97)':'rgba(244,242,238,.97)'} 100%);"></div>
+    <div style="position:relative;padding:36px 30px;display:flex;flex-direction:column;width:100%;">
+      <div style="font-size:13px;letter-spacing:5px;color:${dm};margin-bottom:24px;text-transform:uppercase;">REEL</div>
+      <div style="display:flex;gap:18px;margin-bottom:20px;align-items:flex-start;">
+        ${rec.poster?`<img src="${IMG_W500}${rec.poster}" crossorigin="anonymous" style="width:78px;height:117px;border-radius:8px;object-fit:cover;flex-shrink:0;">`:''}
+        <div>
+          <div style="font-size:20px;color:${tx};font-weight:500;line-height:1.3;margin-bottom:6px;">${rec.title}</div>
+          <div style="font-size:16px;color:${dm};margin-bottom:8px;">${[rec.year,rec.type==='tv'?'시리즈':'필름',rec.runtime?rec.runtime+'min':''].filter(Boolean).join(' · ')}</div>
+          <div>${gs}</div>
+        </div>
+      </div>
+      <div style="height:1px;background:${bd};margin-bottom:16px;"></div>
+      ${rec.review?`<div style="font-size:18px;color:${md};font-style:italic;line-height:1.7;flex:1;overflow:hidden;white-space:pre-wrap;word-wrap:break-word;">"${rec.review}"</div>`:`<div style="flex:1;font-size:18px;color:${dm};opacity:.4;font-style:italic;">소감 없음</div>`}
+      <div style="margin-top:auto;padding-top:18px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;gap:2px;">${capStars}</div>
+        <div style="font-size:13px;color:${dm};">${new Date(rec.addedAt).toLocaleDateString('ko-KR')}</div>
+      </div>
+    </div>
+  </div>`;
+  
+  await new Promise(r=>setTimeout(r,300));
+  try {
+    const cv = await html2canvas(cap,{scale:2,useCORS:true,allowTaint:true,backgroundColor:bg});
+    const a  = document.createElement('a'); 
+    a.download=`${rec.title}_reel.png`; 
+    a.href=cv.toDataURL('image/png'); 
+    a.click();
+    toast('저장됐습니다 ↓');
+  } catch(err) { 
+    console.error(err);
+    toast('저장 중 오류가 발생했습니다'); 
+  }
+  cap.innerHTML = '';
+}
+
+/* ════ MODAL ════ */
+function openAdd() {
+  editId=null; 
+  film=null; 
+  rating=0; 
+  curStatus='watched';
+  
+  document.getElementById('modalTitle').textContent = 'NEW';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('srchResults').innerHTML = '';
+  document.getElementById('searchSection').style.display = '';
+  document.getElementById('selectedSection').style.display = 'none';
+  document.getElementById('reviewInput').value = '';
+  
+  setStatus('watched'); 
+  buildStarInp();
+  
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('searchInput').focus(), 350);
+}
+
+function openEdit(id) {
+  const r = records.find(x => x.id === id); 
+  if (!r) return;
+  
+  editId = id; 
+  rating = r.rating || 0; 
+  curStatus = r.status;
+  film = {
+    id: r.tmdbId, 
+    title: r.title, 
+    poster_path: r.poster, 
+    media_type: r.type, 
+    release_date: (r.year||'') + '-01-01'
+  };
+  
+  document.getElementById('modalTitle').textContent = 'EDIT';
+  document.getElementById('searchSection').style.display = 'none';
+  
+  showChip(r); 
+  setStatus(curStatus); 
+  buildStarInp(); 
+  updateStarInput(rating);
+  
+  document.getElementById('reviewInput').value = r.review || '';
+  document.getElementById('selectedSection').style.display = '';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() { 
+  document.getElementById('modalOverlay').classList.remove('open'); 
+}
+
+document.getElementById('closeModalBtn').onclick = closeModal;
+document.getElementById('modalOverlay').addEventListener('click', e => { 
+  if(e.target === document.getElementById('modalOverlay')) closeModal(); 
+});
+
+function setStatus(s) {
+  curStatus = s;
+  document.querySelectorAll('.status-opt').forEach(b => b.classList.toggle('active', b.dataset.status===s));
+}
+
+document.querySelectorAll('.status-opt').forEach(b => b.addEventListener('click', ()=>setStatus(b.dataset.status)));
+
+/* ════ SEARCH ════ */
+document.getElementById('searchInput').addEventListener('input', e => {
+  clearTimeout(srchTimer);
+  const q = e.target.value.trim();
+  if (!q) { document.getElementById('srchResults').innerHTML=''; return; }
+  srchTimer = setTimeout(()=>doSearch(q), 500);
+});
+
+document.getElementById('searchBtn').onclick = () => { 
+  const q=document.getElementById('searchInput').value.trim(); 
+  if(q) doSearch(q); 
+};
+
+document.getElementById('searchInput').addEventListener('keydown', e => { 
+  if(e.key==='Enter'){
+    const q=e.target.value.trim();
+    if(q) doSearch(q);
+  } 
+});
+
+async function doSearch(q) {
+  const res = document.getElementById('srchResults');
+  res.innerHTML = `<div class="searching">검색 중...</div>`;
+  
+  try {
+    const r = await fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_KEY}&language=ko-KR&query=${encodeURIComponent(q)}&include_adult=false`);
+    const d = await r.json();
+    
+    if (d.status_code===7) { 
+      res.innerHTML=`<div class="searching">⚠️ API 키 오류</div>`; 
+      return; 
+    }
+    
+    const list = (d.results||[]).filter(i=>['movie','tv'].includes(i.media_type)).slice(0,6);
+    
+    if (!list.length) { 
+      res.innerHTML=`<div class="searching">결과 없음</div>`; 
+      return; 
+    }
+    
+    res.innerHTML = '';
+    list.forEach(item => {
+      const el = document.createElement('div'); 
+      el.className='srch-item';
+      const yr = (item.release_date||item.first_air_date||'').slice(0,4);
+      
+      el.innerHTML = `
+        ${item.poster_path?`<img class="srch-poster" src="${IMG_W500}${item.poster_path}" loading="lazy" crossorigin="anonymous">`:`<div class="srch-poster" style="display:flex;align-items:center;justify-content:center;font-size:20px;">🎬</div>`}
+        <div><div class="srch-title">${esc(item.title||item.name)}</div><div class="srch-meta">${[yr,item.media_type==='tv'?'시리즈':'필름'].filter(Boolean).join(' · ')}</div></div>`;
+      
+      el.onclick = () => pickFilm(item);
+      res.appendChild(el);
+    });
+  } catch(err) { 
+    console.error(err);
+    res.innerHTML=`<div class="searching">검색 실패. 다시 시도해주세요.</div>`; 
+  }
+}
+
+async function pickFilm(item) {
+  film = item;
+  
+  try {
+    const ep  = item.media_type==='tv'?'tv':'movie';
+    const res = await fetch(`${TMDB_BASE}/${ep}/${item.id}?api_key=${TMDB_KEY}&language=ko-KR`);
+    const d   = await res.json(); 
+    film = {...item, ...d};
+  } catch(err) {
+    console.error(err);
+  }
+  
+  document.getElementById('searchSection').style.display = 'none';
+  showChip(null);
+  document.getElementById('selectedSection').style.display = '';
+}
+
+function showChip(rec) {
+  const f      = film || rec || {};
+  const title  = f.title||f.name||'';
+  const yr     = (f.release_date||f.first_air_date||'').slice(0,4)||rec?.year||'';
+  const poster = f.poster_path||f.poster||null;
+  const rt     = f.runtime||f.episode_run_time?.[0]||rec?.runtime||null;
+  const gs     = (f.genres||[]).map(x=>x.name).slice(0,3).join(', ');
+  const tp     = f.media_type||rec?.type||'movie';
+  
+  document.getElementById('selChip').innerHTML = `
+    ${poster?`<img src="${IMG_W500}${poster}" crossorigin="anonymous" style="width:44px;height:66px;border-radius:6px;object-fit:cover;flex-shrink:0;">`:''}
+    <div><div class="sel-title">${esc(title)}</div><div class="sel-meta">${[yr,tp==='tv'?'시리즈':'필름',rt?rt+'min':'',gs].filter(Boolean).join(' · ')}</div></div>`;
+}
+
+/* ════ SAVE ════ */
+document.getElementById('saveBtn').onclick = saveRec;
+
+// Ctrl+Enter로 저장
+document.getElementById('reviewInput').addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    saveRec();
+  }
+});
+
+function saveRec() {
+  if (!film && !editId) {
+    toast('영화를 선택해주세요');
+    return;
+  }
+  
+  const review = document.getElementById('reviewInput').value.trim();
+  const f = film || {};
+  let genres = [];
+  
+  if (f.genres) genres = f.genres.map(g=>g.name);
+  else if (f.genre_ids) genres = f.genre_ids.map(id=>GENRE_MAP[id]).filter(Boolean);
+
+  let savedRec = null;
+
+  if (editId) {
+    // 수정 모드
+    const i = records.findIndex(r=>r.id===editId);
+    if (i !== -1) {
+      records[i] = {
+        ...records[i], 
+        rating: rating,
+        status: curStatus, 
+        review: review,
+        updatedAt: Date.now()
+      };
+      savedRec = records[i];
+      console.log('✏️ 수정:', records[i]);
+    }
+  } else {
+    // 추가 모드
+    const yr = (f.release_date||f.first_air_date||'').slice(0,4);
+    const newRecord = {
+      id: Date.now().toString(), 
+      tmdbId: f.id,
+      title: f.title||f.name, 
+      year: yr ? parseInt(yr) : null,
+      type: f.media_type || (f.first_air_date ? 'tv' : 'movie'),
+      poster: f.poster_path || null, 
+      overview: f.overview || '',
+      genres: genres, 
+      runtime: f.runtime || f.episode_run_time?.[0] || null,
+      rating: rating,
+      status: curStatus, 
+      review: review, 
+      addedAt: Date.now(),
+      updatedAt: Date.now(),
+      notionPageId: null
+    };
+    
+    records.unshift(newRecord);
+    savedRec = newRecord;
+    console.log('➕ 추가:', newRecord);
+  }
+  
+  save(); 
+  renderGrid(); 
+  closeModal();
+  toast(editId ? '수정되었습니다' : '추가되었습니다');
+  if (savedRec) autoPushMovie(savedRec);
+}
+
+/* ════ FILTER / SORT ════ */
+document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', ()=>{
+  document.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); 
+  flt = b.dataset.filter; 
+  renderGrid();
+}));
+
+document.querySelectorAll('.sort-pill').forEach(b => b.addEventListener('click', ()=>{
+  document.querySelectorAll('.sort-pill').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); 
+  srt = b.dataset.sort; 
+  renderGrid();
+}));
+
+document.getElementById('openAddBtn').onclick = openAdd;
+document.getElementById('notionSyncAllBtn').onclick = syncAllToNotion;
+
+/* ════ TOAST ════ */
+function toast(msg) {
+  const t = document.getElementById('toast'); 
+  t.textContent = msg; 
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+/* ════ INIT ════ */
+renderGrid();
+console.log('🎬 REEL 시작 - 저장된 기록:', records.length);
+
+/* ════ MAIN SEARCH ════ */
+document.getElementById('mainSearch').addEventListener('input', (e) => {
+  searchQuery = e.target.value.trim();
+  document.getElementById('clearSearch').style.display = searchQuery ? 'flex' : 'none';
+  renderGrid();
+});
+
+document.getElementById('clearSearch').onclick = () => {
+  searchQuery = '';
+  document.getElementById('mainSearch').value = '';
+  document.getElementById('clearSearch').style.display = 'none';
+  renderGrid();
+};
+
+/* ════ STATS MODAL ════ */
+document.getElementById('statsBtn').onclick = () => {
+  showStats();
+};
+
+document.getElementById('closeStatsBtn').onclick = () => {
+  document.getElementById('statsModal').classList.remove('open');
+};
+
+document.getElementById('statsModal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('statsModal')) {
+    document.getElementById('statsModal').classList.remove('open');
+  }
+});
+
+function showStats() {
+  const watched = records.filter(r => r.status === 'watched');
+  const rated = watched.filter(r => r.rating > 0);
+  
+  // 장르 통계
+  const genreCount = {};
+  watched.forEach(r => {
+    (r.genres || []).forEach(g => {
+      genreCount[g] = (genreCount[g] || 0) + 1;
+    });
+  });
+  const topGenres = Object.entries(genreCount)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0, 5);
+  const maxGenre = topGenres[0]?.[1] || 1;
+  
+  // Top 5 영화
+  const topRated = [...watched]
+    .filter(r => r.rating > 0)
+    .sort((a,b) => b.rating - a.rating)
+    .slice(0, 5);
+  
+  const html = `
+    <div class="stat-section">
+      <div class="stat-section-title">Overview</div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-card-num">${watched.length}</div>
+          <div class="stat-card-lbl">시청 완료</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-num">${rated.length ? (rated.reduce((s,r)=>s+r.rating,0)/rated.length).toFixed(1) : '—'}</div>
+          <div class="stat-card-lbl">평균 별점</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-num">${records.filter(r=>r.type==='movie').length}</div>
+          <div class="stat-card-lbl">영화</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-num">${records.filter(r=>r.type==='tv').length}</div>
+          <div class="stat-card-lbl">시리즈</div>
+        </div>
+      </div>
+    </div>
+    
+    ${topGenres.length ? `
+    <div class="stat-section">
+      <div class="stat-section-title">Top Genres</div>
+      ${topGenres.map(([genre, count]) => `
+        <div class="genre-bar">
+          <div class="genre-bar-top">
+            <span class="genre-bar-name">${esc(genre)}</span>
+            <span class="genre-bar-count">${count}</span>
+          </div>
+          <div style="background:var(--border);border-radius:3px;overflow:hidden">
+            <div class="genre-bar-fill" style="width:${(count/maxGenre*100)}%"></div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    ` : ''}
+    
+    ${topRated.length ? `
+    <div class="stat-section">
+      <div class="stat-section-title">Top Rated</div>
+      <div class="top-list">
+        ${topRated.map((r, i) => `
+          <div class="top-item">
+            <div class="top-item-rank">${i+1}</div>
+            ${r.poster ? `<img class="top-item-poster" src="${IMG_W500}${r.poster}">` : '<div class="top-item-poster"></div>'}
+            <div class="top-item-info">
+              <div class="top-item-title">${esc(r.title)}</div>
+              <div class="top-item-meta">${renderStars(r.rating)}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    ` : ''}
+  `;
+  
+  document.getElementById('statsContent').innerHTML = html;
+  document.getElementById('statsModal').classList.add('open');
+}
+
+/* ════ EXPORT / IMPORT ════ */
+document.getElementById('exportBtn').onclick = () => {
+  const data = JSON.stringify(records, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `reel-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('백업 파일 다운로드 ↓');
+};
+
+document.getElementById('importBtn').onclick = () => {
+  document.getElementById('importFile').click();
+};
+
+document.getElementById('importFile').onchange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (!Array.isArray(imported)) {
+        toast('⚠️ 잘못된 파일 형식입니다');
+        return;
+      }
+      
+      if (records.length > 0) {
+        if (!confirm('기존 데이터를 덮어쓰시겠습니까?\n\n현재 기록: ' + records.length + '개\n가져올 기록: ' + imported.length + '개')) {
+          return;
+        }
+      }
+      
+      records = imported;
+      records.forEach(r => { if (!r.updatedAt) r.updatedAt = r.addedAt || Date.now(); });
+      save();
+      renderGrid();
+      toast('✓ ' + imported.length + '개 기록 복원됨');
+      e.target.value = '';
+    } catch (err) {
+      console.error(err);
+      toast('⚠️ 파일 읽기 실패');
+    }
+  };
+  reader.readAsText(file);
+};
+</script>
+<style>
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+</body>
+</html>
