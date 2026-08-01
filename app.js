@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Migrate individual todo items: give every item a stable id + timestamps + sync placeholder.
   // A stable per-item id (independent of array position) is required groundwork for any future
   // two-way Notion sync, since Notion pages need to be matched back to a specific todo reliably.
+  const generateId = () => Math.random().toString(36).substr(2, 9);
   Object.keys(todos).forEach(dateStr => {
     (todos[dateStr] || []).forEach(t => {
       if (!t.id) t.id = generateId();
@@ -100,8 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const saveTodos = () => { localStorage.setItem('swipe-todos', JSON.stringify(todos)); };
-
-  const generateId = () => Math.random().toString(36).substr(2, 9);
 
   // --- ROUTINE ENGINE ---
   const spawnRoutines = (dateStr) => {
