@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Daily</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- YouTube Studio Style Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+  
+  <!-- Slide-out Drawer Menu (Mini/Icon-Only) -->
+  <div class="drawer-overlay hidden" id="drawer-overlay"></div>
+  <div class="drawer-menu mini-drawer" id="drawer-menu">
+    <div class="drawer-header">
+      <button class="icon-btn" id="btn-close-drawer"><i data-lucide="x"></i></button>
+    </div>
+
+    <div class="drawer-content mini-content">
+      <!-- Group 1: Routines / Tags / Pomodoro -->
+      <div class="menu-item" id="menu-routines" title="루틴 관리">
+        <i data-lucide="repeat"></i>
+      </div>
+      <div class="menu-item" id="menu-categories" title="카테고리 관리">
+        <i data-lucide="tags"></i>
+      </div>
+      <div class="menu-item" id="menu-pomo-settings" title="뽀모도로 시간">
+        <i data-lucide="timer"></i>
+      </div>
+
+      <div class="menu-separator"></div>
+
+      <!-- Group 2: Insights / Share / Backup -->
+      <div class="menu-item" id="menu-insights" title="인사이트">
+        <i data-lucide="bar-chart-2"></i>
+      </div>
+      <div class="menu-item" id="menu-export" title="사진 공유">
+        <i data-lucide="share"></i>
+      </div>
+      <div class="menu-item" id="menu-backup" title="데이터 백업/복원">
+        <i data-lucide="database-backup"></i>
+      </div>
+
+      <div class="menu-separator"></div>
+
+      <!-- Group 3: Theme / Dark Mode -->
+      <div class="menu-item" id="menu-theme" title="테마색">
+        <i data-lucide="palette"></i>
+      </div>
+      <div class="menu-item" id="menu-dark-mode" title="다크 모드">
+        <i data-lucide="moon" id="dark-mode-icon"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-container" id="app-capture-area">
+    <header class="app-header">
+      <div class="header-left">
+        <input type="text" id="app-title" class="app-title-input" value="Daily" spellcheck="false" autocomplete="off">
+      </div>
+      <div class="header-right">
+        <button id="btn-search" class="icon-btn" title="검색">
+          <i data-lucide="search"></i>
+        </button>
+        <button id="btn-calendar" class="icon-btn" title="날짜 이동">
+          <i data-lucide="calendar-days"></i>
+          <input type="date" id="native-date-picker" class="hidden-native-date">
+        </button>
+        <button id="btn-emoticons" class="icon-btn" title="특수문자">
+          <i data-lucide="heart"></i>
+        </button>
+        <button id="btn-hamburger" class="icon-btn" title="메뉴">
+          <i data-lucide="menu"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Search Bar (toggle) -->
+    <div class="search-bar hidden" id="search-bar">
+      <i data-lucide="search" style="width:14px;height:14px;color:var(--text-muted);"></i>
+      <input type="text" id="search-input" placeholder="할 일 검색..." autocomplete="off">
+      <button id="btn-search-close" class="icon-btn" style="padding:2px;"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
+    </div>
+    <div class="search-results hidden" id="search-results"></div>
+
+    <!-- Swiper -->
+    <div class="swiper todo-swiper">
+      <div class="swiper-wrapper" id="swiper-wrapper">
+        <!-- Cards injected via JS -->
+      </div>
+    </div>
+
+    <button id="btn-today" class="btn-today hidden">
+      <i data-lucide="calendar"></i>
+      <span>오늘</span>
+    </button>
+  </div>
+
+  <!-- Undo Toast -->
+  <div id="undo-toast" class="link-toast hidden" style="top:auto; bottom:100px;">
+    <span id="undo-toast-text">할 일을 삭제했어요</span>
+    <button id="btn-undo-action" class="btn-cancel-toast">되돌리기</button>
+  </div>
+
+  <!-- MODALS -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <!-- Theme Palette Modal -->
+    <div id="modal-theme" class="modal-content hidden">
+      <div class="color-swatches" id="theme-swatches">
+        <!-- JS will populate with more variety & pastels -->
+      </div>
+    </div>
+
+    <!-- Highlighter Modal (instant-apply) -->
+    <div id="modal-highlight-category" class="modal-content hidden">
+      <div class="color-swatches" id="category-swatches" style="gap:10px;">
+        <button class="swatch none-swatch" data-color="" title="지우기"><i data-lucide="slash" style="width:14px;height:14px;"></i></button>
+        <!-- V2 Swatches will be generated by JS -->
+      </div>
+    </div>
+    
+    <!-- Category Assign Modal (instant-apply list) -->
+    <div id="modal-assign-category" class="modal-content hidden" style="padding: 16px;">
+      <div id="category-assign-list" style="display:flex; flex-direction:column; gap:8px;">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- Category Manager Modal -->
+    <div id="modal-categories" class="modal-content hidden">
+      <div class="routine-list" id="category-list-container"></div>
+      <div class="input-group mt-2">
+        <input type="text" id="new-category-name" class="modal-input" placeholder="새 카테고리..." style="margin-bottom: 8px;">
+        <div class="color-swatches" id="new-category-color" style="margin-bottom: 12px;"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <button class="btn-primary" id="btn-add-category-action" style="flex: 0 0 auto; width: 48%;">추가</button>
+          <button class="btn-secondary close-modal" style="flex: 0 0 auto; width: 48%;">닫기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Routine Manager Modal -->
+    <div id="modal-routine-manager" class="modal-content hidden">
+      <div class="routine-list" id="routine-list-container"></div>
+      <div class="input-group mt-2">
+        <input type="text" id="new-routine-input" class="modal-input" placeholder="새 루틴..." style="margin-bottom: 12px;">
+        <!-- Preset buttons -->
+        <div style="display:flex; gap:6px; margin-bottom:10px;">
+          <button class="btn-routine-preset" data-preset="daily" style="flex:1;padding:6px;border-radius:10px;border:1px solid var(--border-color);background:var(--card-bg);font-size:11px;font-weight:600;cursor:pointer;color:var(--text-muted);">매일</button>
+          <button class="btn-routine-preset" data-preset="weekday" style="flex:1;padding:6px;border-radius:10px;border:1px solid var(--border-color);background:var(--card-bg);font-size:11px;font-weight:600;cursor:pointer;color:var(--text-muted);">평일</button>
+          <button class="btn-routine-preset" data-preset="weekend" style="flex:1;padding:6px;border-radius:10px;border:1px solid var(--border-color);background:var(--card-bg);font-size:11px;font-weight:600;cursor:pointer;color:var(--text-muted);">주말</button>
+        </div>
+        <!-- Day toggles - 7px gap with exact circle -->
+        <div style="display:flex; gap:5px; justify-content:center; margin-bottom:16px; flex-wrap:nowrap;">
+          <button class="btn-day-toggle active" data-day="1">월</button>
+          <button class="btn-day-toggle active" data-day="2">화</button>
+          <button class="btn-day-toggle active" data-day="3">수</button>
+          <button class="btn-day-toggle active" data-day="4">목</button>
+          <button class="btn-day-toggle active" data-day="5">금</button>
+          <button class="btn-day-toggle" data-day="6">토</button>
+          <button class="btn-day-toggle" data-day="0">일</button>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-primary" id="btn-add-routine-action" style="flex:1;">추가</button>
+          <button class="btn-secondary close-modal" style="flex:1;">닫기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pomo Settings Modal -->
+    <div id="modal-pomo-settings" class="modal-content hidden">
+      <div class="pomo-setting-ui" style="text-align: center;">
+        <span id="pomo-duration-display" style="font-size: 24px; font-weight: 700;">25</span>분
+        <input type="range" id="pomo-duration-slider" min="5" max="90" step="5" value="25" style="width:100%; margin: 20px 0;">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary close-modal">완료</button>
+      </div>
+    </div>
+
+    <!-- Insights Modal -->
+    <div id="modal-insights" class="modal-content hidden">
+      <div class="insight-chart" id="insight-stats"></div>
+      <div class="modal-actions">
+        <button class="btn-primary close-modal">닫기</button>
+      </div>
+    </div>
+
+    <!-- Backup / Restore Modal -->
+    <div id="modal-backup" class="modal-content hidden">
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <p style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:4px;">모든 할 일, 루틴, 카테고리, 설정을 파일 하나로 내보내거나 불러올 수 있어요.</p>
+        <button class="btn-primary" id="btn-backup-export" style="width:100%;">내보내기 (다운로드)</button>
+        <button class="btn-secondary" id="btn-backup-import" style="width:100%;">가져오기 (파일 선택)</button>
+        <input type="file" id="backup-file-input" accept="application/json" class="hidden">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary close-modal" style="width:100%;">닫기</button>
+      </div>
+    </div>
+
+    <!-- Emoticon Picker Modal -->
+    <div id="modal-emoticons" class="modal-content hidden" style="padding:0;overflow:hidden;max-width:340px;border-radius:24px;">
+      <div id="emoticon-copy-toast" style="display:none;position:absolute;top:12px;left:50%;transform:translateX(-50%);background:var(--accent-color);color:#fff;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;z-index:9999;pointer-events:none;"></div>
+      <div class="swiper emoticon-swiper" style="height:360px;">
+        <div class="swiper-wrapper" id="emoticon-swiper-wrapper">
+          <!-- slides injected by JS -->
+        </div>
+      </div>
+      <div class="emoticon-swiper-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px 16px;gap:8px;">
+        <button class="emoticon-nav-btn" id="emoticon-prev" style="background:none;border:1px solid var(--border-color);border-radius:10px;padding:6px 12px;cursor:pointer;color:var(--text-muted);font-size:16px;">&#8249;</button>
+        <div class="emoticon-pagination" style="display:flex;gap:6px;align-items:center;"></div>
+        <button class="emoticon-nav-btn" id="emoticon-next" style="background:none;border:1px solid var(--border-color);border-radius:10px;padding:6px 12px;cursor:pointer;color:var(--text-muted);font-size:16px;">&#8250;</button>
+      </div>
+      <div style="padding:0 16px 16px;">
+        <button class="btn-secondary close-modal" style="width:100%;">닫기</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="link-toast" class="link-toast hidden">
+    <i data-lucide="highlighter"></i> 연결할 대상을 누르세요
+    <button id="btn-cancel-link-toast" class="btn-cancel-toast">완료</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isToday.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isBefore.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isAfter.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/ko.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script>
+    dayjs.extend(window.dayjs_plugin_isToday);
+    dayjs.extend(window.dayjs_plugin_isBefore);
+    dayjs.extend(window.dayjs_plugin_isAfter);
+    dayjs.locale('ko');
+  </script>
+
+  <script src="app.js"></script>
+</body>
+</html>
