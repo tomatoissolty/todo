@@ -3,10 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>diary ⋆｡°✩</title>
+<title>⋆｡°✩ diary ⋆｡°✩</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 6' shape-rendering='crispEdges'%3E%3Crect x='1' y='0' width='2' height='1' fill='%23ff6fa8'/%3E%3Crect x='4' y='0' width='2' height='1' fill='%23ff6fa8'/%3E%3Crect x='0' y='1' width='7' height='2' fill='%23ff6fa8'/%3E%3Crect x='1' y='3' width='5' height='1' fill='%23ff6fa8'/%3E%3Crect x='2' y='4' width='3' height='1' fill='%23ff6fa8'/%3E%3Crect x='3' y='5' width='1' height='1' fill='%23ff6fa8'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://cdn.jsdelivr.net/gh/quiple/galmuri@1.2/dist/galmuri.css" rel="stylesheet">
 <style>
+/* 도스이야기(DOSIyagiMedium) — leedheo 제작, 무료 상업 이용 가능 (출처: https://github.com/hurss/fonts) */
+@font-face {
+  font-family: 'DosStory';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2304-2@1.0/DOSIyagiMedium.woff2') format('woff2');
+  font-weight: normal;
+  font-display: swap;
+}
 :root{
   --pink:#ffc6de; --pink-deep:#ff9ec7;
   --purple:#d9c7fb; --purple-deep:#b79bf5;
@@ -15,7 +22,7 @@
   --bg:#fff8fc; --card:#ffffff; --ink:#4a3b52; --ink-soft:#9a8aa3;
   --border:#f0d9ec;
   --radius:18px;
-  --font: 'Galmuri11', 'Galmuri9', sans-serif;
+  --font: 'DosStory', sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{
@@ -32,7 +39,7 @@ button,input,textarea{font-family:var(--font)}
 
 /* HEADER */
 .app-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.app-title{font-size:20px;color:var(--purple-deep);display:flex;align-items:center;gap:6px}
+.app-title{font-size:16px;color:var(--purple-deep);display:flex;align-items:center;gap:6px;white-space:nowrap}
 .btn-add{background:var(--yellow-deep);border:3px solid var(--ink);border-radius:0;padding:9px 16px;font-size:13px;cursor:pointer;box-shadow:3px 3px 0 var(--ink), inset -3px -3px 0 rgba(0,0,0,.15), inset 3px 3px 0 rgba(255,255,255,.65);color:var(--ink);clip-path:polygon(6px 0,calc(100% - 6px) 0,calc(100% - 6px) 6px,100% 6px,100% calc(100% - 6px),calc(100% - 6px) calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,6px calc(100% - 6px),0 calc(100% - 6px),0 6px,6px 6px)}
 .btn-add:active{box-shadow:1px 1px 0 var(--ink), inset -3px -3px 0 rgba(0,0,0,.15), inset 3px 3px 0 rgba(255,255,255,.65);transform:translate(2px,2px)}
 .icon-btn{background:var(--card);border:2px solid var(--border);border-radius:12px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px}
@@ -111,7 +118,7 @@ button,input,textarea{font-family:var(--font)}
   <!-- LIST SCREEN -->
   <div class="screen active" id="screen-list">
     <div class="app-header">
-      <div class="app-title">📔 diary</div>
+      <div class="app-title">⋆｡°✩ diary ⋆｡°✩</div>
       <div style="display:flex;gap:8px;align-items:center">
         <div class="icon-btn" id="btn-sync" title="지금 바로 동기화"><span id="sync-icon">🔄</span></div>
         <button class="btn-add" id="btn-add">+ ADD</button>
@@ -465,34 +472,42 @@ document.getElementById('edit-lock').onclick = async function () {
 };
 
 document.getElementById('btn-done').onclick = async () => {
-  const title = document.getElementById('edit-title').value.trim();
-  const locked = document.getElementById('edit-lock').classList.contains('on');
+  const doneBtn = document.getElementById('btn-done');
+  doneBtn.disabled = true;
+  try {
+    const title = document.getElementById('edit-title').value.trim();
+    const locked = document.getElementById('edit-lock').classList.contains('on');
 
-  // 새 사진은 photos 스토어에 저장
-  for (const block of editBlocks) {
-    if (block.type === 'photo' && block._isNew) {
-      await idbPut('photos', { id: block.photoId, dataUrl: block._dataUrl, notionFileUploadId: null });
+    // 새 사진은 photos 스토어에 저장
+    for (const block of editBlocks) {
+      if (block.type === 'photo' && block._isNew) {
+        await idbPut('photos', { id: block.photoId, dataUrl: block._dataUrl, notionFileUploadId: null });
+      }
     }
-  }
-  const cleanContent = editBlocks.map(b => b.type === 'photo' ? { type: 'photo', photoId: b.photoId } : { type: 'text', text: b.text || '' });
+    const cleanContent = editBlocks.map(b => b.type === 'photo' ? { type: 'photo', photoId: b.photoId } : { type: 'text', text: b.text || '' });
 
-  let entry = currentEntry;
-  const isNew = !entry;
-  if (isNew) {
-    entry = { id: generateId(), date: new Date().toISOString().slice(0, 10), notionPageId: null };
-    entries.push(entry);
-  }
-  entry.title = title;
-  entry.locked = locked;
-  entry.content = cleanContent;
-  entry.updatedAt = Date.now();
-  await idbPut('entries', entry);
+    let entry = currentEntry;
+    const isNew = !entry;
+    if (isNew) {
+      entry = { id: generateId(), date: new Date().toISOString().slice(0, 10), notionPageId: null };
+      entries.push(entry);
+    }
+    entry.title = title;
+    entry.locked = locked;
+    entry.content = cleanContent;
+    entry.updatedAt = Date.now();
+    await idbPut('entries', entry);
 
-  currentEntry = entry;
-  renderList();
-  showViewScreen(entry);
-  showToast('저장했어요 🩷');
-  autoPushDiary(entry);
+    currentEntry = entry;
+    renderList();
+    showViewScreen(entry);
+    showToast('저장했어요 🩷');
+    // 노션 동기화가 끝날 때까지 기다려야, 같은 글을 연달아 저장할 때
+    // notionPageId가 아직 안 채워진 상태로 두 번 생성되는 걸 막을 수 있어요.
+    await autoPushDiary(entry);
+  } finally {
+    doneBtn.disabled = false;
+  }
 };
 
 /* ═══════════ NAVIGATION ═══════════ */
@@ -535,7 +550,20 @@ async function uploadPhotoToNotion(photoId) {
   return data.fileUploadId;
 }
 
+const diaryPushLocks = {};
 async function autoPushDiary(entry) {
+  // 같은 글이 동시에 두 번 push되면 노션 페이지가 중복 생성될 수 있어서, 진행 중이면 그 작업이 끝나길 기다렸다가 이어서 실행해요.
+  if (diaryPushLocks[entry.id]) await diaryPushLocks[entry.id].catch(() => {});
+  const task = autoPushDiaryOnce(entry);
+  diaryPushLocks[entry.id] = task;
+  try {
+    await task;
+  } finally {
+    if (diaryPushLocks[entry.id] === task) delete diaryPushLocks[entry.id];
+  }
+}
+
+async function autoPushDiaryOnce(entry) {
   setSyncSpin(true);
   try {
     const content = [];
