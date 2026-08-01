@@ -56,6 +56,8 @@ function movieToProperties(item) {
   return {
     'Name': { title: [{ text: { content: item.name || '(제목 없음)' } }] },
     'Poster': item.poster ? { url: item.poster } : { url: null },
+    // 갤러리 뷰의 카드 이미지는 Files & media 속성에서 가져오므로 Cover 필드도 함께 채운다
+    'Cover': item.poster ? { files: [{ name: 'poster.jpg', type: 'external', external: { url: item.poster } }] } : { files: [] },
     'Rating': { number: typeof item.rating === 'number' ? item.rating : null },
     'Status': item.status ? { select: { name: item.status } } : { select: null },
     'Genre': { rich_text: item.genre ? [{ text: { content: item.genre } }] : [] },
