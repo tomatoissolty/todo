@@ -87,6 +87,82 @@ function movieFromPage(page) {
   };
 }
 
+// --- Diary(일기 앱) 매핑 — 본문/사진은 속성이 아니라 페이지 내용(블록)으로 들어감 ---
+function diaryToProperties(item) {
+  return {
+    'Name': { title: [{ text: { content: item.name || '(제목 없음)' } }] },
+    'Date': item.date ? { date: { start: item.date } } : { date: null },
+    'Locked': { checkbox: !!item.locked },
+    'App ID': { rich_text: [{ text: { content: String(item.appId || '') } }] },
+    'Last Updated': item.updatedAt ? { date: { start: item.updatedAt } } : { date: null }
+  };
+}
+
+function buildDiaryBlocks(content) {
+  return (content || []).map(seg => {
+    if (seg.type === 'photo' && seg.fileUploadId) {
+      return { object: 'block', type: 'image', image: { type: 'file_upload', file_upload: { id: seg.fileUploadId } } };
+    }
+    return { object: 'block', type: 'paragraph', paragraph: { rich_text: seg.text ? [{ type: 'text', text: { content: seg.text } }] : [] } };
+  });
+}
+
+// 페이지 본문을 완전히 새 내용으로 교체 (기존 블록 삭제 후 재작성)
+async function replaceDiaryContent(pageId, blocks) {
+  let cursor;
+  do {
+    const listUrl = `https://api.notion.com/v1/blocks/${pageId}/children?page_size=100${cursor ? '&start_cursor=' + cursor : ''}`;
+    const r = await fetch(listUrl, { headers: notionHeaders() });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.message || '기존 내용 조회 실패');
+    for (const block of data.results || []) {
+      await fetch(`https://api.notion.com/v1/blocks/${block.id}`, { method: 'DELETE', headers: notionHeaders() });
+    }
+    cursor = data.has_more ? data.next_cursor : undefined;
+  } while (cursor);
+
+  if (blocks.length) {
+    const r2 = await fetch(`https://api.notion.com/v1/blocks/${pageId}/children`, {
+      method: 'PATCH',
+      headers: notionHeaders(),
+      body: JSON.stringify({ children: blocks })
+    });
+    const data2 = await r2.json();
+    if (!r2.ok) throw new Error(data2.message || '본문 저장 실패');
+  }
+}
+
+// 사진을 노션 "자체" 비공개 저장소에 직접 업로드 (외부 공개 호스팅 절대 사용 안 함)
+async function uploadFileToNotion(dataUrl) {
+  const match = dataUrl.match(/^data:(.+);base64,(.+)$/);
+  if (!match) throw new Error('올바르지 않은 이미지 데이터예요');
+  const mime = match[1];
+  const buffer = Buffer.from(match[2], 'base64');
+
+  const createRes = await fetch('https://api.notion.com/v1/file_uploads', {
+    method: 'POST',
+    headers: notionHeaders(),
+    body: JSON.stringify({})
+  });
+  const createData = await createRes.json();
+  if (!createRes.ok) throw new Error(createData.message || '파일 업로드 생성 실패');
+
+  const form = new FormData();
+  form.append('file', new Blob([buffer], { type: mime }), 'photo.jpg');
+  const sendRes = await fetch(createData.upload_url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.NOTION_SECRET}`,
+      'Notion-Version': NOTION_VERSION
+    },
+    body: form
+  });
+  const sendData = await sendRes.json();
+  if (!sendRes.ok) throw new Error(sendData.message || '파일 업로드 전송 실패');
+  return createData.id;
+}
+
+
 const APPS = {
   todo: {
     databaseId: () => process.env.NOTION_DATABASE_ID_TODO || process.env.NOTION_DATABASE_ID,
@@ -99,6 +175,12 @@ const APPS = {
     toProperties: movieToProperties,
     fromPage: movieFromPage,
     useCover: true // 포스터를 노션 페이지 커버로도 설정해서 갤러리 뷰에서 예쁘게 보이게 함
+  },
+  diary: {
+    databaseId: () => process.env.NOTION_DATABASE_ID_DIARY,
+    toProperties: diaryToProperties,
+    fromPage: null, // 일기는 현재 push(올리기)만 지원 — 노션 쪽 수정 불러오기는 아직 없음
+    useCover: false
   }
 };
 
@@ -118,7 +200,49 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // --- 일기 앱 전용 처리: 사진 업로드 ---
+    if (appKey === 'diary' && req.method === 'POST' && req.query.action === 'upload') {
+      const dataUrl = req.body && req.body.dataUrl;
+      if (!dataUrl) { res.status(400).json({ error: 'dataUrl이 필요해요.' }); return; }
+      const fileUploadId = await uploadFileToNotion(dataUrl);
+      res.status(200).json({ fileUploadId });
+      return;
+    }
+
+    // --- 일기 앱 전용 처리: 항목 하나 저장(속성 + 본문 블록) ---
+    if (appKey === 'diary' && req.method === 'POST' && !req.query.action) {
+      const item = req.body && req.body.item;
+      if (!item) { res.status(400).json({ error: 'item이 필요해요.' }); return; }
+      const properties = appConfig.toProperties(item);
+      let pageId = item.notionPageId;
+      if (pageId) {
+        const r = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
+          method: 'PATCH',
+          headers: notionHeaders(),
+          body: JSON.stringify({ properties, archived: false })
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.message || '일기 업데이트 실패');
+      } else {
+        const r = await fetch('https://api.notion.com/v1/pages', {
+          method: 'POST',
+          headers: notionHeaders(),
+          body: JSON.stringify({ parent: { database_id: databaseId }, properties })
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.message || '일기 생성 실패');
+        pageId = data.id;
+      }
+      await replaceDiaryContent(pageId, buildDiaryBlocks(item.content));
+      res.status(200).json({ notionPageId: pageId });
+      return;
+    }
+
     if (req.method === 'GET') {
+      if (!appConfig.fromPage) {
+        res.status(400).json({ error: `이 앱(${appKey})은 아직 노션에서 불러오기(pull)를 지원하지 않아요.` });
+        return;
+      }
       let items = [];
       let cursor;
       do {

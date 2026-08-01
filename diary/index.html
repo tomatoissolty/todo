@@ -2,490 +2,551 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>일기 ⋆｡°✩</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>diary ⋆｡°✩</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/gh/quiple/galmuri@1.2/dist/galmuri.css" rel="stylesheet">
 <style>
 :root{
-  --bg: #F6F1FB;
-  --card: #FFFFFF;
-  --ink: #4A3B5C;
-  --ink-soft: #8B7AA3;
-  --pink: #FFB3D9;
-  --pink-deep: #FF8FC7;
-  --blue: #A8C0FF;
-  --blue-deep: #7FA0FF;
-  --purple: #C9A3F0;
-  --yellow: #FFE066;
-  --border: 3px solid var(--ink);
+  --pink:#ffc6de; --pink-deep:#ff9ec7;
+  --purple:#d9c7fb; --purple-deep:#b79bf5;
+  --blue:#c2e0ff; --blue-deep:#93c8ff;
+  --yellow:#fff2a8; --yellow-deep:#ffe066;
+  --bg:#fff8fc; --card:#ffffff; --ink:#4a3b52; --ink-soft:#9a8aa3;
+  --border:#f0d9ec;
+  --radius:18px;
+  --font: 'Galmuri11', 'Galmuri9', sans-serif;
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{
+  font-family:var(--font);
   background:var(--bg);
-  background-image:
-    radial-gradient(var(--purple) 1.5px, transparent 1.5px),
-    radial-gradient(var(--blue) 1.5px, transparent 1.5px);
-  background-size: 28px 28px;
-  background-position: 0 0, 14px 14px;
-  background-attachment: fixed;
-  opacity: 1;
+  background-image:radial-gradient(var(--pink) 1.4px, transparent 1.4px);
+  background-size:22px 22px;
   color:var(--ink);
-  font-family:'Gaegu',sans-serif;
   min-height:100vh;
-  display:flex;
-  justify-content:center;
+  padding-bottom:60px;
 }
-.pixel{ font-family:'Press Start 2P', monospace; }
-
-.app{ width:100%; max-width:480px; min-height:100vh; background:var(--bg); position:relative; padding-bottom:40px; }
-@media(min-width:481px){ .app{ box-shadow: 0 0 0 3px var(--ink); min-height:calc(100vh - 40px); margin-top:20px; margin-bottom:20px; border-radius:18px; overflow:hidden; } }
+button,input,textarea{font-family:var(--font)}
+.wrap{max-width:520px;margin:0 auto;padding:20px 16px}
 
 /* HEADER */
-.header{ display:flex; align-items:center; justify-content:space-between; padding:22px 20px 14px; }
-.header h1{ font-size:26px; color:var(--ink); }
-.add-btn{
-  font-family:'Press Start 2P'; font-size:11px; background:var(--yellow); color:var(--ink);
-  border:var(--border); border-radius:8px; padding:10px 14px; cursor:pointer;
-  box-shadow:3px 3px 0 var(--ink); transition:transform .1s, box-shadow .1s;
-}
-.add-btn:active{ transform:translate(3px,3px); box-shadow:0 0 0 var(--ink); }
+.app-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.app-title{font-size:20px;color:var(--purple-deep);display:flex;align-items:center;gap:6px}
+.btn-add{background:var(--yellow-deep);border:3px solid var(--ink);border-radius:14px;padding:9px 16px;font-size:13px;cursor:pointer;box-shadow:3px 3px 0 var(--ink);color:var(--ink)}
+.btn-add:active{box-shadow:1px 1px 0 var(--ink);transform:translate(2px,2px)}
+.icon-btn{background:var(--card);border:2px solid var(--border);border-radius:12px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px}
 
 /* LIST */
-.list{ padding:6px 16px 20px; display:flex; flex-direction:column; gap:12px; }
-.entry-row{
-  background:var(--card); border:var(--border); border-radius:14px; padding:12px 14px;
-  display:flex; align-items:center; gap:12px; cursor:pointer;
-  box-shadow:4px 4px 0 var(--purple); transition:transform .12s, box-shadow .12s;
-}
-.entry-row:active{ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--purple); }
-.entry-no{ font-family:'Press Start 2P'; font-size:11px; color:var(--ink-soft); width:20px; flex-shrink:0; text-align:center; }
-.entry-date{
-  font-family:'Press Start 2P'; font-size:9px; background:var(--blue); color:var(--ink);
-  border:2px solid var(--ink); border-radius:6px; padding:8px 6px; text-align:center; line-height:1.6;
-  width:46px; flex-shrink:0; transform:rotate(-3deg); box-shadow:2px 2px 0 var(--ink);
-}
-.entry-main{ flex:1; min-width:0; }
-.entry-title{ font-size:19px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:6px; }
-.entry-pics{ display:flex; gap:4px; margin-top:6px; }
-.pic-thumb{ width:26px; height:26px; border-radius:6px; border:2px solid var(--ink); object-fit:cover; background:var(--purple); flex-shrink:0; }
-.pic-more{ font-family:'Press Start 2P'; font-size:8px; color:var(--ink-soft); display:flex; align-items:center; padding-left:2px; }
-.entry-locked-tag{ font-size:13px; color:var(--pink-deep); }
+.entry-row{background:var(--card);border:2.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:transform .1s,border-color .15s;position:relative}
+.entry-row:hover{border-color:var(--purple-deep);transform:translateY(-2px)}
+.entry-no{font-size:11px;color:var(--ink-soft);width:22px;flex-shrink:0}
+.entry-date{background:var(--blue);border-radius:10px;padding:6px 8px;font-size:11px;text-align:center;flex-shrink:0;min-width:44px}
+.entry-title{flex:1;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.entry-pics{display:flex;gap:4px;flex-shrink:0}
+.pic-thumb{width:30px;height:30px;border-radius:8px;object-fit:cover;border:2px solid var(--border)}
+.pic-placeholder{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid var(--border)}
+.pic-more{width:30px;height:30px;border-radius:8px;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid var(--border)}
+.btn-edit-row{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;background:var(--yellow-deep);border:2px solid var(--ink);display:none;align-items:center;justify-content:center;font-size:11px;cursor:pointer}
+.entry-row:hover .btn-edit-row{display:flex}
+.empty{text-align:center;padding:60px 20px;color:var(--ink-soft);font-size:13px}
 
-.empty{ text-align:center; padding:70px 20px; color:var(--ink-soft); }
-.empty .big{ font-size:40px; margin-bottom:10px; }
-.empty p{ font-size:18px; }
+/* SCREENS */
+.screen{display:none}
+.screen.active{display:block}
 
-/* EDITOR */
-.editor{ padding:18px 18px 30px; display:none; flex-direction:column; gap:16px; }
-.editor.open{ display:flex; }
-.list.hidden, .header.hidden{ display:none; }
+/* VIEW */
+.view-title{font-size:19px;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.view-date{font-size:12px;color:var(--ink-soft);margin-bottom:18px}
+.view-block-text{font-size:14px;line-height:1.9;white-space:pre-wrap;margin-bottom:14px}
+.view-block-photo{width:100%;border-radius:var(--radius);margin-bottom:14px;border:2.5px solid var(--border)}
+.view-actions{display:flex;gap:8px;margin-top:24px}
+.btn-pill{flex:1;padding:12px;border-radius:14px;border:2.5px solid var(--ink);font-size:13px;cursor:pointer;background:var(--card)}
+.btn-pill.primary{background:var(--pink-deep)}
 
-.field-row{ display:flex; align-items:center; gap:10px; }
-.field-label{
-  font-family:'Press Start 2P'; font-size:10px; background:var(--pink); color:var(--ink);
-  border:2px solid var(--ink); border-radius:6px; padding:9px 8px; width:64px; text-align:center; flex-shrink:0;
-  box-shadow:2px 2px 0 var(--ink);
-}
-.title-input{
-  flex:1; font-family:'Gaegu'; font-size:20px; font-weight:700; padding:10px 12px; border:var(--border);
-  border-radius:10px; background:var(--card); color:var(--ink); outline:none;
-}
-.title-input:focus{ background:#FFFDF6; }
+/* EDIT */
+.field-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.field-label{background:var(--purple);border-radius:10px;padding:8px 12px;font-size:12px;flex-shrink:0;min-width:60px;text-align:center}
+.field-input{flex:1;padding:12px 14px;border:2.5px solid var(--border);border-radius:12px;font-size:14px;outline:none;background:var(--card)}
+.field-input:focus{border-color:var(--purple-deep)}
+.lock-toggle{width:52px;height:28px;border-radius:20px;background:var(--border);position:relative;cursor:pointer;flex-shrink:0;border:2px solid var(--ink)}
+.lock-toggle.on{background:var(--pink-deep)}
+.lock-toggle .knob{position:absolute;top:1px;left:1px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s;border:2px solid var(--ink)}
+.lock-toggle.on .knob{left:25px}
 
-.lock-btn{
-  font-size:20px; background:var(--card); border:var(--border); border-radius:10px; padding:8px 14px;
-  cursor:pointer; display:flex; align-items:center; gap:8px; box-shadow:2px 2px 0 var(--ink);
-}
-.lock-btn.active{ background:var(--pink); }
-.lock-btn span.lbl{ font-family:'Press Start 2P'; font-size:9px; }
+.blocks{display:flex;flex-direction:column;gap:8px;margin:16px 0}
+.block-text textarea{width:100%;border:2.5px solid var(--border);border-radius:14px;padding:12px;font-size:14px;line-height:1.8;resize:none;outline:none;min-height:80px;background:var(--card)}
+.block-text textarea:focus{border-color:var(--blue-deep)}
+.block-photo{position:relative;display:inline-block}
+.block-photo img{width:100%;border-radius:14px;border:2.5px solid var(--border);display:block}
+.block-photo .btn-remove-photo{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:#fff;border:2px solid var(--ink);cursor:pointer;font-size:11px}
+.insert-row{display:flex;gap:6px;justify-content:center}
+.btn-insert{background:var(--yellow);border:2px dashed var(--ink-soft);border-radius:10px;padding:5px 10px;font-size:11px;cursor:pointer;color:var(--ink)}
 
-.pics-strip{ display:flex; gap:8px; overflow-x:auto; padding:4px 2px 10px; scrollbar-width:thin; }
-.pics-strip::-webkit-scrollbar{ height:6px; }
-.pics-strip::-webkit-scrollbar-thumb{ background:var(--purple); border-radius:3px; }
-.pic-slot{
-  width:58px; height:58px; border-radius:10px; border:2px solid var(--ink); flex-shrink:0; position:relative;
-  background:var(--card); overflow:hidden;
-}
-.pic-slot img{ width:100%; height:100%; object-fit:cover; display:block; }
-.pic-slot .rm{
-  position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:var(--ink);
-  color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center; cursor:pointer;
-}
-.pic-add{
-  width:58px; height:58px; border-radius:10px; border:2px dashed var(--ink-soft); flex-shrink:0;
-  display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--ink-soft);
-  cursor:pointer; background:transparent;
-}
-.pic-count{ font-size:12px; color:var(--ink-soft); margin-top:-4px; }
+/* MODAL (PIN) */
+.pin-overlay{position:fixed;inset:0;background:rgba(74,59,82,.45);display:none;align-items:center;justify-content:center;z-index:500}
+.pin-overlay.open{display:flex}
+.pin-box{background:var(--card);border:3px solid var(--ink);border-radius:20px;padding:26px;width:260px;text-align:center;box-shadow:5px 5px 0 var(--purple-deep)}
+.pin-box .emoji{font-size:26px;margin-bottom:6px}
+.pin-box p{font-size:12px;color:var(--ink-soft);margin-bottom:14px}
+.pin-box input{width:100%;padding:12px;border:2.5px solid var(--border);border-radius:12px;text-align:center;font-size:16px;letter-spacing:4px;outline:none;margin-bottom:10px}
+.pin-box .row{display:flex;gap:8px}
 
-.content-box{
-  min-height:220px; font-family:'Gaegu'; font-size:18px; line-height:1.7; padding:16px; border:var(--border);
-  border-radius:12px; background:var(--card); color:var(--ink); outline:none; resize:vertical;
-}
-.content-box:empty:before{ content:attr(data-placeholder); color:var(--ink-soft); }
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:20px;font-size:12px;z-index:600;transition:transform .3s;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
 
-.done-btn{
-  font-family:'Press Start 2P'; font-size:13px; background:var(--yellow); color:var(--ink); border:var(--border);
-  border-radius:12px; padding:16px; cursor:pointer; box-shadow:4px 4px 0 var(--ink); text-align:center;
-  transition:transform .1s, box-shadow .1s;
-}
-.done-btn:active{ transform:translate(4px,4px); box-shadow:0 0 0 var(--ink); }
-
-.back-btn{
-  font-size:22px; background:none; border:none; cursor:pointer; color:var(--ink); width:32px;
-}
-
-.toast{
-  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--ink);
-  color:#fff; padding:10px 20px; border-radius:20px; font-size:14px; z-index:999; transition:transform .3s;
-  pointer-events:none; white-space:nowrap;
-}
-.toast.show{ transform:translateX(-50%) translateY(0); }
-
-input[type=file]{ display:none; }
+#sync-icon{transition:transform .3s}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
-<div class="app">
-  <div class="header" id="header">
-    <h1>📔 일기</h1>
-    <button class="add-btn" id="btnAdd">+ ADD</button>
+<div class="wrap">
+  <!-- LIST SCREEN -->
+  <div class="screen active" id="screen-list">
+    <div class="app-header">
+      <div class="app-title">📔 diary</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="icon-btn" id="btn-sync" title="지금 바로 동기화"><span id="sync-icon">🔄</span></div>
+        <button class="btn-add" id="btn-add">+ ADD</button>
+      </div>
+    </div>
+    <div id="entry-list"></div>
   </div>
 
-  <div class="list" id="list"></div>
-
-  <!-- EDITOR -->
-  <div class="editor" id="editor">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <button class="back-btn" id="btnBack">←</button>
-      <span class="pixel" style="font-size:11px;color:var(--ink-soft);" id="editorHint">새 일기</span>
+  <!-- VIEW SCREEN -->
+  <div class="screen" id="screen-view">
+    <div class="icon-btn" id="btn-back-view" style="margin-bottom:14px">←</div>
+    <div class="view-title" id="view-title"></div>
+    <div class="view-date" id="view-date"></div>
+    <div id="view-body"></div>
+    <div class="view-actions">
+      <button class="btn-pill primary" id="btn-goto-edit">✏️ 수정하기</button>
     </div>
+  </div>
 
+  <!-- EDIT SCREEN -->
+  <div class="screen" id="screen-edit">
+    <div class="icon-btn" id="btn-back-edit" style="margin-bottom:14px">←</div>
     <div class="field-row">
       <div class="field-label">TITLE</div>
-      <input type="text" class="title-input" id="inputTitle" placeholder="제목을 적어주세요">
+      <input class="field-input" id="edit-title" placeholder="제목을 적어주세요">
     </div>
-
     <div class="field-row">
       <div class="field-label">LOCK</div>
-      <button class="lock-btn" id="btnLock">
-        <span id="lockIcon">🔓</span>
-        <span class="lbl" id="lockLabel">OPEN</span>
-      </button>
+      <div class="lock-toggle" id="edit-lock"><div class="knob"></div></div>
+      <span style="font-size:11px;color:var(--ink-soft)">비밀글로 설정</span>
     </div>
 
-    <div>
-      <div class="field-row" style="margin-bottom:8px;">
-        <div class="field-label">PICS</div>
-        <span class="pic-count" id="picCount">0 / 15</span>
-      </div>
-      <div class="pics-strip" id="picsStrip"></div>
-      <input type="file" id="fileInput" accept="image/*" multiple>
+    <div class="blocks" id="edit-blocks"></div>
+    <div class="insert-row">
+      <button class="btn-insert" id="btn-insert-text">+ 글 추가</button>
+      <button class="btn-insert" id="btn-insert-photo">+ 사진 추가</button>
     </div>
+    <input type="file" id="photo-file-input" accept="image/*" multiple style="display:none">
 
-    <div class="content-box" id="content" contenteditable="true" data-placeholder="오늘 있었던 일을 적어보세요..."></div>
+    <div class="view-actions">
+      <button class="btn-pill primary" id="btn-done">DONE! 🩷</button>
+    </div>
+  </div>
+</div>
 
-    <button class="done-btn" id="btnDone">DONE!</button>
+<!-- PIN MODAL -->
+<div class="pin-overlay" id="pin-overlay">
+  <div class="pin-box">
+    <div class="emoji">🔒</div>
+    <p id="pin-message">비밀번호를 입력해주세요</p>
+    <input type="password" id="pin-input" inputmode="numeric" maxlength="8" autocomplete="off">
+    <div class="row">
+      <button class="btn-pill" id="pin-cancel">취소</button>
+      <button class="btn-pill primary" id="pin-confirm">확인</button>
+    </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-/* ═══ IndexedDB — 사진 원본은 여기에, 텍스트/메타데이터는 localStorage에 ═══ */
-let dbPromise = null;
+/* ═══════════ CONFIG ═══════════ */
+const MAX_PHOTOS = 15;
+const MAX_LIST_THUMBS = 3;
+const CUTE_PLACEHOLDERS = ['🍬','🍡','🧸','🎀','🍭','🌸','🦄','🍩','🍮','🐰'];
+
+/* ═══════════ INDEXEDDB ═══════════ */
+let db;
 function openDB() {
-  if (dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open('diary_photos_db', 1);
-    req.onupgradeneeded = () => req.result.createObjectStore('photos');
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('diary_app_db', 1);
+    req.onupgradeneeded = () => {
+      const d = req.result;
+      if (!d.objectStoreNames.contains('entries')) d.createObjectStore('entries', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('photos')) d.createObjectStore('photos', { keyPath: 'id' });
+    };
+    req.onsuccess = () => { db = req.result; resolve(db); };
+    req.onerror = () => reject(req.error);
+  });
+}
+function idbGetAll(store) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
-  return dbPromise;
 }
-async function putPhoto(id, blob) {
-  const db = await openDB();
+function idbGet(store, id) {
   return new Promise((resolve, reject) => {
-    const tx = db.transaction('photos', 'readwrite');
-    tx.objectStore('photos').put(blob, id);
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).get(id);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+function idbPut(store, value) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).put(value);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
 }
-async function getPhoto(id) {
-  const db = await openDB();
+function idbDelete(store, id) {
   return new Promise((resolve, reject) => {
-    const tx = db.transaction('photos', 'readonly');
-    const req = tx.objectStore('photos').get(id);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function deletePhoto(id) {
-  const db = await openDB();
-  return new Promise((resolve) => {
-    const tx = db.transaction('photos', 'readwrite');
-    tx.objectStore('photos').delete(id);
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).delete(id);
     tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
   });
 }
 
-/* ═══ STATE ═══ */
+/* ═══════════ STATE ═══════════ */
+let entries = [];
+let currentEntry = null; // being viewed/edited
+let editBlocks = [];     // working copy of content blocks while editing
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-let entries = JSON.parse(localStorage.getItem('diary_entries_v1') || '[]');
-// 마이그레이션: 앞으로 만들 노션 동기화에 필요한 필드 미리 준비
-entries.forEach(e => {
-  if (!e.id) e.id = generateId();
-  if (!e.updatedAt) e.updatedAt = e.createdAt || Date.now();
-  if (e.notionPageId === undefined) e.notionPageId = null;
-  if (!e.photos) e.photos = [];
-});
-function saveEntries() { localStorage.setItem('diary_entries_v1', JSON.stringify(entries)); }
 
-let unlockedSession = sessionStorage.getItem('diary_unlocked') === '1';
-let editingId = null;
-let draftPhotos = []; // [{id, isNew, blob?, url}]
-let draftLocked = false;
-
-const $ = (id) => document.getElementById(id);
-const toastEl = $('toast');
-function toast(msg) {
-  toastEl.textContent = msg;
-  toastEl.classList.add('show');
-  setTimeout(() => toastEl.classList.remove('show'), 1800);
-}
-
-/* ═══ PIN (잠금) ═══ */
+/* ═══════════ PIN (app-level lock, separate from site password) ═══════════ */
+const PIN_KEY = 'diary_lock_pin_hash';
 async function sha256(text) {
   const data = new TextEncoder().encode(text);
   const hash = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
-async function ensurePin() {
-  let hash = localStorage.getItem('diary_pin_hash');
-  if (hash) return true;
-  const pin = prompt('잠금 일기에 쓸 비밀번호(PIN)를 처음 설정해주세요');
-  if (!pin) return false;
-  localStorage.setItem('diary_pin_hash', await sha256(pin));
-  return true;
-}
-async function checkPin() {
-  const hash = localStorage.getItem('diary_pin_hash');
-  if (!hash) return true;
-  const pin = prompt('🔒 비밀번호(PIN)를 입력하세요');
-  if (pin === null) return false;
-  if (await sha256(pin) === hash) {
-    unlockedSession = true;
-    sessionStorage.setItem('diary_unlocked', '1');
-    return true;
-  }
-  toast('비밀번호가 틀렸어요');
-  return false;
+function hasPinSet() { return !!localStorage.getItem(PIN_KEY); }
+async function setPin(pin) { localStorage.setItem(PIN_KEY, await sha256(pin)); }
+async function checkPin(pin) { return hasPinSet() && (await sha256(pin)) === localStorage.getItem(PIN_KEY); }
+
+function askPin({ isSettingNew }) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('pin-overlay');
+    const msg = document.getElementById('pin-message');
+    const input = document.getElementById('pin-input');
+    msg.textContent = isSettingNew ? '잠금에 사용할 비밀번호를 정해주세요' : '비밀번호를 입력해주세요';
+    input.value = '';
+    overlay.classList.add('open');
+    setTimeout(() => input.focus(), 100);
+
+    const cleanup = () => {
+      overlay.classList.remove('open');
+      document.getElementById('pin-confirm').onclick = null;
+      document.getElementById('pin-cancel').onclick = null;
+    };
+    document.getElementById('pin-confirm').onclick = async () => {
+      const val = input.value.trim();
+      if (!val) return;
+      if (isSettingNew) {
+        await setPin(val);
+        cleanup();
+        resolve(true);
+        return;
+      }
+      const ok = await checkPin(val);
+      if (ok) { cleanup(); resolve(true); }
+      else { input.value = ''; msg.textContent = '틀렸어요, 다시 입력해주세요'; }
+    };
+    document.getElementById('pin-cancel').onclick = () => { cleanup(); resolve(false); };
+  });
 }
 
-/* ═══ LIST RENDER ═══ */
-function fmtDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+/* ═══════════ RENDER: LIST ═══════════ */
+function pastelFor(seed) {
+  const palette = ['var(--pink)', 'var(--purple)', 'var(--blue)', 'var(--yellow)'];
+  let h = 0; for (const c of seed) h = (h * 31 + c.charCodeAt(0)) % 997;
+  return palette[h % palette.length];
 }
 
 async function renderList() {
-  const listEl = $('list');
-  const sorted = [...entries].sort((a, b) => (b.date + b.createdAt).localeCompare(a.date + a.createdAt));
-  listEl.innerHTML = '';
-
-  if (!sorted.length) {
-    listEl.innerHTML = `<div class="empty"><div class="big">⋆｡°✩</div><p>아직 쓴 일기가 없어요<br>+ ADD 눌러서 첫 일기를 남겨보세요</p></div>`;
+  entries.sort((a, b) => b.updatedAt - a.updatedAt);
+  const el = document.getElementById('entry-list');
+  if (!entries.length) {
+    el.innerHTML = `<div class="empty">아직 쓴 일기가 없어요 ⋆｡°✩<br>+ADD를 눌러 첫 일기를 남겨보세요</div>`;
     return;
   }
-
-  for (let i = 0; i < sorted.length; i++) {
-    const e = sorted[i];
-    const no = String(sorted.length - i).padStart(2, '0');
+  el.innerHTML = '';
+  let no = entries.length;
+  for (const entry of entries) {
     const row = document.createElement('div');
     row.className = 'entry-row';
-
-    const isHidden = e.locked && !unlockedSession;
+    const photoBlocks = (entry.content || []).filter(b => b.type === 'photo');
     let picsHTML = '';
-    if (!isHidden && e.photos.length) {
-      const shown = e.photos.slice(0, 3);
-      picsHTML = `<div class="entry-pics" data-pics="${shown.join(',')}">${shown.map(() => `<img class="pic-thumb">`).join('')}${e.photos.length > 3 ? `<span class="pic-more">+${e.photos.length - 3}</span>` : ''}</div>`;
+    if (entry.locked) {
+      const count = Math.min(photoBlocks.length, MAX_LIST_THUMBS);
+      for (let i = 0; i < count; i++) {
+        const emoji = CUTE_PLACEHOLDERS[(entry.id.charCodeAt(i % entry.id.length) + i) % CUTE_PLACEHOLDERS.length];
+        picsHTML += `<div class="pic-placeholder" style="background:${pastelFor(entry.id + i)}">${emoji}</div>`;
+      }
+    } else {
+      const shown = photoBlocks.slice(0, MAX_LIST_THUMBS);
+      for (const p of shown) {
+        const photo = await idbGet('photos', p.photoId);
+        if (photo) picsHTML += `<img class="pic-thumb" src="${photo.dataUrl}">`;
+      }
+      if (photoBlocks.length > MAX_LIST_THUMBS) picsHTML += `<div class="pic-more">+${photoBlocks.length - MAX_LIST_THUMBS}</div>`;
     }
 
     row.innerHTML = `
-      <div class="entry-no pixel">${no}</div>
-      <div class="entry-date pixel">${fmtDate(e.date)}</div>
-      <div class="entry-main">
-        <div class="entry-title">${isHidden ? '<span class="entry-locked-tag">🔒 잠긴 일기</span>' : (e.locked ? '🔒 ' : '') + escapeHtml(e.title || '(제목 없음)')}</div>
-        ${picsHTML}
-      </div>
+      <div class="entry-no">${String(no).padStart(2, '0')}</div>
+      <div class="entry-date">${formatDateShort(entry.date)}</div>
+      <div class="entry-title">${entry.locked ? '🔒' : ''} ${escapeHtml(entry.title || '(제목 없음)')}</div>
+      <div class="entry-pics">${picsHTML}</div>
+      <div class="btn-edit-row" data-id="${entry.id}" title="수정">✏️</div>
     `;
-    row.onclick = () => openEntry(e.id);
-    listEl.appendChild(row);
+    row.onclick = (e) => {
+      if (e.target.closest('.btn-edit-row')) return;
+      openEntry(entry.id, false);
+    };
+    row.querySelector('.btn-edit-row').onclick = (e) => { e.stopPropagation(); openEntry(entry.id, true); };
+    el.appendChild(row);
+    no--;
+  }
+}
 
-    // 썸네일 실제 이미지 채우기
-    if (!isHidden && e.photos.length) {
-      const imgs = row.querySelectorAll('.pic-thumb');
-      const shown = e.photos.slice(0, 3);
-      shown.forEach(async (pid, idx) => {
-        const blob = await getPhoto(pid);
-        if (blob && imgs[idx]) imgs[idx].src = URL.createObjectURL(blob);
-      });
+function formatDateShort(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[d.getMonth()]}<br>${d.getDate()}`;
+}
+function escapeHtml(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ═══════════ OPEN ENTRY (view or edit) ═══════════ */
+async function openEntry(id, goEdit) {
+  const entry = entries.find(e => e.id === id);
+  if (!entry) return;
+  if (entry.locked) {
+    const ok = await askPin({ isSettingNew: false });
+    if (!ok) return;
+  }
+  currentEntry = entry;
+  if (goEdit) showEditScreen(entry); else showViewScreen(entry);
+}
+
+/* ═══════════ VIEW SCREEN ═══════════ */
+async function showViewScreen(entry) {
+  document.getElementById('view-title').textContent = (entry.locked ? '🔒 ' : '') + (entry.title || '(제목 없음)');
+  document.getElementById('view-date').textContent = entry.date || '';
+  const body = document.getElementById('view-body');
+  body.innerHTML = '';
+  for (const block of entry.content || []) {
+    if (block.type === 'text') {
+      if (!block.text) continue;
+      const p = document.createElement('div');
+      p.className = 'view-block-text';
+      p.textContent = block.text;
+      body.appendChild(p);
+    } else if (block.type === 'photo') {
+      const photo = await idbGet('photos', block.photoId);
+      if (photo) {
+        const img = document.createElement('img');
+        img.className = 'view-block-photo';
+        img.src = photo.dataUrl;
+        body.appendChild(img);
+      }
     }
   }
+  showScreen('screen-view');
 }
 
-function escapeHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-
-/* ═══ EDITOR ═══ */
-function showEditor(show) {
-  $('editor').classList.toggle('open', show);
-  $('list').classList.toggle('hidden', show);
-  $('header').classList.toggle('hidden', show);
+/* ═══════════ EDIT SCREEN ═══════════ */
+function showEditScreen(entry) {
+  document.getElementById('edit-title').value = entry ? (entry.title || '') : '';
+  const lockToggle = document.getElementById('edit-lock');
+  lockToggle.classList.toggle('on', !!(entry && entry.locked));
+  editBlocks = entry ? JSON.parse(JSON.stringify(entry.content || [])) : [{ type: 'text', text: '' }];
+  renderEditBlocks();
+  showScreen('screen-edit');
 }
 
-async function openEntry(id) {
-  const e = entries.find(x => x.id === id);
-  if (!e) return;
-  if (e.locked && !unlockedSession) {
-    const ok = await checkPin();
-    if (!ok) return;
-    await renderList();
-  }
-  editingId = id;
-  $('editorHint').textContent = '일기 수정';
-  $('inputTitle').value = e.title || '';
-  $('content').innerText = e.content || '';
-  draftLocked = !!e.locked;
-  updateLockUI();
-  draftPhotos = [];
-  for (const pid of e.photos) {
-    const blob = await getPhoto(pid);
-    draftPhotos.push({ id: pid, isNew: false, url: blob ? URL.createObjectURL(blob) : '' });
-  }
-  renderPicsStrip();
-  showEditor(true);
+function renderEditBlocks() {
+  const el = document.getElementById('edit-blocks');
+  el.innerHTML = '';
+  editBlocks.forEach((block, idx) => {
+    const wrap = document.createElement('div');
+    if (block.type === 'text') {
+      wrap.className = 'block-text';
+      wrap.innerHTML = `<textarea placeholder="이어서 적어보세요...">${escapeHtml(block.text)}</textarea>`;
+      wrap.querySelector('textarea').addEventListener('input', (e) => { editBlocks[idx].text = e.target.value; });
+    } else if (block.type === 'photo') {
+      wrap.className = 'block-photo';
+      wrap.innerHTML = `<img src="${block._dataUrl || ''}"><button class="btn-remove-photo" data-idx="${idx}">✕</button>`;
+      wrap.querySelector('.btn-remove-photo').onclick = () => { editBlocks.splice(idx, 1); renderEditBlocks(); };
+    }
+    el.appendChild(wrap);
+  });
 }
 
-function openNewEntry() {
-  editingId = null;
-  $('editorHint').textContent = '새 일기';
-  $('inputTitle').value = '';
-  $('content').innerText = '';
-  draftLocked = false;
-  updateLockUI();
-  draftPhotos = [];
-  renderPicsStrip();
-  showEditor(true);
-  setTimeout(() => $('inputTitle').focus(), 150);
-}
-
-function updateLockUI() {
-  $('btnLock').classList.toggle('active', draftLocked);
-  $('lockIcon').textContent = draftLocked ? '🔒' : '🔓';
-  $('lockLabel').textContent = draftLocked ? 'LOCK' : 'OPEN';
-}
-
-$('btnLock').onclick = async () => {
-  if (!draftLocked) {
-    const ok = await ensurePin();
-    if (!ok) return;
-  }
-  draftLocked = !draftLocked;
-  updateLockUI();
+document.getElementById('btn-insert-text').onclick = () => {
+  editBlocks.push({ type: 'text', text: '' });
+  renderEditBlocks();
 };
-
-function renderPicsStrip() {
-  const strip = $('picsStrip');
-  strip.innerHTML = '';
-  draftPhotos.forEach((p, idx) => {
-    const slot = document.createElement('div');
-    slot.className = 'pic-slot';
-    slot.innerHTML = `<img src="${p.url}"><div class="rm" data-idx="${idx}">✕</div>`;
-    strip.appendChild(slot);
-  });
-  if (draftPhotos.length < 15) {
-    const add = document.createElement('button');
-    add.className = 'pic-add';
-    add.textContent = '+';
-    add.onclick = () => $('fileInput').click();
-    strip.appendChild(add);
-  }
-  $('picCount').textContent = `${draftPhotos.length} / 15`;
-
-  strip.querySelectorAll('.rm').forEach(btn => {
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      const idx = parseInt(btn.dataset.idx);
-      draftPhotos.splice(idx, 1);
-      renderPicsStrip();
-    };
-  });
-}
-
-$('fileInput').addEventListener('change', (e) => {
+document.getElementById('btn-insert-photo').onclick = () => {
+  const photoCount = editBlocks.filter(b => b.type === 'photo').length;
+  if (photoCount >= MAX_PHOTOS) { showToast(`사진은 최대 ${MAX_PHOTOS}장까지예요`); return; }
+  document.getElementById('photo-file-input').click();
+};
+document.getElementById('photo-file-input').addEventListener('change', async (e) => {
   const files = Array.from(e.target.files || []);
-  const room = 15 - draftPhotos.length;
-  files.slice(0, room).forEach(file => {
-    draftPhotos.push({ id: generateId(), isNew: true, blob: file, url: URL.createObjectURL(file) });
-  });
-  if (files.length > room) toast('사진은 최대 15장까지예요');
-  renderPicsStrip();
+  let photoCount = editBlocks.filter(b => b.type === 'photo').length;
+  for (const file of files) {
+    if (photoCount >= MAX_PHOTOS) { showToast(`사진은 최대 ${MAX_PHOTOS}장까지예요`); break; }
+    const dataUrl = await fileToDataUrl(file);
+    editBlocks.push({ type: 'photo', photoId: generateId(), _dataUrl: dataUrl, _isNew: true });
+    photoCount++;
+  }
+  renderEditBlocks();
   e.target.value = '';
 });
+function fileToDataUrl(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(file);
+  });
+}
 
-$('btnAdd').onclick = openNewEntry;
-$('btnBack').onclick = () => showEditor(false);
-
-$('btnDone').onclick = async () => {
-  const title = $('inputTitle').value.trim();
-  const content = $('content').innerText.trim();
-  if (!title && !content && draftPhotos.length === 0) {
-    toast('내용을 조금이라도 적어주세요');
-    return;
+document.getElementById('edit-lock').onclick = async function () {
+  const turningOn = !this.classList.contains('on');
+  if (turningOn) {
+    const ok = await askPin({ isSettingNew: !hasPinSet() });
+    if (!ok) return;
   }
-
-  // 새로 추가된 사진들을 IndexedDB에 저장
-  for (const p of draftPhotos) {
-    if (p.isNew) await putPhoto(p.id, p.blob);
-  }
-  const photoIds = draftPhotos.map(p => p.id);
-
-  if (editingId) {
-    const e = entries.find(x => x.id === editingId);
-    // 편집 중 제거된 사진은 저장소에서도 정리
-    const removed = e.photos.filter(pid => !photoIds.includes(pid));
-    for (const pid of removed) await deletePhoto(pid);
-
-    e.title = title;
-    e.content = content;
-    e.locked = draftLocked;
-    e.photos = photoIds;
-    e.updatedAt = Date.now();
-  } else {
-    entries.push({
-      id: generateId(),
-      title, content,
-      date: new Date().toISOString().slice(0, 10),
-      locked: draftLocked,
-      photos: photoIds,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      notionPageId: null
-    });
-  }
-
-  saveEntries();
-  showEditor(false);
-  await renderList();
-  toast('저장했어요 ⋆｡°✩');
+  this.classList.toggle('on', turningOn);
 };
 
-/* ═══ INIT ═══ */
-renderList();
+document.getElementById('btn-done').onclick = async () => {
+  const title = document.getElementById('edit-title').value.trim();
+  const locked = document.getElementById('edit-lock').classList.contains('on');
+
+  // 새 사진은 photos 스토어에 저장
+  for (const block of editBlocks) {
+    if (block.type === 'photo' && block._isNew) {
+      await idbPut('photos', { id: block.photoId, dataUrl: block._dataUrl, notionFileUploadId: null });
+    }
+  }
+  const cleanContent = editBlocks.map(b => b.type === 'photo' ? { type: 'photo', photoId: b.photoId } : { type: 'text', text: b.text || '' });
+
+  let entry = currentEntry;
+  const isNew = !entry;
+  if (isNew) {
+    entry = { id: generateId(), date: new Date().toISOString().slice(0, 10), notionPageId: null };
+    entries.push(entry);
+  }
+  entry.title = title;
+  entry.locked = locked;
+  entry.content = cleanContent;
+  entry.updatedAt = Date.now();
+  await idbPut('entries', entry);
+
+  currentEntry = entry;
+  renderList();
+  showViewScreen(entry);
+  showToast('저장했어요 🩷');
+  autoPushDiary(entry);
+};
+
+/* ═══════════ NAVIGATION ═══════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+document.getElementById('btn-add').onclick = () => { currentEntry = null; showEditScreen(null); };
+document.getElementById('btn-back-view').onclick = () => showScreen('screen-list');
+document.getElementById('btn-back-edit').onclick = () => showScreen('screen-list');
+document.getElementById('btn-goto-edit').onclick = () => showEditScreen(currentEntry);
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ═══════════ NOTION SYNC ═══════════ */
+const NOTION_ENDPOINT = '/api/notion?app=diary';
+let syncCount = 0;
+function setSyncSpin(active) {
+  syncCount = Math.max(0, syncCount + (active ? 1 : -1));
+  document.getElementById('sync-icon').style.animation = syncCount > 0 ? 'spin 1s linear infinite' : '';
+}
+
+async function uploadPhotoToNotion(photoId) {
+  const photo = await idbGet('photos', photoId);
+  if (!photo) return null;
+  if (photo.notionFileUploadId) return photo.notionFileUploadId;
+  const r = await fetch(`${NOTION_ENDPOINT}&action=upload`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dataUrl: photo.dataUrl })
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || '사진 업로드 실패');
+  photo.notionFileUploadId = data.fileUploadId;
+  await idbPut('photos', photo);
+  return data.fileUploadId;
+}
+
+async function autoPushDiary(entry) {
+  setSyncSpin(true);
+  try {
+    const content = [];
+    for (const block of entry.content) {
+      if (block.type === 'photo') {
+        const fileUploadId = await uploadPhotoToNotion(block.photoId);
+        content.push({ type: 'photo', fileUploadId });
+      } else {
+        content.push({ type: 'text', text: block.text });
+      }
+    }
+    const r = await fetch(NOTION_ENDPOINT, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item: {
+        appId: entry.id, notionPageId: entry.notionPageId || null,
+        name: entry.title, date: entry.date, locked: entry.locked,
+        updatedAt: new Date(entry.updatedAt).toISOString(), content
+      } })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || '동기화 실패');
+    if (data.notionPageId) { entry.notionPageId = data.notionPageId; await idbPut('entries', entry); }
+  } catch (err) {
+    console.warn('노션 동기화 실패(조용히 재시도됨):', err.message);
+  } finally {
+    setSyncSpin(false);
+  }
+}
+
+document.getElementById('btn-sync').onclick = async () => {
+  if (!entries.length) { showToast('동기화할 일기가 없어요'); return; }
+  showToast('전체 동기화 중...');
+  for (const entry of entries) await autoPushDiary(entry);
+  showToast('동기화 완료 🩷');
+};
+
+/* ═══════════ INIT ═══════════ */
+(async function init() {
+  await openDB();
+  entries = await idbGetAll('entries');
+  renderList();
+})();
 </script>
 </body>
 </html>
