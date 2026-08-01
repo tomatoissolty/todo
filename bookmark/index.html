@@ -7,6 +7,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+@font-face {
+  font-family: 'JejuStoneWall';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2210-EF@1.0/EF_jejudoldam.woff2') format('woff2');
+  font-weight: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'IsYun';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2202-2@1.0/LeeSeoyun.woff') format('woff');
+  font-weight: normal; font-display: swap;
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/nanumsquare.css">
+<style>
 :root{
   --bg:#fdfbff; --card:#ffffff; --line:#eae6f2;
   --text:#2b2540; --text-mid:#8b85a0;
@@ -17,7 +30,7 @@
 body{background:var(--bg);color:var(--text);font-family:'Outfit','Noto Sans KR',sans-serif;font-weight:300;min-height:100vh}
 .wrap{max-width:520px;margin:0 auto;padding:24px 20px 80px}
 header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-.logo{font-family:'DM Serif Display',serif;font-size:22px;letter-spacing:2px}
+.logo{font-family:'JejuStoneWall',sans-serif;font-size:24px;letter-spacing:2px}
 .btn-add{border:1px solid var(--text);background:var(--text);color:#fff;padding:9px 16px;font-size:12px;letter-spacing:1px;border-radius:20px;cursor:pointer}
 .btn-add:hover{opacity:.85}
 
@@ -25,8 +38,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .bm-row-main{display:flex;align-items:center;gap:14px;padding:16px 18px}
 .bm-no{font-size:12px;color:var(--text-mid);width:20px;flex-shrink:0}
 .bm-body{flex:1;min-width:0}
-.bm-title{font-family:'DM Serif Display',serif;font-size:16px;transition:color .15s}
-.bm-subtitle{font-size:11px;color:var(--text-mid);margin-top:3px;transition:color .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bm-title{font-family:'IsYun',sans-serif;font-size:17px;font-weight:normal;transition:color .15s}
+.bm-subtitle{font-family:'NanumSquare',sans-serif;font-weight:300;font-size:11px;color:var(--text-mid);margin-top:3px;transition:color .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bm-arrow{font-size:16px;color:var(--text-mid);transition:color .15s;flex-shrink:0}
 
 .bm-row:hover,.bm-row.active{background:var(--active-bg);border-color:var(--active-bg)}
@@ -65,6 +78,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
     <div class="logo">BOOKMARK</div>
     <button class="btn-add" id="btnAdd">+ 추가</button>
   </header>
+  <input class="form-input" id="searchBox" placeholder="제목이나 메모로 검색..." style="margin-bottom:14px">
   <div id="list"></div>
 </div>
 
@@ -97,6 +111,7 @@ const NOTION_ENDPOINT = '/api/notion?app=bookmark';
 const isHoverCapable = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 let items = [];
 let pendingDataUrl = null;
+let searchQuery = '';
 
 function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
@@ -109,7 +124,8 @@ async function loadList() {
     const r = await fetch(NOTION_ENDPOINT);
     const d = await r.json();
     if (!r.ok) { el.innerHTML = `<div class="empty">${esc(d.error || '불러오기 실패')}</div>`; return; }
-    items = d.items || [];
+    // 오래된 것이 01번이 되도록 등록 순서(생성 시각) 기준 오름차순 정렬
+    items = (d.items || []).sort((a, b) => new Date(a.createdTime || 0) - new Date(b.createdTime || 0));
     renderList();
   } catch (err) {
     el.innerHTML = `<div class="empty">불러오기 실패</div>`;
@@ -118,14 +134,21 @@ async function loadList() {
 
 function renderList() {
   const el = document.getElementById('list');
+  const q = searchQuery.trim().toLowerCase();
+  const numbered = items.map((bm, i) => ({ bm, no: i + 1 }));
+  const filtered = q ? numbered.filter(({ bm }) =>
+    (bm.name || '').toLowerCase().includes(q) || (bm.subtitle || '').toLowerCase().includes(q)
+  ) : numbered;
+
   if (!items.length) { el.innerHTML = `<div class="empty">북마크가 없어요. + 추가로 첫 링크를 남겨보세요</div>`; return; }
+  if (!filtered.length) { el.innerHTML = `<div class="empty">검색 결과가 없어요</div>`; return; }
   el.innerHTML = '';
-  items.forEach((bm, i) => {
+  filtered.forEach(({ bm, no }) => {
     const row = document.createElement('div');
     row.className = 'bm-row';
     row.innerHTML = `
       <div class="bm-row-main">
-        <div class="bm-no">${String(i + 1).padStart(2, '0')}</div>
+        <div class="bm-no">${String(no).padStart(2, '0')}</div>
         <div class="bm-body">
           <div class="bm-title">${esc(bm.name)}</div>
           ${bm.subtitle ? `<div class="bm-subtitle">${esc(bm.subtitle)}</div>` : ''}
@@ -153,6 +176,11 @@ function renderList() {
   });
 }
 
+document.getElementById('searchBox').addEventListener('input', (e) => {
+  searchQuery = e.target.value;
+  renderList();
+});
+
 // 모바일에서 다른 곳 탭하면 활성화 해제
 if (!isHoverCapable) {
   document.addEventListener('click', (e) => {
@@ -173,6 +201,9 @@ document.getElementById('btnAdd').onclick = () => {
 };
 document.getElementById('btnClose').onclick = () => document.getElementById('modalOverlay').classList.remove('open');
 document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target.id === 'modalOverlay') e.currentTarget.classList.remove('open'); });
+document.querySelector('.modal').addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); document.getElementById('btnSave').click(); }
+});
 
 document.getElementById('btnFile').onclick = () => document.getElementById('fileInput').click();
 document.getElementById('fileInput').addEventListener('change', (e) => {

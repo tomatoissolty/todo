@@ -262,6 +262,7 @@ function bookmarkFromPage(page) {
     url: p['URL']?.url || '',
     subtitle: richText(p['Subtitle']),
     cover: fileUrl(p['Cover']),
+    createdTime: page.created_time || null,
     lastUpdated: p['Last Updated']?.date?.start || null
   };
 }
