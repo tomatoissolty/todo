@@ -519,15 +519,53 @@ async function autoDeleteBook(pageId) {
   catch (err) { console.warn('노션 삭제 실패:', err.message); }
   finally { setSyncSpin(false); }
 }
+
+// 노션 쪽에 새로 생기거나 더 최근에 수정된 항목을 로컬로 가져온다 (노션→앱 방향).
+async function pullFromNotion() {
+  const r = await fetch(NOTION_ENDPOINT);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || '다운로드 실패');
+
+  const localById = {};
+  records.forEach(rec => { localById[rec.id] = rec; });
+  let changed = false;
+
+  (data.items || []).forEach(row => {
+    if (!row.appId) return;
+    const remoteTime = row.lastUpdated ? new Date(row.lastUpdated).getTime() : 0;
+    const existing = localById[row.appId];
+    if (existing) {
+      if (remoteTime > (existing.updatedAt || 0)) {
+        existing.title = row.name; existing.author = row.author; existing.publisher = row.publisher;
+        existing.isbn = row.isbn; existing.rating = row.rating || 0; existing.status = row.status || existing.status;
+        existing.review = row.review || ''; existing.notionPageId = row.notionPageId; existing.updatedAt = remoteTime;
+        changed = true;
+      }
+    } else {
+      records.unshift({
+        id: row.appId, title: row.name, author: row.author, publisher: row.publisher,
+        cover: null, isbn: row.isbn, rating: row.rating || 0, status: row.status || '읽음', review: row.review || '',
+        addedAt: remoteTime || Date.now(), updatedAt: remoteTime || Date.now(), notionPageId: row.notionPageId
+      });
+      changed = true;
+    }
+  });
+
+  if (changed) { save(); renderGrid(); }
+}
+
 document.getElementById('syncBtn').onclick = async () => {
   if (!records.length) { toast('동기화할 기록이 없어요'); return; }
   toast('전체 동기화 중...');
   for (const rec of records) await autoPushBook(rec);
+  try { await pullFromNotion(); } catch (err) { console.warn('pull 실패:', err.message); }
   toast('동기화 완료');
 };
 
 /* ════ INIT ════ */
 renderGrid();
+pullFromNotion().catch(err => console.warn('초기 pull 실패:', err.message));
+setInterval(() => { pullFromNotion().catch(err => console.warn('백그라운드 pull 실패:', err.message)); }, 30000);
 </script>
 <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>
 </body>

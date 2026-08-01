@@ -618,8 +618,85 @@ document.getElementById('btn-sync').onclick = async () => {
   if (!entries.length) { showToast('동기화할 일기가 없어요'); return; }
   showToast('전체 동기화 중...');
   for (const entry of entries) await autoPushDiary(entry);
+  try { await pullFromNotion(); } catch (err) { console.warn('pull 실패:', err.message); }
   showToast('동기화 완료 🩷');
 };
+
+/* ═══════════ PULL (노션 → 앱): 속성 + 본문(사진 포함)을 함께 가져옴 ═══════════ */
+function fetchImageAsDataUrl(url) {
+  return fetch(url).then(res => res.blob()).then(blob => new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  }));
+}
+
+async function pullEntryContent(notionPageId) {
+  const r = await fetch(`${NOTION_ENDPOINT}&action=content&pageId=${notionPageId}`);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || '본문 조회 실패');
+  const content = [];
+  for (const seg of data.content || []) {
+    if (seg.type === 'photo' && seg.url) {
+      const dataUrl = await fetchImageAsDataUrl(seg.url);
+      const photoId = generateId();
+      await idbPut('photos', { id: photoId, dataUrl, notionFileUploadId: null });
+      content.push({ type: 'photo', photoId });
+    } else {
+      content.push({ type: 'text', text: seg.text || '' });
+    }
+  }
+  return content;
+}
+
+// 지금 편집 중이거나 PIN 입력 중인 글은 건드리면 안 되니 이번 주기는 건너뛴다.
+function isBusyEditing(entry) {
+  const editing = document.getElementById('screen-edit').classList.contains('active');
+  const pinOpen = document.getElementById('pin-overlay').classList.contains('open');
+  return (editing && currentEntry === entry) || pinOpen;
+}
+
+async function pullFromNotion() {
+  const r = await fetch(NOTION_ENDPOINT);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || '다운로드 실패');
+
+  const localById = {};
+  entries.forEach(e => { localById[e.id] = e; });
+  let changed = false;
+
+  for (const row of (data.items || [])) {
+    if (!row.appId) continue;
+    const remoteTime = row.lastUpdated ? new Date(row.lastUpdated).getTime() : 0;
+    const existing = localById[row.appId];
+
+    if (existing) {
+      if (isBusyEditing(existing)) continue;
+      if (remoteTime > (existing.updatedAt || 0)) {
+        existing.title = row.name;
+        existing.date = row.date;
+        existing.locked = row.locked;
+        existing.notionPageId = row.notionPageId;
+        existing.content = await pullEntryContent(row.notionPageId);
+        existing.updatedAt = remoteTime;
+        await idbPut('entries', existing);
+        changed = true;
+      }
+    } else {
+      const newEntry = {
+        id: row.appId, title: row.name, date: row.date || new Date().toISOString().slice(0, 10),
+        locked: row.locked, notionPageId: row.notionPageId,
+        content: await pullEntryContent(row.notionPageId),
+        updatedAt: remoteTime || Date.now()
+      };
+      entries.push(newEntry);
+      await idbPut('entries', newEntry);
+      changed = true;
+    }
+  }
+
+  if (changed) renderList();
+}
 
 /* ═══════════ INIT ═══════════ */
 (async function init() {
@@ -627,6 +704,8 @@ document.getElementById('btn-sync').onclick = async () => {
   entries = await idbGetAll('entries');
   renderPixelDeco();
   renderList();
+  pullFromNotion().catch(err => console.warn('초기 pull 실패:', err.message));
+  setInterval(() => { pullFromNotion().catch(err => console.warn('백그라운드 pull 실패:', err.message)); }, 45000);
 })();
 </script>
 </body>

@@ -446,7 +446,52 @@ async function autoDeleteMovie(notionPageId) {
   }
 }
 
-// 헤더의 "지금 바로 동기화" 버튼 — 로컬에 있는 모든 기록을 한 번에 밀어넣는다 (수동 보조 기능).
+// 노션 쪽에 새로 생기거나 더 최근에 수정된 항목을 로컬로 가져온다 (노션→앱 방향).
+const STATUS_KO_REVERSE = Object.fromEntries(Object.entries(STATUS_KO).map(([k, v]) => [v, k]));
+async function pullFromNotion() {
+  const r = await fetch(NOTION_ENDPOINT);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || '다운로드 실패');
+
+  const localById = {};
+  records.forEach(rec => { localById[rec.id] = rec; });
+  let changed = false;
+
+  (data.items || []).forEach(row => {
+    if (!row.appId) return; // 노션에서 수동으로 추가한, App ID 없는 행은 건너뜀
+    const remoteTime = row.lastUpdated ? new Date(row.lastUpdated).getTime() : 0;
+    const existing = localById[row.appId];
+
+    if (existing) {
+      if (remoteTime > (existing.updatedAt || 0)) {
+        existing.title = row.name;
+        existing.poster = row.poster ? row.poster.replace(IMG_W500, '') : null;
+        existing.rating = row.rating || 0;
+        existing.status = STATUS_KO_REVERSE[row.status] || existing.status;
+        existing.genres = row.genre ? row.genre.split(',').map(s => s.trim()).filter(Boolean) : [];
+        existing.year = row.year || null;
+        existing.type = row.type === '시리즈' ? 'tv' : 'movie';
+        existing.review = row.review || '';
+        existing.notionPageId = row.notionPageId;
+        existing.updatedAt = remoteTime;
+        changed = true;
+      }
+    } else {
+      records.unshift({
+        id: row.appId, title: row.name, poster: row.poster ? row.poster.replace(IMG_W500, '') : null,
+        rating: row.rating || 0, status: STATUS_KO_REVERSE[row.status] || 'watched',
+        genres: row.genre ? row.genre.split(',').map(s => s.trim()).filter(Boolean) : [],
+        year: row.year || null, type: row.type === '시리즈' ? 'tv' : 'movie', review: row.review || '',
+        addedAt: remoteTime || Date.now(), updatedAt: remoteTime || Date.now(), notionPageId: row.notionPageId
+      });
+      changed = true;
+    }
+  });
+
+  if (changed) { save(); renderGrid(); }
+}
+
+
 async function syncAllToNotion() {
   if (!records.length) { toast('동기화할 기록이 없어요'); return; }
   setSyncIcon(true);
@@ -472,6 +517,7 @@ async function syncAllToNotion() {
   }
   save();
   renderGrid();
+  try { await pullFromNotion(); } catch (err) { console.warn('pull 실패:', err.message); }
   setSyncIcon(false);
   toast(failed ? `동기화 완료 (${done}개 성공, ${failed}개 실패)` : `${done}개 동기화 완료`);
 }
@@ -1022,6 +1068,8 @@ function toast(msg) {
 /* ════ INIT ════ */
 renderGrid();
 console.log('🎬 REEL 시작 - 저장된 기록:', records.length);
+pullFromNotion().catch(err => console.warn('초기 pull 실패:', err.message));
+setInterval(() => { pullFromNotion().catch(err => console.warn('백그라운드 pull 실패:', err.message)); }, 30000);
 
 /* ════ MAIN SEARCH ════ */
 document.getElementById('mainSearch').addEventListener('input', (e) => {

@@ -98,6 +98,44 @@ function diaryToProperties(item) {
   };
 }
 
+function diaryFromPage(page) {
+  const p = page.properties || {};
+  const richText = (prop) => (prop?.rich_text || []).map(t => t.plain_text).join('');
+  const titleText = (prop) => (prop?.title || []).map(t => t.plain_text).join('');
+  return {
+    notionPageId: page.id,
+    appId: richText(p['App ID']),
+    name: titleText(p['Name']),
+    date: p['Date']?.date?.start || null,
+    locked: !!p['Locked']?.checkbox,
+    lastUpdated: p['Last Updated']?.date?.start || null
+  };
+}
+
+// 노션 페이지 본문 블록을 앱이 이해하는 content 배열로 변환 (문단→글, 이미지→사진 URL)
+async function fetchDiaryContent(pageId) {
+  let blocks = [];
+  let cursor;
+  do {
+    const url = `https://api.notion.com/v1/blocks/${pageId}/children?page_size=100${cursor ? '&start_cursor=' + cursor : ''}`;
+    const r = await fetch(url, { headers: notionHeaders() });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.message || '본문 조회 실패');
+    blocks = blocks.concat(data.results || []);
+    cursor = data.has_more ? data.next_cursor : undefined;
+  } while (cursor);
+
+  return blocks.map(b => {
+    if (b.type === 'image') {
+      const img = b.image || {};
+      const url = (img.file && img.file.url) || (img.external && img.external.url) || null;
+      return { type: 'photo', url };
+    }
+    const text = ((b.paragraph && b.paragraph.rich_text) || []).map(t => t.plain_text).join('');
+    return { type: 'text', text };
+  }).filter(seg => seg.type === 'photo' ? !!seg.url : true);
+}
+
 function buildDiaryBlocks(content) {
   return (content || []).map(seg => {
     if (seg.type === 'photo' && seg.fileUploadId) {
@@ -178,6 +216,23 @@ function bookToProperties(item) {
     'Last Updated': item.updatedAt ? { date: { start: item.updatedAt } } : { date: null }
   };
 }
+function bookFromPage(page) {
+  const p = page.properties || {};
+  const richText = (prop) => (prop?.rich_text || []).map(t => t.plain_text).join('');
+  const titleText = (prop) => (prop?.title || []).map(t => t.plain_text).join('');
+  return {
+    notionPageId: page.id,
+    appId: richText(p['App ID']),
+    name: titleText(p['Name']),
+    author: richText(p['Author']),
+    publisher: richText(p['Publisher']),
+    isbn: richText(p['ISBN']),
+    rating: typeof p['Rating']?.number === 'number' ? p['Rating'].number : 0,
+    status: p['Status']?.select?.name || null,
+    review: richText(p['Review']),
+    lastUpdated: p['Last Updated']?.date?.start || null
+  };
+}
 
 
 // --- Bookmark(북마크 앱) 매핑 — 수정/삭제는 노션에서만, 앱은 추가+목록 조회만 함 ---
@@ -224,13 +279,13 @@ const APPS = {
   diary: {
     databaseId: () => process.env.NOTION_DATABASE_ID_DIARY,
     toProperties: diaryToProperties,
-    fromPage: null, // 일기는 현재 push(올리기)만 지원 — 노션 쪽 수정 불러오기는 아직 없음
+    fromPage: diaryFromPage,
     useCover: false
   },
   book: {
     databaseId: () => process.env.NOTION_DATABASE_ID_BOOK,
     toProperties: bookToProperties,
-    fromPage: null,
+    fromPage: bookFromPage,
     useCover: false // 표지는 Cover 파일 속성에 직접 넣으므로 페이지 커버는 따로 안 씀
   },
   bookmark: {
@@ -292,6 +347,15 @@ module.exports = async (req, res) => {
       }
       await replaceDiaryContent(pageId, buildDiaryBlocks(item.content));
       res.status(200).json({ notionPageId: pageId });
+      return;
+    }
+
+    // --- 일기 앱 전용 처리: 특정 페이지의 본문 내용 가져오기 (pull 시 사용) ---
+    if (appKey === 'diary' && req.method === 'GET' && req.query.action === 'content') {
+      const pageId = req.query.pageId;
+      if (!pageId) { res.status(400).json({ error: 'pageId가 필요해요.' }); return; }
+      const content = await fetchDiaryContent(pageId);
+      res.status(200).json({ content });
       return;
     }
 
