@@ -415,14 +415,14 @@ async function doSearch(q) {
   const res = document.getElementById('srchResults');
   res.innerHTML = `<div class="searching">검색 중...</div>`;
   try {
-    const r = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=10`);
+    const r = await fetch(`/api/books?q=${encodeURIComponent(q)}`);
     const d = await r.json();
+    if (!r.ok) { res.innerHTML = `<div class="searching">${esc(d.error || '검색 실패')}</div>`; return; }
     const items = d.items || [];
     if (!items.length) { res.innerHTML = `<div class="searching">결과 없음</div>`; return; }
     res.innerHTML = '';
-    items.forEach(item => {
-      const info = item.volumeInfo || {};
-      const cover = info.imageLinks ? (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail || '').replace('http://', 'https://') : '';
+    items.forEach(info => {
+      const cover = info.thumbnail || '';
       const el = document.createElement('div');
       el.className = 'srch-item';
       el.innerHTML = `
@@ -434,13 +434,12 @@ async function doSearch(q) {
   } catch (err) { res.innerHTML = `<div class="searching">검색 실패</div>`; }
 }
 function pickBook(info) {
-  const isbn = (info.industryIdentifiers || []).find(x => x.type === 'ISBN_13' || x.type === 'ISBN_10');
   book = {
     title: info.title || '제목 없음',
     author: (info.authors || []).join(', '),
     publisher: info.publisher || '',
-    cover: info.imageLinks ? (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail || '').replace('http://', 'https://') : '',
-    isbn: isbn ? isbn.identifier : ''
+    cover: info.thumbnail || '',
+    isbn: info.isbn || ''
   };
   document.getElementById('searchSection').style.display = 'none';
   showChip(book);
