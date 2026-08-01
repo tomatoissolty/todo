@@ -511,55 +511,36 @@ function renderStars(r) {
   return html;
 }
 
-/* ════ STAR INPUT WIDGET ════ */
+/* ════ STAR INPUT WIDGET — 별 5개, 클릭한 위치(왼쪽/오른쪽 절반)로 반개·한개 판단.
+   예전엔 버튼 10개로 쪼개서 오작동이 잦았는데, 이 방식이 훨씬 안정적이에요. ════ */
 function buildStarInp() {
   const c = document.getElementById('starInp');
   c.innerHTML = '';
-  
-  const fillColor = '#d4a843';
-  const emptyColor = dark ? '#3a3a3a' : '#d0d0d0';
-  
-  // 0.5 단위로 10개 버튼 생성 (0.5, 1, 1.5, 2, ..., 5)
-  for (let i = 0.5; i <= 5; i += 0.5) {
+  for (let i = 1; i <= 5; i++) {
     const b = document.createElement('button');
     b.className = 'star-btn';
     b.type = 'button';
-    b.dataset.v = i;
-    
-    const isHalf = i % 1 !== 0;
-    const width = isHalf ? '50%' : '100%';
-    
-    if (i <= rating) {
-      b.innerHTML = `<span style="position:relative;display:inline-block;color:${emptyColor};"><span style="position:absolute;top:0;left:0;width:${width};overflow:hidden;color:${fillColor};">★</span>☆</span>`;
-    } else {
-      b.innerHTML = `☆`;
-      b.style.color = emptyColor;
-    }
-    
-    b.addEventListener('mouseover', () => updateStarInput(i));
-    b.addEventListener('mouseout', () => updateStarInput(rating));
-    b.addEventListener('click', () => { rating = i; updateStarInput(i); });
-    b.addEventListener('touchend', e => { e.preventDefault(); rating = i; updateStarInput(i); });
-    
+    b.dataset.i = i;
+    const setFromEvent = (clientX) => {
+      const rect = b.getBoundingClientRect();
+      const isLeftHalf = (clientX - rect.left) < rect.width / 2;
+      rating = isLeftHalf ? i - 0.5 : i;
+      updateStarInput(rating);
+    };
+    b.addEventListener('click', (e) => setFromEvent(e.clientX));
+    b.addEventListener('touchend', (e) => { e.preventDefault(); setFromEvent(e.changedTouches[0].clientX); });
     c.appendChild(b);
   }
+  updateStarInput(rating);
 }
 
 function updateStarInput(v) {
   const fillColor = '#d4a843';
   const emptyColor = dark ? '#3a3a3a' : '#d0d0d0';
-  
-  document.querySelectorAll('.star-btn').forEach((b) => {
-    const btnVal = parseFloat(b.dataset.v);
-    const isHalf = btnVal % 1 !== 0;
-    const width = isHalf ? '50%' : '100%';
-    
-    if (btnVal <= v) {
-      b.innerHTML = `<span style="position:relative;display:inline-block;color:${emptyColor};"><span style="position:absolute;top:0;left:0;width:${width};overflow:hidden;color:${fillColor};">★</span>☆</span>`;
-    } else {
-      b.innerHTML = `☆`;
-      b.style.color = emptyColor;
-    }
+  document.querySelectorAll('#starInp .star-btn').forEach((b) => {
+    const i = parseInt(b.dataset.i);
+    const width = v >= i ? '100%' : (v >= i - 0.5 ? '50%' : '0%');
+    b.innerHTML = `<span style="position:relative;display:inline-block;color:${emptyColor};"><span style="position:absolute;top:0;left:0;width:${width};overflow:hidden;color:${fillColor};">★</span>☆</span>`;
   });
 }
 

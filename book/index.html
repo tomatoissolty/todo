@@ -119,14 +119,11 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:54px;display:flex;
 <header>
   <div class="logo">SHELF</div>
   <div class="hdr-r">
-    <button class="icon-btn" id="exportBtn" title="백업"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
-    <button class="icon-btn" id="importBtn" title="복원"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
     <button class="icon-btn" id="syncBtn" title="지금 바로 동기화"><span id="sync-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></span></button>
     <button class="icon-btn" id="openAddBtn" title="책 추가"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
   </div>
 </header>
 
-<input type="file" id="importFile" accept=".json" style="display:none">
 
 <div class="stats-bar">
   <div class="stat-item"><span class="stat-num" id="sTotal">0</span><span class="stat-lbl">Total</span></div>
@@ -143,6 +140,12 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:54px;display:flex;
   <button class="filter-btn" data-filter="읽음">읽음</button>
   <button class="filter-btn" data-filter="읽는 중">읽는 중</button>
   <button class="filter-btn" data-filter="읽고 싶음">읽고 싶음</button>
+</div>
+<div class="controls">
+  <button class="filter-btn sort-btn active" data-sort="newest">최신순</button>
+  <button class="filter-btn sort-btn" data-sort="oldest">오래된순</button>
+  <button class="filter-btn sort-btn" data-sort="rating_high">별점 높은순</button>
+  <button class="filter-btn sort-btn" data-sort="rating_low">별점 낮은순</button>
 </div>
 
 <div class="grid" id="grid"></div>
@@ -184,14 +187,12 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:54px;display:flex;
 
 <script>
 /* ════ CONFIG ════ */
-// Google Books API — 별도 키 없이 바로 쓸 수 있어요 (검색량 적을 땐 제한에 안 걸려요)
-const BOOKS_API = 'https://www.googleapis.com/books/v1/volumes';
 const STATUS_LIST = ['읽고 싶음', '읽는 중', '읽음'];
 
 /* ════ STATE ════ */
 let records = JSON.parse(localStorage.getItem('shelf_v1') || '[]');
 records.forEach(r => { if (!r.updatedAt) r.updatedAt = r.addedAt || Date.now(); });
-let flt = 'all', book = null, rating = 0, curStatus = '읽음', searchQuery = '';
+let flt = 'all', book = null, rating = 0, curStatus = '읽음', searchQuery = '', srt = 'newest';
 
 function save() { localStorage.setItem('shelf_v1', JSON.stringify(records)); }
 function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -269,7 +270,10 @@ function getList() {
     l = l.filter(r => (r.title || '').toLowerCase().includes(q) || (r.author || '').toLowerCase().includes(q));
   }
   if (flt !== 'all') l = l.filter(r => r.status === flt);
-  l.sort((a, b) => b.addedAt - a.addedAt);
+  if (srt === 'newest') l.sort((a, b) => b.addedAt - a.addedAt);
+  else if (srt === 'oldest') l.sort((a, b) => a.addedAt - b.addedAt);
+  else if (srt === 'rating_high') l.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  else if (srt === 'rating_low') l.sort((a, b) => (a.rating || 0) - (b.rating || 0));
   return l;
 }
 function renderGrid() {
@@ -411,7 +415,7 @@ async function doSearch(q) {
   const res = document.getElementById('srchResults');
   res.innerHTML = `<div class="searching">검색 중...</div>`;
   try {
-    const r = await fetch(`${BOOKS_API}?q=${encodeURIComponent(q)}&maxResults=8&langRestrict=ko`);
+    const r = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=10`);
     const d = await r.json();
     const items = d.items || [];
     if (!items.length) { res.innerHTML = `<div class="searching">결과 없음</div>`; return; }
@@ -471,35 +475,16 @@ document.getElementById('saveBtn').onclick = () => {
 };
 
 /* ════ FILTER / SEARCH BAR ════ */
-document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', () => {
-  document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
+document.querySelectorAll('.filter-btn[data-filter]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.filter-btn[data-filter]').forEach(x => x.classList.remove('active'));
   b.classList.add('active'); flt = b.dataset.filter; renderGrid();
+}));
+document.querySelectorAll('.sort-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.sort-btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active'); srt = b.dataset.sort; renderGrid();
 }));
 document.getElementById('mainSearch').addEventListener('input', (e) => { searchQuery = e.target.value.trim(); renderGrid(); });
 document.getElementById('openAddBtn').onclick = openAdd;
-
-/* ════ EXPORT / IMPORT ════ */
-document.getElementById('exportBtn').onclick = () => {
-  const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = `shelf-backup-${new Date().toISOString().slice(0,10)}.json`; a.click();
-  URL.revokeObjectURL(url);
-};
-document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
-document.getElementById('importFile').onchange = (e) => {
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    try {
-      const imported = JSON.parse(ev.target.result);
-      if (!Array.isArray(imported)) { toast('잘못된 파일'); return; }
-      if (records.length && !confirm(`현재 ${records.length}개를 ${imported.length}개로 덮어쓸까요?`)) return;
-      records = imported; save(); renderGrid(); toast('복원됨');
-    } catch (err) { toast('읽기 실패'); }
-    e.target.value = '';
-  };
-  reader.readAsText(file);
-};
 
 /* ════════════════════════════════════════
    NOTION SYNC — Daily/REEL과 같은 공용 프록시(/api/notion?app=book) 사용
