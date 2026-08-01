@@ -163,6 +163,23 @@ async function uploadFileToNotion(dataUrl) {
 }
 
 
+// --- Book(SHELF 독서 기록 앱) 매핑 ---
+function bookToProperties(item) {
+  return {
+    'Name': { title: [{ text: { content: item.name || '(제목 없음)' } }] },
+    'Author': { rich_text: item.author ? [{ text: { content: item.author } }] : [] },
+    'Publisher': { rich_text: item.publisher ? [{ text: { content: item.publisher } }] : [] },
+    'Cover': item.cover ? { files: [{ name: 'cover.jpg', type: 'external', external: { url: item.cover } }] } : { files: [] },
+    'ISBN': { rich_text: item.isbn ? [{ text: { content: item.isbn } }] : [] },
+    'Rating': { number: typeof item.rating === 'number' ? item.rating : null },
+    'Status': item.status ? { select: { name: item.status } } : { select: null },
+    'Review': { rich_text: item.review ? [{ text: { content: item.review } }] : [] },
+    'App ID': { rich_text: [{ text: { content: String(item.appId || '') } }] },
+    'Last Updated': item.updatedAt ? { date: { start: item.updatedAt } } : { date: null }
+  };
+}
+
+
 const APPS = {
   todo: {
     databaseId: () => process.env.NOTION_DATABASE_ID_TODO || process.env.NOTION_DATABASE_ID,
@@ -181,6 +198,12 @@ const APPS = {
     toProperties: diaryToProperties,
     fromPage: null, // 일기는 현재 push(올리기)만 지원 — 노션 쪽 수정 불러오기는 아직 없음
     useCover: false
+  },
+  book: {
+    databaseId: () => process.env.NOTION_DATABASE_ID_BOOK,
+    toProperties: bookToProperties,
+    fromPage: null,
+    useCover: false // 표지는 Cover 파일 속성에 직접 넣으므로 페이지 커버는 따로 안 씀
   }
 };
 
