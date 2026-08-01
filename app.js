@@ -314,7 +314,11 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!todos[toDate]) todos[toDate] = [];
           todos[toDate].splice(evt.newDraggableIndex, 0, movedItem);
           saveTodos();
-          if (fromDate !== toDate) renderTodos(fromDate);
+          if (fromDate !== toDate) {
+            renderTodos(fromDate);
+            movedItem.updatedAt = Date.now();
+            autoPushItem(movedItem, toDate);
+          }
           renderTodos(toDate);
         }
       });
@@ -356,6 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('undo-toast').classList.add('hidden');
     lastDeleted = null;
     clearTimeout(undoTimeoutId);
+    autoPushItem(item, date); // 노션에 다시 살아있는 상태로 복원
   });
 
   // --- ACTIONS ---
@@ -403,6 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
       lastDeleted = { date: d, index: i, item };
       saveTodos(); renderTodos(d);
       showUndoToast('할 일을 삭제했어요');
+      if (item.notionPageId) autoDeleteItem(item.notionPageId);
       return;
     }
 
@@ -421,6 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
             todos[d][i].text = todoTextEl.innerText.trim();
             todos[d][i].updatedAt = Date.now();
             saveTodos();
+            autoPushItem(todos[d][i], d);
           }
         };
         todoTextEl.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); todoTextEl.blur(); } };
@@ -462,6 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
           todo.categoryId = item.dataset.cid || null;
           todo.updatedAt = Date.now();
           saveTodos(); renderTodos(linkMode.sourceDate); closeModal();
+          autoPushItem(todo, linkMode.sourceDate);
         };
       });
       return;
@@ -480,6 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
       todos[b.dataset.date][b.dataset.index].subtasks.push({ text: '새 소항목', completed: false });
       todos[b.dataset.date][b.dataset.index].updatedAt = Date.now();
       saveTodos(); renderTodos(b.dataset.date);
+      autoPushItem(todos[b.dataset.date][b.dataset.index], b.dataset.date);
       const row = document.querySelector(`#list-${b.dataset.date} .todo-item[data-index="${b.dataset.index}"]`);
       if (row) row.classList.add('expanded');
       setTimeout(() => {
@@ -500,6 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
       todos[btn.dataset.date][btn.dataset.parent].subtasks.splice(parseInt(btn.dataset.index), 1);
       todos[btn.dataset.date][btn.dataset.parent].updatedAt = Date.now();
       saveTodos(); renderTodos(btn.dataset.date);
+      autoPushItem(todos[btn.dataset.date][btn.dataset.parent], btn.dataset.date);
       return;
     }
 
@@ -514,15 +524,17 @@ document.addEventListener('DOMContentLoaded', () => {
         renderRoutines(); saveSettings();
       } else if (btn.dataset.type === 'category') {
         const deletedId = btn.dataset.id;
+        const affected = [];
         Object.keys(todos).forEach(date => {
           todos[date].forEach(todo => {
-            if (todo.categoryId === deletedId) todo.categoryId = null;
+            if (todo.categoryId === deletedId) { todo.categoryId = null; todo.updatedAt = Date.now(); affected.push({ date, todo }); }
           });
         });
         saveTodos();
         appSettings.categories = appSettings.categories.filter(c => c.id !== deletedId);
         renderCategoriesModal(); saveSettings();
         renderAllTodos();
+        affected.forEach(({ date, todo }) => autoPushItem(todo, date));
       }
     }
 
@@ -550,13 +562,15 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const d = e.target.dataset.date, input = e.target.querySelector('.add-todo-input'), text = input.value.trim();
       if (text) {
-        todos[d].push({
+        const newTodo = {
           id: generateId(), text, completed: false, linkColor: null, categoryId: null,
           subtasks: [], pomoTime: 0, pomoActive: false, pomoEndAt: null,
           updatedAt: Date.now(), notionPageId: null
-        });
+        };
+        todos[d].push(newTodo);
         saveTodos(); renderTodos(d); input.value = '';
         if (appSettings.uiSounds) sounds.click.play();
+        autoPushItem(newTodo, d);
       }
     }
   });
@@ -567,12 +581,14 @@ document.addEventListener('DOMContentLoaded', () => {
       todos[d][i].completed = cb.checked;
       todos[d][i].updatedAt = Date.now();
       saveTodos(); renderTodos(d);
+      autoPushItem(todos[d][i], d);
     }
     if (e.target.classList.contains('subtask-checkbox')) {
       const cb = e.target, d = cb.dataset.date, p = cb.dataset.parent, i = cb.dataset.index;
       todos[d][p].subtasks[i].completed = cb.checked;
       todos[d][p].updatedAt = Date.now();
       saveTodos(); renderTodos(d);
+      autoPushItem(todos[d][p], d);
     }
   });
 
@@ -584,6 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
         todos[d][p].subtasks[i].text = el.innerText.trim();
         todos[d][p].updatedAt = Date.now();
         saveTodos();
+        autoPushItem(todos[d][p], d);
       }
     }
   });
@@ -905,6 +922,173 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     reader.readAsText(file);
   });
+
+  // --- NOTION SYNC ---
+  const serializeSubtasks = (subtasks) => (subtasks || []).map(st => `${st.completed ? '☑' : '☐'} ${st.text}`).join('\n');
+  const parseSubtasks = (text) => (text || '').split('\n').map(line => line.trim()).filter(Boolean).map(line => ({
+    completed: line.startsWith('☑'),
+    text: line.replace(/^[☑☐]\s*/, '')
+  }));
+  const categoryNameById = (id) => { const c = appSettings.categories.find(c => c.id === id); return c ? c.name : ''; };
+  const categoryIdByName = (name) => { const c = appSettings.categories.find(c => c.name === name); return c ? c.id : null; };
+
+  const flattenTodos = () => {
+    const flat = [];
+    Object.keys(todos).forEach(dateStr => {
+      (todos[dateStr] || []).forEach((t, idx) => flat.push({ dateStr, idx, todo: t }));
+    });
+    return flat;
+  };
+
+  const toItemPayload = (todo, dateStr) => ({
+    appId: todo.id,
+    notionPageId: todo.notionPageId || null,
+    name: todo.text,
+    date: dateStr,
+    completed: todo.completed,
+    category: categoryNameById(todo.categoryId),
+    routine: !!todo.routineId,
+    subtasks: serializeSubtasks(todo.subtasks),
+    updatedAt: new Date(todo.updatedAt || Date.now()).toISOString()
+  });
+
+  let syncActivityCount = 0;
+  const setSyncIcon = (active) => {
+    syncActivityCount = Math.max(0, syncActivityCount + (active ? 1 : -1));
+    const icon = document.querySelector('#menu-notion-sync i');
+    if (icon) icon.style.animation = syncActivityCount > 0 ? 'spin 1s linear infinite' : '';
+  };
+
+  // 항목 하나가 바뀔 때마다 조용히 노션으로 보내요 (버튼 없이 자동). 실패해도 알림창은 안 띄우고
+  // 다음 변경이나 주기적 동기화 때 다시 시도돼요 — 매 타이핑마다 에러 팝업이 뜨면 방해되니까요.
+  const autoPushItem = async (todo, dateStr) => {
+    setSyncIcon(true);
+    try {
+      const r = await fetch('/api/notion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: [toItemPayload(todo, dateStr)] })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || '업로드 실패');
+      const result = (data.results || [])[0];
+      if (result && result.notionPageId) {
+        todo.notionPageId = result.notionPageId;
+        saveTodos();
+      }
+    } catch (err) {
+      console.warn('노션 자동 동기화 실패(조용히 재시도됨):', err.message);
+    } finally {
+      setSyncIcon(false);
+    }
+  };
+
+  // 항목이 삭제되면 노션 쪽 페이지도 자동으로 보관 처리(삭제)돼요
+  const autoDeleteItem = async (notionPageId) => {
+    setSyncIcon(true);
+    try {
+      await fetch('/api/notion', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageId: notionPageId })
+      });
+    } catch (err) {
+      console.warn('노션 자동 삭제 실패(조용히 재시도됨):', err.message);
+    } finally {
+      setSyncIcon(false);
+    }
+  };
+
+  // 사용자가 지금 뭔가 입력 중이면(할 일 텍스트, 소항목, 제목 등) 그 사이에 원격 데이터로
+  // 화면을 다시 그리면 입력 중이던 내용이 날아갈 수 있어서, 그럴 땐 이번 주기는 건너뛰어요.
+  const isEditingSomething = () => {
+    const ae = document.activeElement;
+    return !!ae && (ae.isContentEditable || ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA');
+  };
+
+  // 노션에서 생기거나 바뀐 내용을 앱으로 가져와요. silent=true면 알림창 없이 조용히 처리돼요
+  // (백그라운드 자동 동기화용), false면 결과를 alert로 알려줘요 (수동 버튼용).
+  const pullFromNotion = async (silent) => {
+    const pullRes = await fetch('/api/notion');
+    const pullData = await pullRes.json();
+    if (!pullRes.ok) throw new Error(pullData.error || '다운로드 실패');
+
+    const localById = {};
+    flattenTodos().forEach(({ dateStr, idx, todo }) => { localById[todo.id] = { dateStr, idx, todo }; });
+    let changed = false;
+
+    (pullData.items || []).forEach(row => {
+      if (!row.appId) return; // App ID 없는 행(노션에서 수동으로 추가한 행)은 건너뜀
+      const existing = localById[row.appId];
+      const remoteTime = row.lastUpdated ? new Date(row.lastUpdated).getTime() : 0;
+
+      if (existing) {
+        const localTime = existing.todo.updatedAt || 0;
+        if (remoteTime > localTime) {
+          existing.todo.text = row.name;
+          existing.todo.completed = row.completed;
+          existing.todo.categoryId = categoryIdByName(row.category) || existing.todo.categoryId;
+          existing.todo.subtasks = parseSubtasks(row.subtasks);
+          existing.todo.notionPageId = row.notionPageId;
+          existing.todo.updatedAt = remoteTime;
+          changed = true;
+        }
+      } else if (row.date) {
+        if (!todos[row.date]) todos[row.date] = [];
+        todos[row.date].push({
+          id: row.appId, text: row.name, completed: row.completed,
+          categoryId: categoryIdByName(row.category), routineId: null,
+          linkColor: null, subtasks: parseSubtasks(row.subtasks),
+          pomoTime: 0, pomoActive: false, pomoEndAt: null,
+          updatedAt: remoteTime || Date.now(), notionPageId: row.notionPageId
+        });
+        changed = true;
+      }
+    });
+
+    if (changed) { saveTodos(); renderAllTodos(); }
+    return changed;
+  };
+
+  // 수동 "전체 동기화" 버튼 — 로컬에 있는 걸 전부 올리고, 노션 쪽 최신 내용을 받아와요
+  const syncWithNotion = async () => {
+    setSyncIcon(true);
+    try {
+      const flat = flattenTodos();
+      if (flat.length > 0) {
+        const pushItems = flat.map(({ dateStr, todo }) => toItemPayload(todo, dateStr));
+        const pushRes = await fetch('/api/notion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: pushItems })
+        });
+        const pushData = await pushRes.json();
+        if (!pushRes.ok) throw new Error(pushData.error || '업로드 실패');
+        const idToPageId = {};
+        (pushData.results || []).forEach(r => { idToPageId[r.appId] = r.notionPageId; });
+        flat.forEach(({ dateStr, idx }) => {
+          const t = todos[dateStr][idx];
+          if (idToPageId[t.id]) t.notionPageId = idToPageId[t.id];
+        });
+        saveTodos();
+      }
+      await pullFromNotion(false);
+      alert('노션과 동기화됐어요!');
+    } catch (err) {
+      alert(`동기화 실패: ${err.message}`);
+    } finally {
+      setSyncIcon(false);
+    }
+  };
+
+  document.getElementById('menu-notion-sync').addEventListener('click', syncWithNotion);
+
+  // 버튼 없이도 자동으로 동기화되도록: 30초마다 노션 쪽 변경사항을 조용히 가져와요.
+  // (앱에서 뭔가 바뀔 때는 각 동작이 바로바로 autoPushItem/autoDeleteItem을 호출해서 올려요.)
+  setInterval(() => {
+    if (isEditingSomething()) return; // 입력 중이면 이번 주기는 건너뜀
+    pullFromNotion(true).catch(err => console.warn('백그라운드 노션 동기화 실패:', err.message));
+  }, 30000);
 
   // --- EMOTICON PICKER ---
   const EMOTICON_CATEGORIES = [
