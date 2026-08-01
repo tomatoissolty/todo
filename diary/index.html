@@ -33,7 +33,7 @@ button,input,textarea{font-family:var(--font)}
 /* HEADER */
 .app-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
 .app-title{font-size:20px;color:var(--purple-deep);display:flex;align-items:center;gap:6px}
-.btn-add{background:var(--yellow-deep);border:3px solid var(--ink);border-radius:14px;padding:9px 16px;font-size:13px;cursor:pointer;box-shadow:3px 3px 0 var(--ink), inset -3px -3px 0 rgba(0,0,0,.15), inset 3px 3px 0 rgba(255,255,255,.65);color:var(--ink)}
+.btn-add{background:var(--yellow-deep);border:3px solid var(--ink);border-radius:0;padding:9px 16px;font-size:13px;cursor:pointer;box-shadow:3px 3px 0 var(--ink), inset -3px -3px 0 rgba(0,0,0,.15), inset 3px 3px 0 rgba(255,255,255,.65);color:var(--ink);clip-path:polygon(6px 0,calc(100% - 6px) 0,calc(100% - 6px) 6px,100% 6px,100% calc(100% - 6px),calc(100% - 6px) calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,6px calc(100% - 6px),0 calc(100% - 6px),0 6px,6px 6px)}
 .btn-add:active{box-shadow:1px 1px 0 var(--ink), inset -3px -3px 0 rgba(0,0,0,.15), inset 3px 3px 0 rgba(255,255,255,.65);transform:translate(2px,2px)}
 .icon-btn{background:var(--card);border:2px solid var(--border);border-radius:12px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px}
 
@@ -61,14 +61,14 @@ button,input,textarea{font-family:var(--font)}
 .view-block-text{font-size:14px;line-height:1.9;white-space:pre-wrap;margin-bottom:14px}
 .view-block-photo{width:100%;border-radius:var(--radius);margin-bottom:14px;border:2.5px solid var(--border)}
 .view-actions{display:flex;gap:8px;margin-top:24px}
-.btn-pill{flex:1;padding:12px;border-radius:14px;border:2.5px solid var(--ink);font-size:13px;cursor:pointer;background:var(--card)}
+.btn-pill{flex:1;padding:12px;border-radius:0;border:2.5px solid var(--ink);font-size:13px;cursor:pointer;background:var(--card);clip-path:polygon(6px 0,calc(100% - 6px) 0,calc(100% - 6px) 6px,100% 6px,100% calc(100% - 6px),calc(100% - 6px) calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,6px calc(100% - 6px),0 calc(100% - 6px),0 6px,6px 6px)}
 .btn-pill.primary{background:var(--pink-deep);box-shadow:3px 3px 0 var(--ink), inset -3px -3px 0 rgba(0,0,0,.15), inset 3px 3px 0 rgba(255,255,255,.65)}
 .btn-pill.primary:active{box-shadow:1px 1px 0 var(--ink), inset -3px -3px 0 rgba(0,0,0,.15), inset 3px 3px 0 rgba(255,255,255,.65);transform:translate(2px,2px)}
 
 /* EDIT */
 .field-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .field-label{background:var(--purple);border-radius:10px;padding:8px 12px;font-size:12px;flex-shrink:0;min-width:60px;text-align:center}
-.field-label{background:var(--purple);border:2.5px solid var(--ink);border-radius:10px;padding:8px 12px;font-size:12px;flex-shrink:0;min-width:60px;text-align:center;box-shadow:3px 3px 0 var(--ink), inset -2px -2px 0 rgba(0,0,0,.15), inset 2px 2px 0 rgba(255,255,255,.65)}
+.field-label{background:var(--purple);border:2.5px solid var(--ink);border-radius:0;padding:8px 12px;font-size:12px;flex-shrink:0;min-width:60px;text-align:center;box-shadow:3px 3px 0 var(--ink), inset -2px -2px 0 rgba(0,0,0,.15), inset 2px 2px 0 rgba(255,255,255,.65);clip-path:polygon(4px 0,calc(100% - 4px) 0,calc(100% - 4px) 4px,100% 4px,100% calc(100% - 4px),calc(100% - 4px) calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 4px),0 calc(100% - 4px),0 4px,4px 4px)}
 .field-input{flex:1;padding:12px 14px;border:2.5px solid var(--border);border-radius:12px;font-size:14px;outline:none;background:var(--card)}
 .field-input:focus{border-color:var(--purple-deep)}
 .lock-toggle{width:52px;height:28px;border-radius:20px;background:var(--border);position:relative;cursor:pointer;flex-shrink:0;border:2px solid var(--ink);box-shadow:2px 2px 0 var(--ink), inset -2px -2px 0 rgba(0,0,0,.15), inset 2px 2px 0 rgba(255,255,255,.6)}
