@@ -180,6 +180,34 @@ function bookToProperties(item) {
 }
 
 
+// --- Bookmark(북마크 앱) 매핑 — 수정/삭제는 노션에서만, 앱은 추가+목록 조회만 함 ---
+function bookmarkToProperties(item) {
+  return {
+    'Name': { title: [{ text: { content: item.name || '(제목 없음)' } }] },
+    'URL': { url: item.url || null },
+    'Subtitle': { rich_text: item.subtitle ? [{ text: { content: item.subtitle } }] : [] },
+    'Cover': item.coverFileUploadId ? { files: [{ name: 'ref.jpg', type: 'file_upload', file_upload: { id: item.coverFileUploadId } }] } : { files: [] },
+    'App ID': { rich_text: [{ text: { content: String(item.appId || '') } }] },
+    'Last Updated': item.updatedAt ? { date: { start: item.updatedAt } } : { date: null }
+  };
+}
+function bookmarkFromPage(page) {
+  const p = page.properties || {};
+  const richText = (prop) => (prop?.rich_text || []).map(t => t.plain_text).join('');
+  const titleText = (prop) => (prop?.title || []).map(t => t.plain_text).join('');
+  const fileUrl = (prop) => { const f = (prop?.files || [])[0]; if (!f) return null; return (f.file && f.file.url) || (f.external && f.external.url) || null; };
+  return {
+    notionPageId: page.id,
+    appId: richText(p['App ID']),
+    name: titleText(p['Name']),
+    url: p['URL']?.url || '',
+    subtitle: richText(p['Subtitle']),
+    cover: fileUrl(p['Cover']),
+    lastUpdated: p['Last Updated']?.date?.start || null
+  };
+}
+
+
 const APPS = {
   todo: {
     databaseId: () => process.env.NOTION_DATABASE_ID_TODO || process.env.NOTION_DATABASE_ID,
@@ -204,6 +232,12 @@ const APPS = {
     toProperties: bookToProperties,
     fromPage: null,
     useCover: false // 표지는 Cover 파일 속성에 직접 넣으므로 페이지 커버는 따로 안 씀
+  },
+  bookmark: {
+    databaseId: () => process.env.NOTION_DATABASE_ID_BOOKMARK,
+    toProperties: bookmarkToProperties,
+    fromPage: bookmarkFromPage, // 북마크는 노션이 원본이라 목록을 항상 pull(GET)로 가져와요
+    useCover: false
   }
 };
 
@@ -223,8 +257,8 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // --- 일기 앱 전용 처리: 사진 업로드 ---
-    if (appKey === 'diary' && req.method === 'POST' && req.query.action === 'upload') {
+    // --- 사진/파일을 노션 자체 저장소로 업로드 (여러 앱이 공용으로 씀) ---
+    if (req.method === 'POST' && req.query.action === 'upload') {
       const dataUrl = req.body && req.body.dataUrl;
       if (!dataUrl) { res.status(400).json({ error: 'dataUrl이 필요해요.' }); return; }
       const fileUploadId = await uploadFileToNotion(dataUrl);

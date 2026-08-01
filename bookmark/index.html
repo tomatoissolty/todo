@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>BOOKMARK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fdfbff; --card:#ffffff; --line:#eae6f2;
+  --text:#2b2540; --text-mid:#8b85a0;
+  --active-bg:#4a3fb5; --active-text:#ffffff;
+  --pink:#ff9ec7;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Outfit','Noto Sans KR',sans-serif;font-weight:300;min-height:100vh}
+.wrap{max-width:520px;margin:0 auto;padding:24px 20px 80px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.logo{font-family:'DM Serif Display',serif;font-size:22px;letter-spacing:2px}
+.btn-add{border:1px solid var(--text);background:var(--text);color:#fff;padding:9px 16px;font-size:12px;letter-spacing:1px;border-radius:20px;cursor:pointer}
+.btn-add:hover{opacity:.85}
+
+.bm-row{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden;transition:background .15s,border-color .15s;cursor:pointer}
+.bm-row-main{display:flex;align-items:center;gap:14px;padding:16px 18px}
+.bm-no{font-size:12px;color:var(--text-mid);width:20px;flex-shrink:0}
+.bm-body{flex:1;min-width:0}
+.bm-title{font-family:'DM Serif Display',serif;font-size:16px;transition:color .15s}
+.bm-subtitle{font-size:11px;color:var(--text-mid);margin-top:3px;transition:color .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bm-arrow{font-size:16px;color:var(--text-mid);transition:color .15s;flex-shrink:0}
+
+.bm-row:hover,.bm-row.active{background:var(--active-bg);border-color:var(--active-bg)}
+.bm-row:hover .bm-title,.bm-row.active .bm-title{color:var(--active-text)}
+.bm-row:hover .bm-subtitle,.bm-row.active .bm-subtitle{color:rgba(255,255,255,.75)}
+.bm-row:hover .bm-arrow,.bm-row.active .bm-arrow{color:var(--active-text)}
+
+.bm-image-wrap{display:none;padding:0 14px 14px}
+.bm-row:hover .bm-image-wrap,.bm-row.active .bm-image-wrap{display:block}
+.bm-image-wrap img{width:100%;max-height:220px;object-fit:cover;border:3px solid var(--pink);border-radius:10px;display:block}
+
+.empty{text-align:center;padding:60px 20px;color:var(--text-mid);font-size:12px}
+
+.modal-overlay{position:fixed;inset:0;z-index:300;background:rgba(30,20,50,.4);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:20px}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:400px;padding:24px}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-title{font-family:'DM Serif Display',serif;font-size:17px}
+.close-btn{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-mid)}
+.form-lbl{display:block;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-mid);margin:12px 0 6px}
+.form-lbl:first-of-type{margin-top:0}
+.form-input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;outline:none}
+.form-input:focus{border-color:var(--active-bg)}
+.file-row{display:flex;align-items:center;gap:10px}
+.file-row img{width:44px;height:44px;object-fit:cover;border-radius:8px;border:2px solid var(--pink)}
+.btn-file{border:1px dashed var(--text-mid);background:transparent;border-radius:8px;padding:8px 12px;font-size:11px;cursor:pointer;color:var(--text-mid)}
+.save-btn{width:100%;padding:12px;border:none;border-radius:8px;background:var(--active-bg);color:#fff;font-size:13px;font-weight:500;cursor:pointer;margin-top:18px}
+.save-btn:hover{opacity:.9}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--text);color:#fff;border-radius:20px;padding:9px 20px;font-size:12px;z-index:999;transition:transform .3s}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">BOOKMARK</div>
+    <button class="btn-add" id="btnAdd">+ 추가</button>
+  </header>
+  <div id="list"></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-hdr">
+      <span class="modal-title">새 북마크</span>
+      <button class="close-btn" id="btnClose">✕</button>
+    </div>
+    <label class="form-lbl">제목</label>
+    <input class="form-input" id="inTitle" placeholder="사이트 이름">
+    <label class="form-lbl">URL</label>
+    <input class="form-input" id="inUrl" placeholder="https://...">
+    <label class="form-lbl">부제 (메모)</label>
+    <input class="form-input" id="inSubtitle" placeholder="짧은 메모">
+    <label class="form-lbl">참고 사진 (선택)</label>
+    <div class="file-row">
+      <button class="btn-file" id="btnFile">사진 선택</button>
+      <img id="filePreview" style="display:none">
+    </div>
+    <input type="file" id="fileInput" accept="image/*" style="display:none">
+    <button class="save-btn" id="btnSave">저장</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const NOTION_ENDPOINT = '/api/notion?app=bookmark';
+const isHoverCapable = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+let items = [];
+let pendingDataUrl = null;
+
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
+
+/* ════ LOAD (노션이 원본이라 매번 새로 받아와요) ════ */
+async function loadList() {
+  const el = document.getElementById('list');
+  el.innerHTML = `<div class="empty">불러오는 중...</div>`;
+  try {
+    const r = await fetch(NOTION_ENDPOINT);
+    const d = await r.json();
+    if (!r.ok) { el.innerHTML = `<div class="empty">${esc(d.error || '불러오기 실패')}</div>`; return; }
+    items = d.items || [];
+    renderList();
+  } catch (err) {
+    el.innerHTML = `<div class="empty">불러오기 실패</div>`;
+  }
+}
+
+function renderList() {
+  const el = document.getElementById('list');
+  if (!items.length) { el.innerHTML = `<div class="empty">북마크가 없어요. + 추가로 첫 링크를 남겨보세요</div>`; return; }
+  el.innerHTML = '';
+  items.forEach((bm, i) => {
+    const row = document.createElement('div');
+    row.className = 'bm-row';
+    row.innerHTML = `
+      <div class="bm-row-main">
+        <div class="bm-no">${String(i + 1).padStart(2, '0')}</div>
+        <div class="bm-body">
+          <div class="bm-title">${esc(bm.name)}</div>
+          ${bm.subtitle ? `<div class="bm-subtitle">${esc(bm.subtitle)}</div>` : ''}
+        </div>
+        <div class="bm-arrow">→</div>
+      </div>
+      ${bm.cover ? `<div class="bm-image-wrap"><img src="${bm.cover}"></div>` : ''}
+    `;
+
+    if (isHoverCapable) {
+      // PC: 그냥 누르면 바로 이동 (호버는 CSS가 알아서 처리)
+      row.addEventListener('click', () => window.open(bm.url, '_blank'));
+    } else {
+      // 모바일: 한 번 탭 = 활성화(사진 보기), 한 번 더 탭 = 이동
+      row.addEventListener('click', () => {
+        if (row.classList.contains('active')) {
+          window.open(bm.url, '_blank');
+        } else {
+          document.querySelectorAll('.bm-row.active').forEach(r => r.classList.remove('active'));
+          row.classList.add('active');
+        }
+      });
+    }
+    el.appendChild(row);
+  });
+}
+
+// 모바일에서 다른 곳 탭하면 활성화 해제
+if (!isHoverCapable) {
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.bm-row')) {
+      document.querySelectorAll('.bm-row.active').forEach(r => r.classList.remove('active'));
+    }
+  });
+}
+
+/* ════ ADD MODAL ════ */
+document.getElementById('btnAdd').onclick = () => {
+  document.getElementById('inTitle').value = '';
+  document.getElementById('inUrl').value = '';
+  document.getElementById('inSubtitle').value = '';
+  document.getElementById('filePreview').style.display = 'none';
+  pendingDataUrl = null;
+  document.getElementById('modalOverlay').classList.add('open');
+};
+document.getElementById('btnClose').onclick = () => document.getElementById('modalOverlay').classList.remove('open');
+document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target.id === 'modalOverlay') e.currentTarget.classList.remove('open'); });
+
+document.getElementById('btnFile').onclick = () => document.getElementById('fileInput').click();
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    pendingDataUrl = reader.result;
+    const img = document.getElementById('filePreview');
+    img.src = pendingDataUrl; img.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('btnSave').onclick = async () => {
+  const name = document.getElementById('inTitle').value.trim();
+  const url = document.getElementById('inUrl').value.trim();
+  const subtitle = document.getElementById('inSubtitle').value.trim();
+  if (!name || !url) { toast('제목과 URL은 필수예요'); return; }
+
+  document.getElementById('modalOverlay').classList.remove('open');
+  toast('저장 중...');
+  try {
+    let coverFileUploadId = null;
+    if (pendingDataUrl) {
+      const upRes = await fetch(`${NOTION_ENDPOINT}&action=upload`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dataUrl: pendingDataUrl })
+      });
+      const upData = await upRes.json();
+      if (upRes.ok) coverFileUploadId = upData.fileUploadId;
+    }
+    const item = {
+      appId: Date.now().toString(), name, url, subtitle, coverFileUploadId,
+      updatedAt: new Date().toISOString()
+    };
+    const r = await fetch(NOTION_ENDPOINT, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: [item] })
+    });
+    if (!r.ok) throw new Error('저장 실패');
+    toast('저장했어요');
+    loadList();
+  } catch (err) {
+    toast('저장 실패: ' + err.message);
+  }
+};
+
+/* ════ INIT ════ */
+loadList();
+</script>
+</body>
+</html>
