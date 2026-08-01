@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>일기 ⋆｡°✩</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: #F6F1FB;
+  --card: #FFFFFF;
+  --ink: #4A3B5C;
+  --ink-soft: #8B7AA3;
+  --pink: #FFB3D9;
+  --pink-deep: #FF8FC7;
+  --blue: #A8C0FF;
+  --blue-deep: #7FA0FF;
+  --purple: #C9A3F0;
+  --yellow: #FFE066;
+  --border: 3px solid var(--ink);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  background:var(--bg);
+  background-image:
+    radial-gradient(var(--purple) 1.5px, transparent 1.5px),
+    radial-gradient(var(--blue) 1.5px, transparent 1.5px);
+  background-size: 28px 28px;
+  background-position: 0 0, 14px 14px;
+  background-attachment: fixed;
+  opacity: 1;
+  color:var(--ink);
+  font-family:'Gaegu',sans-serif;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+}
+.pixel{ font-family:'Press Start 2P', monospace; }
+
+.app{ width:100%; max-width:480px; min-height:100vh; background:var(--bg); position:relative; padding-bottom:40px; }
+@media(min-width:481px){ .app{ box-shadow: 0 0 0 3px var(--ink); min-height:calc(100vh - 40px); margin-top:20px; margin-bottom:20px; border-radius:18px; overflow:hidden; } }
+
+/* HEADER */
+.header{ display:flex; align-items:center; justify-content:space-between; padding:22px 20px 14px; }
+.header h1{ font-size:26px; color:var(--ink); }
+.add-btn{
+  font-family:'Press Start 2P'; font-size:11px; background:var(--yellow); color:var(--ink);
+  border:var(--border); border-radius:8px; padding:10px 14px; cursor:pointer;
+  box-shadow:3px 3px 0 var(--ink); transition:transform .1s, box-shadow .1s;
+}
+.add-btn:active{ transform:translate(3px,3px); box-shadow:0 0 0 var(--ink); }
+
+/* LIST */
+.list{ padding:6px 16px 20px; display:flex; flex-direction:column; gap:12px; }
+.entry-row{
+  background:var(--card); border:var(--border); border-radius:14px; padding:12px 14px;
+  display:flex; align-items:center; gap:12px; cursor:pointer;
+  box-shadow:4px 4px 0 var(--purple); transition:transform .12s, box-shadow .12s;
+}
+.entry-row:active{ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--purple); }
+.entry-no{ font-family:'Press Start 2P'; font-size:11px; color:var(--ink-soft); width:20px; flex-shrink:0; text-align:center; }
+.entry-date{
+  font-family:'Press Start 2P'; font-size:9px; background:var(--blue); color:var(--ink);
+  border:2px solid var(--ink); border-radius:6px; padding:8px 6px; text-align:center; line-height:1.6;
+  width:46px; flex-shrink:0; transform:rotate(-3deg); box-shadow:2px 2px 0 var(--ink);
+}
+.entry-main{ flex:1; min-width:0; }
+.entry-title{ font-size:19px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:6px; }
+.entry-pics{ display:flex; gap:4px; margin-top:6px; }
+.pic-thumb{ width:26px; height:26px; border-radius:6px; border:2px solid var(--ink); object-fit:cover; background:var(--purple); flex-shrink:0; }
+.pic-more{ font-family:'Press Start 2P'; font-size:8px; color:var(--ink-soft); display:flex; align-items:center; padding-left:2px; }
+.entry-locked-tag{ font-size:13px; color:var(--pink-deep); }
+
+.empty{ text-align:center; padding:70px 20px; color:var(--ink-soft); }
+.empty .big{ font-size:40px; margin-bottom:10px; }
+.empty p{ font-size:18px; }
+
+/* EDITOR */
+.editor{ padding:18px 18px 30px; display:none; flex-direction:column; gap:16px; }
+.editor.open{ display:flex; }
+.list.hidden, .header.hidden{ display:none; }
+
+.field-row{ display:flex; align-items:center; gap:10px; }
+.field-label{
+  font-family:'Press Start 2P'; font-size:10px; background:var(--pink); color:var(--ink);
+  border:2px solid var(--ink); border-radius:6px; padding:9px 8px; width:64px; text-align:center; flex-shrink:0;
+  box-shadow:2px 2px 0 var(--ink);
+}
+.title-input{
+  flex:1; font-family:'Gaegu'; font-size:20px; font-weight:700; padding:10px 12px; border:var(--border);
+  border-radius:10px; background:var(--card); color:var(--ink); outline:none;
+}
+.title-input:focus{ background:#FFFDF6; }
+
+.lock-btn{
+  font-size:20px; background:var(--card); border:var(--border); border-radius:10px; padding:8px 14px;
+  cursor:pointer; display:flex; align-items:center; gap:8px; box-shadow:2px 2px 0 var(--ink);
+}
+.lock-btn.active{ background:var(--pink); }
+.lock-btn span.lbl{ font-family:'Press Start 2P'; font-size:9px; }
+
+.pics-strip{ display:flex; gap:8px; overflow-x:auto; padding:4px 2px 10px; scrollbar-width:thin; }
+.pics-strip::-webkit-scrollbar{ height:6px; }
+.pics-strip::-webkit-scrollbar-thumb{ background:var(--purple); border-radius:3px; }
+.pic-slot{
+  width:58px; height:58px; border-radius:10px; border:2px solid var(--ink); flex-shrink:0; position:relative;
+  background:var(--card); overflow:hidden;
+}
+.pic-slot img{ width:100%; height:100%; object-fit:cover; display:block; }
+.pic-slot .rm{
+  position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:var(--ink);
+  color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.pic-add{
+  width:58px; height:58px; border-radius:10px; border:2px dashed var(--ink-soft); flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--ink-soft);
+  cursor:pointer; background:transparent;
+}
+.pic-count{ font-size:12px; color:var(--ink-soft); margin-top:-4px; }
+
+.content-box{
+  min-height:220px; font-family:'Gaegu'; font-size:18px; line-height:1.7; padding:16px; border:var(--border);
+  border-radius:12px; background:var(--card); color:var(--ink); outline:none; resize:vertical;
+}
+.content-box:empty:before{ content:attr(data-placeholder); color:var(--ink-soft); }
+
+.done-btn{
+  font-family:'Press Start 2P'; font-size:13px; background:var(--yellow); color:var(--ink); border:var(--border);
+  border-radius:12px; padding:16px; cursor:pointer; box-shadow:4px 4px 0 var(--ink); text-align:center;
+  transition:transform .1s, box-shadow .1s;
+}
+.done-btn:active{ transform:translate(4px,4px); box-shadow:0 0 0 var(--ink); }
+
+.back-btn{
+  font-size:22px; background:none; border:none; cursor:pointer; color:var(--ink); width:32px;
+}
+
+.toast{
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--ink);
+  color:#fff; padding:10px 20px; border-radius:20px; font-size:14px; z-index:999; transition:transform .3s;
+  pointer-events:none; white-space:nowrap;
+}
+.toast.show{ transform:translateX(-50%) translateY(0); }
+
+input[type=file]{ display:none; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header" id="header">
+    <h1>📔 일기</h1>
+    <button class="add-btn" id="btnAdd">+ ADD</button>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <!-- EDITOR -->
+  <div class="editor" id="editor">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="back-btn" id="btnBack">←</button>
+      <span class="pixel" style="font-size:11px;color:var(--ink-soft);" id="editorHint">새 일기</span>
+    </div>
+
+    <div class="field-row">
+      <div class="field-label">TITLE</div>
+      <input type="text" class="title-input" id="inputTitle" placeholder="제목을 적어주세요">
+    </div>
+
+    <div class="field-row">
+      <div class="field-label">LOCK</div>
+      <button class="lock-btn" id="btnLock">
+        <span id="lockIcon">🔓</span>
+        <span class="lbl" id="lockLabel">OPEN</span>
+      </button>
+    </div>
+
+    <div>
+      <div class="field-row" style="margin-bottom:8px;">
+        <div class="field-label">PICS</div>
+        <span class="pic-count" id="picCount">0 / 15</span>
+      </div>
+      <div class="pics-strip" id="picsStrip"></div>
+      <input type="file" id="fileInput" accept="image/*" multiple>
+    </div>
+
+    <div class="content-box" id="content" contenteditable="true" data-placeholder="오늘 있었던 일을 적어보세요..."></div>
+
+    <button class="done-btn" id="btnDone">DONE!</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══ IndexedDB — 사진 원본은 여기에, 텍스트/메타데이터는 localStorage에 ═══ */
+let dbPromise = null;
+function openDB() {
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open('diary_photos_db', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('photos');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return dbPromise;
+}
+async function putPhoto(id, blob) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('photos', 'readwrite');
+    tx.objectStore('photos').put(blob, id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function getPhoto(id) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('photos', 'readonly');
+    const req = tx.objectStore('photos').get(id);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function deletePhoto(id) {
+  const db = await openDB();
+  return new Promise((resolve) => {
+    const tx = db.transaction('photos', 'readwrite');
+    tx.objectStore('photos').delete(id);
+    tx.oncomplete = () => resolve();
+  });
+}
+
+/* ═══ STATE ═══ */
+const generateId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+let entries = JSON.parse(localStorage.getItem('diary_entries_v1') || '[]');
+// 마이그레이션: 앞으로 만들 노션 동기화에 필요한 필드 미리 준비
+entries.forEach(e => {
+  if (!e.id) e.id = generateId();
+  if (!e.updatedAt) e.updatedAt = e.createdAt || Date.now();
+  if (e.notionPageId === undefined) e.notionPageId = null;
+  if (!e.photos) e.photos = [];
+});
+function saveEntries() { localStorage.setItem('diary_entries_v1', JSON.stringify(entries)); }
+
+let unlockedSession = sessionStorage.getItem('diary_unlocked') === '1';
+let editingId = null;
+let draftPhotos = []; // [{id, isNew, blob?, url}]
+let draftLocked = false;
+
+const $ = (id) => document.getElementById(id);
+const toastEl = $('toast');
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  setTimeout(() => toastEl.classList.remove('show'), 1800);
+}
+
+/* ═══ PIN (잠금) ═══ */
+async function sha256(text) {
+  const data = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+async function ensurePin() {
+  let hash = localStorage.getItem('diary_pin_hash');
+  if (hash) return true;
+  const pin = prompt('잠금 일기에 쓸 비밀번호(PIN)를 처음 설정해주세요');
+  if (!pin) return false;
+  localStorage.setItem('diary_pin_hash', await sha256(pin));
+  return true;
+}
+async function checkPin() {
+  const hash = localStorage.getItem('diary_pin_hash');
+  if (!hash) return true;
+  const pin = prompt('🔒 비밀번호(PIN)를 입력하세요');
+  if (pin === null) return false;
+  if (await sha256(pin) === hash) {
+    unlockedSession = true;
+    sessionStorage.setItem('diary_unlocked', '1');
+    return true;
+  }
+  toast('비밀번호가 틀렸어요');
+  return false;
+}
+
+/* ═══ LIST RENDER ═══ */
+function fmtDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+}
+
+async function renderList() {
+  const listEl = $('list');
+  const sorted = [...entries].sort((a, b) => (b.date + b.createdAt).localeCompare(a.date + a.createdAt));
+  listEl.innerHTML = '';
+
+  if (!sorted.length) {
+    listEl.innerHTML = `<div class="empty"><div class="big">⋆｡°✩</div><p>아직 쓴 일기가 없어요<br>+ ADD 눌러서 첫 일기를 남겨보세요</p></div>`;
+    return;
+  }
+
+  for (let i = 0; i < sorted.length; i++) {
+    const e = sorted[i];
+    const no = String(sorted.length - i).padStart(2, '0');
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+
+    const isHidden = e.locked && !unlockedSession;
+    let picsHTML = '';
+    if (!isHidden && e.photos.length) {
+      const shown = e.photos.slice(0, 3);
+      picsHTML = `<div class="entry-pics" data-pics="${shown.join(',')}">${shown.map(() => `<img class="pic-thumb">`).join('')}${e.photos.length > 3 ? `<span class="pic-more">+${e.photos.length - 3}</span>` : ''}</div>`;
+    }
+
+    row.innerHTML = `
+      <div class="entry-no pixel">${no}</div>
+      <div class="entry-date pixel">${fmtDate(e.date)}</div>
+      <div class="entry-main">
+        <div class="entry-title">${isHidden ? '<span class="entry-locked-tag">🔒 잠긴 일기</span>' : (e.locked ? '🔒 ' : '') + escapeHtml(e.title || '(제목 없음)')}</div>
+        ${picsHTML}
+      </div>
+    `;
+    row.onclick = () => openEntry(e.id);
+    listEl.appendChild(row);
+
+    // 썸네일 실제 이미지 채우기
+    if (!isHidden && e.photos.length) {
+      const imgs = row.querySelectorAll('.pic-thumb');
+      const shown = e.photos.slice(0, 3);
+      shown.forEach(async (pid, idx) => {
+        const blob = await getPhoto(pid);
+        if (blob && imgs[idx]) imgs[idx].src = URL.createObjectURL(blob);
+      });
+    }
+  }
+}
+
+function escapeHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+/* ═══ EDITOR ═══ */
+function showEditor(show) {
+  $('editor').classList.toggle('open', show);
+  $('list').classList.toggle('hidden', show);
+  $('header').classList.toggle('hidden', show);
+}
+
+async function openEntry(id) {
+  const e = entries.find(x => x.id === id);
+  if (!e) return;
+  if (e.locked && !unlockedSession) {
+    const ok = await checkPin();
+    if (!ok) return;
+    await renderList();
+  }
+  editingId = id;
+  $('editorHint').textContent = '일기 수정';
+  $('inputTitle').value = e.title || '';
+  $('content').innerText = e.content || '';
+  draftLocked = !!e.locked;
+  updateLockUI();
+  draftPhotos = [];
+  for (const pid of e.photos) {
+    const blob = await getPhoto(pid);
+    draftPhotos.push({ id: pid, isNew: false, url: blob ? URL.createObjectURL(blob) : '' });
+  }
+  renderPicsStrip();
+  showEditor(true);
+}
+
+function openNewEntry() {
+  editingId = null;
+  $('editorHint').textContent = '새 일기';
+  $('inputTitle').value = '';
+  $('content').innerText = '';
+  draftLocked = false;
+  updateLockUI();
+  draftPhotos = [];
+  renderPicsStrip();
+  showEditor(true);
+  setTimeout(() => $('inputTitle').focus(), 150);
+}
+
+function updateLockUI() {
+  $('btnLock').classList.toggle('active', draftLocked);
+  $('lockIcon').textContent = draftLocked ? '🔒' : '🔓';
+  $('lockLabel').textContent = draftLocked ? 'LOCK' : 'OPEN';
+}
+
+$('btnLock').onclick = async () => {
+  if (!draftLocked) {
+    const ok = await ensurePin();
+    if (!ok) return;
+  }
+  draftLocked = !draftLocked;
+  updateLockUI();
+};
+
+function renderPicsStrip() {
+  const strip = $('picsStrip');
+  strip.innerHTML = '';
+  draftPhotos.forEach((p, idx) => {
+    const slot = document.createElement('div');
+    slot.className = 'pic-slot';
+    slot.innerHTML = `<img src="${p.url}"><div class="rm" data-idx="${idx}">✕</div>`;
+    strip.appendChild(slot);
+  });
+  if (draftPhotos.length < 15) {
+    const add = document.createElement('button');
+    add.className = 'pic-add';
+    add.textContent = '+';
+    add.onclick = () => $('fileInput').click();
+    strip.appendChild(add);
+  }
+  $('picCount').textContent = `${draftPhotos.length} / 15`;
+
+  strip.querySelectorAll('.rm').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.idx);
+      draftPhotos.splice(idx, 1);
+      renderPicsStrip();
+    };
+  });
+}
+
+$('fileInput').addEventListener('change', (e) => {
+  const files = Array.from(e.target.files || []);
+  const room = 15 - draftPhotos.length;
+  files.slice(0, room).forEach(file => {
+    draftPhotos.push({ id: generateId(), isNew: true, blob: file, url: URL.createObjectURL(file) });
+  });
+  if (files.length > room) toast('사진은 최대 15장까지예요');
+  renderPicsStrip();
+  e.target.value = '';
+});
+
+$('btnAdd').onclick = openNewEntry;
+$('btnBack').onclick = () => showEditor(false);
+
+$('btnDone').onclick = async () => {
+  const title = $('inputTitle').value.trim();
+  const content = $('content').innerText.trim();
+  if (!title && !content && draftPhotos.length === 0) {
+    toast('내용을 조금이라도 적어주세요');
+    return;
+  }
+
+  // 새로 추가된 사진들을 IndexedDB에 저장
+  for (const p of draftPhotos) {
+    if (p.isNew) await putPhoto(p.id, p.blob);
+  }
+  const photoIds = draftPhotos.map(p => p.id);
+
+  if (editingId) {
+    const e = entries.find(x => x.id === editingId);
+    // 편집 중 제거된 사진은 저장소에서도 정리
+    const removed = e.photos.filter(pid => !photoIds.includes(pid));
+    for (const pid of removed) await deletePhoto(pid);
+
+    e.title = title;
+    e.content = content;
+    e.locked = draftLocked;
+    e.photos = photoIds;
+    e.updatedAt = Date.now();
+  } else {
+    entries.push({
+      id: generateId(),
+      title, content,
+      date: new Date().toISOString().slice(0, 10),
+      locked: draftLocked,
+      photos: photoIds,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      notionPageId: null
+    });
+  }
+
+  saveEntries();
+  showEditor(false);
+  await renderList();
+  toast('저장했어요 ⋆｡°✩');
+};
+
+/* ═══ INIT ═══ */
+renderList();
+</script>
+</body>
+</html>
