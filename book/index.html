@@ -538,13 +538,14 @@ async function pullFromNotion() {
       if (remoteTime > (existing.updatedAt || 0)) {
         existing.title = row.name; existing.author = row.author; existing.publisher = row.publisher;
         existing.isbn = row.isbn; existing.rating = row.rating || 0; existing.status = row.status || existing.status;
-        existing.review = row.review || ''; existing.notionPageId = row.notionPageId; existing.updatedAt = remoteTime;
+        existing.review = row.review || ''; existing.cover = row.cover || existing.cover;
+        existing.notionPageId = row.notionPageId; existing.updatedAt = remoteTime;
         changed = true;
       }
     } else {
       records.unshift({
         id: row.appId, title: row.name, author: row.author, publisher: row.publisher,
-        cover: null, isbn: row.isbn, rating: row.rating || 0, status: row.status || '읽음', review: row.review || '',
+        cover: row.cover || null, isbn: row.isbn, rating: row.rating || 0, status: row.status || '읽음', review: row.review || '',
         addedAt: remoteTime || Date.now(), updatedAt: remoteTime || Date.now(), notionPageId: row.notionPageId
       });
       changed = true;

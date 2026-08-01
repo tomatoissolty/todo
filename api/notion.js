@@ -29,6 +29,7 @@ function todoToProperties(item) {
     'Completed': { checkbox: !!item.completed },
     'Category': { rich_text: item.category ? [{ text: { content: item.category } }] : [] },
     'Routine': { checkbox: !!item.routine },
+    'Deferred': { checkbox: !!item.deferred },
     'Subtasks': { rich_text: item.subtasks ? [{ text: { content: item.subtasks } }] : [] },
     'App ID': { rich_text: [{ text: { content: String(item.appId || '') } }] },
     'Last Updated': item.updatedAt ? { date: { start: item.updatedAt } } : { date: null }
@@ -46,6 +47,7 @@ function todoFromPage(page) {
     completed: !!p['Completed']?.checkbox,
     category: richText(p['Category']),
     routine: !!p['Routine']?.checkbox,
+    deferred: !!p['Deferred']?.checkbox,
     subtasks: richText(p['Subtasks']),
     lastUpdated: p['Last Updated']?.date?.start || null
   };
@@ -220,12 +222,14 @@ function bookFromPage(page) {
   const p = page.properties || {};
   const richText = (prop) => (prop?.rich_text || []).map(t => t.plain_text).join('');
   const titleText = (prop) => (prop?.title || []).map(t => t.plain_text).join('');
+  const fileUrl = (prop) => { const f = (prop?.files || [])[0]; if (!f) return null; return (f.file && f.file.url) || (f.external && f.external.url) || null; };
   return {
     notionPageId: page.id,
     appId: richText(p['App ID']),
     name: titleText(p['Name']),
     author: richText(p['Author']),
     publisher: richText(p['Publisher']),
+    cover: fileUrl(p['Cover']),
     isbn: richText(p['ISBN']),
     rating: typeof p['Rating']?.number === 'number' ? p['Rating'].number : 0,
     status: p['Status']?.select?.name || null,

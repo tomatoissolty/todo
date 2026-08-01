@@ -116,6 +116,7 @@ body { font-family: var(--font-family); background-color: var(--bg-color); color
 .todo-item.is-linked .todo-text { font-weight: 400; background-color: var(--link-color, rgba(255, 235, 59, 0.4)); padding: 2px 6px; border-radius: 4px; color: #000; }
 :root[data-theme="dark"] .todo-item.is-linked .todo-text { color: #fff; background-color: var(--link-color, rgba(255, 235, 59, 0.3)); }
 .todo-item.completed .todo-text { color: var(--text-muted); text-decoration: line-through; }
+.todo-item.deferred:not(.completed) .todo-text { color: var(--deferred-color, #e74c3c); font-weight: 600; }
 
 /* Subtasks */
 .subtask-container { padding-left: 36px; margin-top: 8px; display: none; flex-direction: column; gap: 8px; animation: slideDown 0.2s ease-out; }

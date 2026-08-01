@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
         title: d.title || '',
         authors: d.authors || [],
         publisher: d.publisher || '',
-        thumbnail: d.thumbnail || '',
+        thumbnail: (d.thumbnail || '').replace('http://', 'https://'),
         isbn: isbns[isbns.length - 1] || ''
       };
     });

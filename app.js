@@ -84,6 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const color = appSettings.accentColor || `hsl(${appSettings.accentHue}, 100%, ${appSettings.darkMode ? 55 : 50}%)`;
     document.documentElement.style.setProperty('--accent-color', color);
     document.documentElement.style.setProperty('--accent-hover', color);
+    // 미뤄진(deferred) 항목 글자색 = 현재 테마색의 보색(hue+180). 파스텔이면 채도·명도를 그대로 유지해서 파스텔로 남는다.
+    const m = color.match(/hsl\(\s*([\d.]+)\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%\s*\)/);
+    const complementary = m ? `hsl(${(parseFloat(m[1]) + 180) % 360}, ${m[2]}%, ${m[3]}%)` : '#e74c3c';
+    document.documentElement.style.setProperty('--deferred-color', complementary);
   };
 
   const saveSettings = () => { localStorage.setItem('swipe-settings', JSON.stringify(appSettings)); };
@@ -128,6 +132,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
+  };
+
+  // --- ROLLOVER: 어제 이전 날짜에 완료 안 된(루틴 제외) 항목을 오늘로 자동으로 옮기고 '미뤄짐' 표시 ---
+  const rolloverIncompleteTodos = () => {
+    const todayStr = todayDate.format('YYYY-MM-DD');
+    let changed = false;
+    Object.keys(todos).forEach(dateStr => {
+      if (dateStr >= todayStr) return; // 오늘/미래는 그대로 둠
+      const dayList = todos[dateStr] || [];
+      for (let i = dayList.length - 1; i >= 0; i--) {
+        const t = dayList[i];
+        if (t.completed || t.routineId) continue; // 완료했거나 루틴 생성 항목이면 안 옮김
+        dayList.splice(i, 1);
+        t.deferred = true;
+        t.updatedAt = Date.now();
+        if (!todos[todayStr]) todos[todayStr] = [];
+        todos[todayStr].push(t);
+        changed = true;
+        autoPushItem(t, todayStr); // 노션에도 날짜/Deferred 변경 반영
+      }
+    });
+    if (changed) saveTodos();
   };
 
   // --- CARDS RENDER ---
@@ -205,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (todo.completed) completedCount++;
 
       const li = document.createElement('li');
-      li.className = `todo-item ${todo.completed ? 'completed' : ''} ${isLinked ? 'is-linked' : ''} ${!isMatch ? 'is-filtered-out' : ''}`;
+      li.className = `todo-item ${todo.completed ? 'completed' : ''} ${isLinked ? 'is-linked' : ''} ${!isMatch ? 'is-filtered-out' : ''} ${todo.deferred ? 'deferred' : ''}`;
       li.dataset.index = todo.originalIndex;
       // Sink completed items to the bottom visually without touching the underlying array order,
       // so drag-to-reorder indices (which map 1:1 to array positions) stay correct.
@@ -1230,6 +1256,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function escapeHtml(unsafe) { return unsafe?.replace(/&/g, "&amp;")?.replace(/</g, "&lt;")?.replace(/>/g, "&gt;")?.replace(/"/g, "&quot;")?.replace(/'/g, "&#039;") || ""; }
 
   applySettings();
+  rolloverIncompleteTodos();
   dateCards.forEach(date => swiperWrapper.appendChild(createCardElement(date)));
   const swiper = new Swiper('.todo-swiper', {
     effect: 'coverflow', centeredSlides: true, slidesPerView: 'auto', initialSlide: 30,

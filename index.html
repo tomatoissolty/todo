@@ -4,15 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Daily</title>
+  <script>
+    // 라이브러리 로딩이 실패해서 앱이 하얗게 비는 대신, 무슨 일이 있었는지 화면에 보이게 해줌
+    window.addEventListener('error', function (e) {
+      var wrap = document.getElementById('swiper-wrapper');
+      if (wrap && !wrap.children.length) {
+        wrap.innerHTML = '<div style="padding:60px 24px;text-align:center;color:#999;font-size:13px;line-height:1.6;">앱을 불러오는 중 문제가 생겼어요.<br>Wi-Fi로 바꿔서 새로고침해보시거나, 계속되면 캡처해서 보여주세요.<br><span style="opacity:.6;font-size:11px;">(' + (e.message || '') + ')</span></div>';
+      }
+    }, true);
+  </script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/swiper@11/swiper-bundle.min.css" />
   <link rel="stylesheet" href="style.css">
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- YouTube Studio Style Confetti -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="https://unpkg.com/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
 <body>
   
@@ -234,12 +243,12 @@
     <button id="btn-cancel-link-toast" class="btn-cancel-toast">완료</button>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isToday.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isBefore.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isAfter.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/ko.js"></script>
+  <script src="https://unpkg.com/swiper@11/swiper-bundle.min.js"></script>
+  <script src="https://unpkg.com/dayjs@1/dayjs.min.js"></script>
+  <script src="https://unpkg.com/dayjs@1/plugin/isToday.js"></script>
+  <script src="https://unpkg.com/dayjs@1/plugin/isBefore.js"></script>
+  <script src="https://unpkg.com/dayjs@1/plugin/isAfter.js"></script>
+  <script src="https://unpkg.com/dayjs@1/locale/ko.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
