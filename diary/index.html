@@ -554,12 +554,21 @@ document.getElementById('btn-insert-schedule').onclick = async () => {
     const r = await fetch('/api/notion?app=calendar');
     const d = await r.json();
     if (!r.ok) { showToast(d.error || '불러오기 실패'); return; }
-    const todayStr = new Date().toISOString().slice(0, 10);
+
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    // 같은 날 여러 번(또는 수정하면서 또) 불러올 때, 이전에 이미 불러온 데까지는 건너뛰기 위한 커서.
+    // 날짜별로 저장해서, 몇 번째 일기든 그날 안에서는 이어서 불러와져요.
+    const cutoffKey = 'diary_schedule_cutoff_' + todayStr;
+    const cutoffTime = localStorage.getItem(cutoffKey);
+
     const todays = (d.items || [])
       .filter(ev => ev.start && ev.start.slice(0, 10) === todayStr)
+      .filter(ev => new Date(ev.start) <= now) // 불러오는 시점 이후 일정은 아직 안 가져옴
+      .filter(ev => !cutoffTime || new Date(ev.start) > new Date(cutoffTime)) // 이전에 불러온 만큼은 제외
       .sort((a, b) => new Date(a.start) - new Date(b.start));
 
-    if (!todays.length) { showToast('오늘 등록된 일정이 없어요'); return; }
+    if (!todays.length) { showToast('새로 불러올 일정이 없어요'); return; }
 
     // 하나로 합쳐진 블록이 아니라, 일정 하나마다 따로 블록으로 넣어야
     // 나중에 그 사이사이에 사진이나 글을 끼워넣을 수 있어요.
@@ -570,7 +579,8 @@ document.getElementById('btn-insert-schedule').onclick = async () => {
       editBlocks.push({ type: 'text', text: line, isSchedule: true });
     });
     renderEditBlocks();
-    showToast('오늘 일정을 가져왔어요');
+    localStorage.setItem(cutoffKey, now.toISOString());
+    showToast('일정을 가져왔어요');
   } catch (err) {
     showToast('불러오기 실패');
   }
