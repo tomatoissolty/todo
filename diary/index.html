@@ -65,7 +65,9 @@ button,input,textarea{font-family:var(--font)}
 .view-day{font-size:19px;font-weight:bold;line-height:1}
 .view-month{font-size:8px;letter-spacing:1px;margin-top:3px}
 .view-title{font-size:15px;display:flex;align-items:center;gap:6px}
-.view-block-text{font-size:13px;line-height:1.85;white-space:pre-wrap;margin-bottom:12px}
+.view-block-text{font-size:13px;line-height:1.85;white-space:pre-wrap;margin-bottom:12px;border-radius:6px;transition:background .15s}
+.view-block-text.schedule{font-size:9.1px;line-height:1.7}
+.view-block-text[style*="background"]{padding:4px 8px}
 .view-block-photo{width:100%;display:block;margin-bottom:12px}
 .view-actions{display:flex;gap:8px;margin-top:16px}
 .btn-pill{flex:1;padding:12px;border-radius:0;border:2.5px solid var(--ink);font-size:13px;cursor:pointer;background:var(--card);clip-path:var(--pixel-clip-6)}
@@ -85,13 +87,23 @@ button,input,textarea{font-family:var(--font)}
 
 .blocks{display:flex;flex-direction:column;gap:3px;margin:14px 0}
 .block-text{position:relative}
-.block-text textarea{width:100%;border:2.5px solid var(--border);border-radius:14px;padding:10px 34px 10px 12px;font-size:14px;line-height:1.7;resize:none;outline:none;min-height:56px;background:var(--card)}
+.block-text textarea{width:100%;border:2.5px solid var(--border);border-radius:14px;padding:10px 60px 10px 12px;font-size:14px;line-height:1.7;resize:none;outline:none;min-height:56px;background:var(--card)}
+.block-text.schedule textarea{font-size:10px;min-height:34px;line-height:1.6}
+.btn-highlight{position:absolute;top:6px;right:34px;width:22px;height:22px;border-radius:50%;background:var(--card);border:1.5px solid var(--border);cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center}
+.highlight-swatches{position:absolute;top:32px;right:6px;background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:6px;display:none;gap:5px;z-index:20;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.highlight-swatches.open{display:flex}
+.highlight-swatches .hs{width:20px;height:20px;border-radius:6px;cursor:pointer;border:1.5px solid var(--border)}
+.highlight-swatches .hs.none{background:#fff;position:relative}
+.highlight-swatches .hs.none::after{content:'✕';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink-soft)}
 .block-text textarea:focus{border-color:var(--blue-deep)}
 .block-text .btn-remove-text{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--card);border:2px solid var(--ink);cursor:pointer;font-size:10px;color:var(--ink)}
 .block-photo{position:relative;display:inline-block}
 .block-photo img{width:100%;border-radius:14px;border:2.5px solid var(--border);display:block}
 .block-photo .btn-remove-photo{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:#fff;border:2px solid var(--ink);cursor:pointer;font-size:11px}
 .insert-row{display:flex;gap:6px;justify-content:center}
+.block-gap{display:flex;gap:4px;justify-content:center;padding:1px 0;opacity:.35;transition:opacity .15s}
+.block-gap:hover{opacity:1}
+.block-gap button{background:var(--card);border:1.5px dashed var(--ink-soft);border-radius:8px;padding:2px 8px;font-size:10px;cursor:pointer;color:var(--ink-soft)}
 .btn-insert{background:var(--yellow);border:2px dashed var(--ink-soft);border-radius:10px;padding:5px 10px;font-size:11px;cursor:pointer;color:var(--ink)}
 
 /* MODAL (PIN) */
@@ -163,6 +175,7 @@ button,input,textarea{font-family:var(--font)}
     <div class="insert-row">
       <button class="btn-insert" id="btn-insert-text">+ 글 추가</button>
       <button class="btn-insert" id="btn-insert-photo">+ 사진 추가</button>
+      <button class="btn-insert" id="btn-insert-schedule">🗓️ 오늘 일정 불러오기</button>
     </div>
     <input type="file" id="photo-file-input" accept="image/*" multiple style="display:none">
 
@@ -194,6 +207,30 @@ const MAX_LIST_THUMBS = 3;
 const CUTE_PLACEHOLDERS = ['🌟','💫','🌠','✨','🍨','🍮','🥞','🍃'];
 
 /* ═══════════ PIXEL ART DECORATIONS ═══════════ */
+/* ═══════════ 홈(toisty) 테마 팔레트 — 하이라이트 색 고를 때 씀. 이름은 저장된 선택값과 매칭용, 홈 화면 것과 같은 목록이에요. ═══════════ */
+const HOME_PALETTES = [
+  { name: '기본', outerBg: '#FDF6E3', menuInactiveBg: '#FFE0EC', menuActiveBg: '#ECE3FF' },
+  { name: 'A', outerBg: '#E9F5A9', menuInactiveBg: '#507255', menuActiveBg: '#C8E6A5' },
+  { name: 'B', outerBg: '#fefae0', menuInactiveBg: '#ffcad4', menuActiveBg: '#f4acb7' },
+  { name: 'C', outerBg: '#bad7f2', menuInactiveBg: '#f2bac9', menuActiveBg: '#f2e2ba' },
+  { name: '하늘1', outerBg: '#EAF6FB', menuInactiveBg: '#CFE9F5', menuActiveBg: '#5BB8DB' },
+  { name: '하늘2', outerBg: '#EEF5F9', menuInactiveBg: '#D6E8F0', menuActiveBg: '#89B4D4' },
+  { name: '하늘3', outerBg: '#E6F7FB', menuInactiveBg: '#BFE6F2', menuActiveBg: '#3AA6C9' },
+  { name: '초록1', outerBg: '#EEFAF3', menuInactiveBg: '#D3F0E0', menuActiveBg: '#5BC990' },
+  { name: '초록2', outerBg: '#F2F5EE', menuInactiveBg: '#DBE5CF', menuActiveBg: '#8FAE6F' },
+  { name: '초록3', outerBg: '#EEF7EE', menuInactiveBg: '#CFE8CF', menuActiveBg: '#6FAE6F' },
+  { name: '새1', outerBg: '#EFBDBD', menuInactiveBg: '#A2739E', menuActiveBg: '#7C6699' },
+  { name: '새2', outerBg: '#7C86A3', menuInactiveBg: '#D8AC70', menuActiveBg: '#E1CB8E' },
+  { name: '새3', outerBg: '#6B4770', menuInactiveBg: '#F0E8B8', menuActiveBg: '#ACCFA3' },
+  { name: '새4', outerBg: '#F0BBDA', menuInactiveBg: '#D5E9F4', menuActiveBg: '#E3F6DE' },
+  { name: '새5', outerBg: '#586386', menuInactiveBg: '#C2C6F1', menuActiveBg: '#FEF5DB' },
+  { name: '새6', outerBg: '#B0B0CD', menuInactiveBg: '#CDDADF', menuActiveBg: '#DEE6D7' }
+];
+function getCurrentHomePalette() {
+  const savedName = localStorage.getItem('toisty_palette');
+  return HOME_PALETTES.find(p => p.name === savedName) || HOME_PALETTES[0];
+}
+
 const PIXEL_GRIDS = {
   heart:  ['.11.11.','1111111','1111111','.11111.','..111..','...1...'],
   blob:   ['.1111..','111111.','1.11.1.','1111111','.11111.','..111..'],
@@ -270,6 +307,7 @@ function idbDelete(store, id) {
 let entries = [];
 let currentEntry = null; // being viewed/edited
 let editBlocks = [];     // working copy of content blocks while editing
+let pendingInsertIndex = null; // "+ 사진" 버튼을 어느 틈에서 눌렀는지 기억해뒀다가 그 자리에 끼워넣음
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 /* ═══════════ PIN (app-level lock, separate from site password) ═══════════ */
@@ -406,8 +444,9 @@ async function showViewScreen(entry) {
     if (block.type === 'text') {
       if (!block.text) continue;
       const p = document.createElement('div');
-      p.className = 'view-block-text';
+      p.className = 'view-block-text' + (block.isSchedule ? ' schedule' : '');
       p.textContent = block.text;
+      if (block.highlightColor) p.style.background = block.highlightColor;
       body.appendChild(p);
     } else if (block.type === 'photo') {
       const photo = await idbGet('photos', block.photoId);
@@ -435,19 +474,60 @@ function showEditScreen(entry) {
 function renderEditBlocks() {
   const el = document.getElementById('edit-blocks');
   el.innerHTML = '';
+
+  const makeGap = (atIndex) => {
+    const gap = document.createElement('div');
+    gap.className = 'block-gap';
+    gap.innerHTML = `<button data-t="text">+ 글</button><button data-t="photo">+ 사진</button>`;
+    gap.querySelector('[data-t="text"]').onclick = () => {
+      editBlocks.splice(atIndex, 0, { type: 'text', text: '' });
+      renderEditBlocks();
+    };
+    gap.querySelector('[data-t="photo"]').onclick = () => {
+      const photoCount = editBlocks.filter(b => b.type === 'photo').length;
+      if (photoCount >= MAX_PHOTOS) { showToast(`사진은 최대 ${MAX_PHOTOS}장까지예요`); return; }
+      pendingInsertIndex = atIndex;
+      document.getElementById('photo-file-input').click();
+    };
+    return gap;
+  };
+
+  el.appendChild(makeGap(0)); // 맨 위에도 끼워넣을 수 있게
+
   editBlocks.forEach((block, idx) => {
     const wrap = document.createElement('div');
     if (block.type === 'text') {
-      wrap.className = 'block-text';
-      wrap.innerHTML = `<textarea placeholder="이어서 적어보세요...">${escapeHtml(block.text)}</textarea><button class="btn-remove-text" data-idx="${idx}">✕</button>`;
+      wrap.className = 'block-text' + (block.isSchedule ? ' schedule' : '');
+      wrap.style.position = 'relative';
+      const palette = getCurrentHomePalette();
+      const swatchColors = [palette.outerBg, palette.menuInactiveBg, palette.menuActiveBg];
+      wrap.innerHTML = `
+        <textarea placeholder="이어서 적어보세요...">${escapeHtml(block.text)}</textarea>
+        <button class="btn-highlight" data-idx="${idx}" title="하이라이트">✎</button>
+        <button class="btn-remove-text" data-idx="${idx}">✕</button>
+        <div class="highlight-swatches" id="hs-${idx}">
+          <div class="hs none" data-color=""></div>
+          ${swatchColors.map(c => `<div class="hs" data-color="${c}" style="background:${c}"></div>`).join('')}
+        </div>`;
+      if (block.highlightColor) wrap.querySelector('textarea').style.background = block.highlightColor;
       wrap.querySelector('textarea').addEventListener('input', (e) => { editBlocks[idx].text = e.target.value; });
       wrap.querySelector('.btn-remove-text').onclick = () => { editBlocks.splice(idx, 1); renderEditBlocks(); };
+      wrap.querySelector('.btn-highlight').onclick = (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.highlight-swatches.open').forEach(s => { if (s.id !== `hs-${idx}`) s.classList.remove('open'); });
+        wrap.querySelector('.highlight-swatches').classList.toggle('open');
+      };
+      wrap.querySelectorAll('.hs').forEach(sw => sw.addEventListener('click', () => {
+        editBlocks[idx].highlightColor = sw.dataset.color || null;
+        renderEditBlocks();
+      }));
     } else if (block.type === 'photo') {
       wrap.className = 'block-photo';
       wrap.innerHTML = `<img src="${block._dataUrl || ''}"><button class="btn-remove-photo" data-idx="${idx}">✕</button>`;
       wrap.querySelector('.btn-remove-photo').onclick = () => { editBlocks.splice(idx, 1); renderEditBlocks(); };
     }
     el.appendChild(wrap);
+    el.appendChild(makeGap(idx + 1)); // 이 블록 바로 다음 자리에 끼워넣기
   });
 }
 
@@ -458,17 +538,55 @@ document.getElementById('btn-insert-text').onclick = () => {
 document.getElementById('btn-insert-photo').onclick = () => {
   const photoCount = editBlocks.filter(b => b.type === 'photo').length;
   if (photoCount >= MAX_PHOTOS) { showToast(`사진은 최대 ${MAX_PHOTOS}장까지예요`); return; }
+  pendingInsertIndex = null;
   document.getElementById('photo-file-input').click();
+};
+
+function formatTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+document.getElementById('btn-insert-schedule').onclick = async () => {
+  showToast('오늘 일정 불러오는 중...');
+  try {
+    const r = await fetch('/api/notion?app=calendar');
+    const d = await r.json();
+    if (!r.ok) { showToast(d.error || '불러오기 실패'); return; }
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todays = (d.items || [])
+      .filter(ev => ev.start && ev.start.slice(0, 10) === todayStr)
+      .sort((a, b) => new Date(a.start) - new Date(b.start));
+
+    if (!todays.length) { showToast('오늘 등록된 일정이 없어요'); return; }
+
+    // 하나로 합쳐진 블록이 아니라, 일정 하나마다 따로 블록으로 넣어야
+    // 나중에 그 사이사이에 사진이나 글을 끼워넣을 수 있어요.
+    todays.forEach(ev => {
+      const start = formatTime(ev.start);
+      const end = ev.end ? formatTime(ev.end) : '';
+      const line = end ? `${start}–${end} ${ev.name}` : `${start} ${ev.name}`;
+      editBlocks.push({ type: 'text', text: line, isSchedule: true });
+    });
+    renderEditBlocks();
+    showToast('오늘 일정을 가져왔어요');
+  } catch (err) {
+    showToast('불러오기 실패');
+  }
 };
 document.getElementById('photo-file-input').addEventListener('change', async (e) => {
   const files = Array.from(e.target.files || []);
   let photoCount = editBlocks.filter(b => b.type === 'photo').length;
+  let insertAt = pendingInsertIndex !== null ? pendingInsertIndex : editBlocks.length;
   for (const file of files) {
     if (photoCount >= MAX_PHOTOS) { showToast(`사진은 최대 ${MAX_PHOTOS}장까지예요`); break; }
     const dataUrl = await fileToDataUrl(file);
-    editBlocks.push({ type: 'photo', photoId: generateId(), _dataUrl: dataUrl, _isNew: true });
+    editBlocks.splice(insertAt, 0, { type: 'photo', photoId: generateId(), _dataUrl: dataUrl, _isNew: true });
+    insertAt++;
     photoCount++;
   }
+  pendingInsertIndex = null;
   renderEditBlocks();
   e.target.value = '';
 });
@@ -502,7 +620,9 @@ document.getElementById('btn-done').onclick = async () => {
         await idbPut('photos', { id: block.photoId, dataUrl: block._dataUrl, notionFileUploadId: null });
       }
     }
-    const cleanContent = editBlocks.map(b => b.type === 'photo' ? { type: 'photo', photoId: b.photoId } : { type: 'text', text: b.text || '' });
+    const cleanContent = editBlocks.map(b => b.type === 'photo'
+      ? { type: 'photo', photoId: b.photoId }
+      : { type: 'text', text: b.text || '', isSchedule: !!b.isSchedule, highlightColor: b.highlightColor || null });
 
     let entry = currentEntry;
     const isNew = !entry;

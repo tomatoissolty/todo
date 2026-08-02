@@ -294,6 +294,19 @@ function galleryFromPage(page) {
 }
 
 
+function calendarFromPage(page) {
+  const p = page.properties || {};
+  const titleText = (prop) => (prop?.title || []).map(t => t.plain_text).join('');
+  return {
+    notionPageId: page.id,
+    name: titleText(p['Name']),
+    start: p['Start']?.date?.start || null,
+    end: p['End']?.date?.start || null,
+    color: p['Color']?.select?.name || null
+  };
+}
+
+
 const APPS = {
   todo: {
     databaseId: () => process.env.NOTION_DATABASE_ID_TODO || process.env.NOTION_DATABASE_ID,
@@ -335,6 +348,12 @@ const APPS = {
     databaseId: () => process.env.NOTION_DATABASE_ID_GALLERY,
     toProperties: null,
     fromPage: galleryFromPage,
+    useCover: false
+  },
+  calendar: {
+    databaseId: () => process.env.NOTION_DATABASE_ID_CALENDAR,
+    toProperties: null, // 읽기 전용 - 일정은 Notion Calendar 앱에서 만듦
+    fromPage: calendarFromPage,
     useCover: false
   }
 };
