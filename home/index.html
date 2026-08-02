@@ -3,98 +3,273 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>부처의 홈</title>
+<title>toisty</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#faf9f7; --ink:#2c2a28; --ink-soft:#8a8580; --line:#eee3da;
-  --blue:#dceeff; --blue-ink:#3a6ea8;
+  --outer-bg:#fdf6e3; --card-bg:#ffffff; --ink:#2c2a28; --ink-soft:#8a8580; --line:#eee3da;
   --purple:#ece3ff; --purple-ink:#6c4fb0;
-  --orange:#ffe4d1; --orange-ink:#b4632a;
-  --green:#ddf5df; --green-ink:#3c8a4c;
   --pink:#ffe0ec; --pink-ink:#b8517d;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',sans-serif;display:flex;flex-direction:column}
-
-header{
-  flex-shrink:0;
-  padding:calc(14px + env(safe-area-inset-top,0px)) 16px 0;
-  background:#fff; border-bottom:1px solid var(--line);
+body{
+  background:var(--outer-bg); color:var(--ink); font-family:'Noto Sans KR',sans-serif;
+  display:flex; align-items:center; justify-content:center; min-height:100vh; padding:16px;
 }
-.brand{text-align:center;font-family:'DM Serif Display',serif;font-size:19px;padding-bottom:10px;letter-spacing:1px}
-nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:12px;-webkit-overflow-scrolling:touch}
-nav::-webkit-scrollbar{display:none}
-.tab{
-  flex-shrink:0; display:flex; align-items:center; gap:6px;
-  padding:9px 14px; border-radius:20px; border:1px solid var(--line);
-  background:#fff; color:var(--ink-soft); font-size:13px; font-weight:500;
-  cursor:pointer; white-space:nowrap; transition:background .15s,color .15s,border-color .15s;
+.shell{
+  width:100%; max-width:1200px; height:calc(100vh - 32px); max-height:800px;
+  background:var(--card-bg); border:1px solid var(--line); border-radius:8px;
+  display:flex; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,.08);
 }
-.tab .dot{width:7px;height:7px;border-radius:50%}
-.tab.blue .dot{background:var(--blue-ink)} .tab.purple .dot{background:var(--purple-ink)}
-.tab.orange .dot{background:var(--orange-ink)} .tab.green .dot{background:var(--green-ink)}
-.tab.pink .dot{background:var(--pink-ink)}
-.tab.active.blue{background:var(--blue);color:var(--blue-ink);border-color:var(--blue)}
-.tab.active.purple{background:var(--purple);color:var(--purple-ink);border-color:var(--purple)}
-.tab.active.orange{background:var(--orange);color:var(--orange-ink);border-color:var(--orange)}
-.tab.active.green{background:var(--green);color:var(--green-ink);border-color:var(--green)}
-.tab.active.pink{background:var(--pink);color:var(--pink-ink);border-color:var(--pink)}
 
-main{flex:1;position:relative;background:#fff}
-.pane{position:absolute;inset:0;display:none}
+/* SIDEBAR */
+.sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto}
+.header-photo-wrap{aspect-ratio:1/1;background:var(--purple);overflow:hidden;position:relative}
+.header-photo-wrap img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.header-photo-wrap:hover img{transform:scale(1.06)}
+nav{display:flex;flex-direction:column}
+.nav-item{
+  display:flex; align-items:center; gap:10px; padding:14px 16px;
+  border-bottom:1px solid var(--line); cursor:pointer; font-size:13px; font-weight:500;
+  background:var(--pink); color:var(--ink-soft); transition:background .15s,color .15s;
+}
+.nav-item .no{font-size:10px;color:var(--ink-soft);opacity:.7}
+.nav-item.active{background:var(--purple);color:var(--purple-ink)}
+.nav-item:hover:not(.active){filter:brightness(.97)}
+
+/* MAIN */
+main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
+.pane{position:absolute;inset:0;display:none;overflow-y:auto}
 .pane.active{display:block}
 .pane iframe{width:100%;height:100%;border:none;display:block}
 .pane .loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:12px}
+
+/* TOISTY (main) PANE */
+.toisty-wrap{padding:28px;max-width:760px;margin:0 auto}
+.toisty-title{font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:20px}
+.main-photo-box{
+  width:100%; aspect-ratio:16/9; background:var(--purple); border:1px solid var(--line);
+  border-radius:6px; overflow:hidden; margin-bottom:24px; cursor:pointer;
+  transition:border-color .2s;
+}
+.main-photo-box:hover{border-color:var(--purple-ink)}
+.main-photo-box img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.main-photo-box:hover img{transform:scale(1.04)}
+.main-photo-box .no-photo{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:12px}
+
+.mini-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mini-card{
+  border:1px solid var(--line); border-radius:6px; padding:16px;
+  transition:border-color .2s, background .2s;
+}
+.mini-card:hover{border-color:var(--purple-ink);background:#fbf9ff}
+.mini-card-title{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px}
+.mini-todo-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px solid var(--line)}
+.mini-todo-item:last-child{border-bottom:none}
+.mini-todo-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.mini-todo-dot.done{background:#8fd19e}
+.mini-todo-dot.undone{background:#f0a5c0}
+.mini-todo-item.done span{text-decoration:line-through;color:var(--ink-soft)}
+.mini-bm-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink);transition:color .15s}
+.mini-bm-item:last-child{border-bottom:none}
+.mini-bm-item:hover{color:var(--purple-ink)}
+.mini-empty{font-size:12px;color:var(--ink-soft);padding:6px 0}
+
+/* GALLERY PANE */
+.gallery-wrap{padding:28px}
+.gallery-title{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:20px}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.gallery-item{aspect-ratio:1/1;overflow:hidden;border-radius:4px;cursor:pointer;background:var(--purple)}
+.gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform .3s,opacity .3s}
+.gallery-item:hover img{transform:scale(1.08);opacity:.9}
+
+.gallery-popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;z-index:500;padding:20px}
+.gallery-popup-overlay.open{opacity:1;pointer-events:all}
+.gallery-popup{max-width:600px;max-height:85vh;display:flex;flex-direction:column;align-items:center}
+.gallery-popup img{max-width:100%;max-height:75vh;object-fit:contain;border-radius:4px}
+.gallery-popup-caption{color:#fff;font-size:13px;margin-top:12px;text-align:center;opacity:.85}
+.gallery-popup-close{position:absolute;top:20px;right:24px;color:#fff;font-size:20px;cursor:pointer;background:none;border:none}
+
+@media(max-width:700px){
+  body{padding:0}
+  .shell{max-height:none;height:100vh;border-radius:0;flex-direction:column}
+  .sidebar{width:100%;flex-direction:row;overflow-x:auto}
+  .header-photo-wrap{display:none}
+  nav{flex-direction:row}
+  .nav-item{border-bottom:none;border-right:1px solid var(--line);white-space:nowrap}
+  .mini-cards{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="brand">부처의 홈</div>
-  <nav id="tabs">
-    <div class="tab blue active" data-app="todo" data-src="/"><span class="dot"></span>TODO</div>
-    <div class="tab purple" data-app="diary" data-src="/diary"><span class="dot"></span>DIARY</div>
-    <div class="tab orange" data-app="movie" data-src="/movie"><span class="dot"></span>MOVIES</div>
-    <div class="tab green" data-app="book" data-src="/book"><span class="dot"></span>BOOKS</div>
-    <div class="tab pink" data-app="bookmark" data-src="/bookmark"><span class="dot"></span>BOOKMARK</div>
-  </nav>
-</header>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="header-photo-wrap" id="headerPhotoWrap"></div>
+    <nav id="navList">
+      <div class="nav-item active" data-app="toisty"><span class="no">#1</span> toisty</div>
+      <div class="nav-item" data-app="todo"><span class="no">#2</span> TODO</div>
+      <div class="nav-item" data-app="diary"><span class="no">#3</span> DIARY</div>
+      <div class="nav-item" data-app="movie"><span class="no">#4</span> MOVIES</div>
+      <div class="nav-item" data-app="book"><span class="no">#5</span> BOOKS</div>
+      <div class="nav-item" data-app="bookmark"><span class="no">#6</span> BOOKMARK</div>
+      <div class="nav-item" data-app="gallery"><span class="no">#7</span> GALLERY</div>
+    </nav>
+  </aside>
+  <main id="main"></main>
+</div>
 
-<main id="main"></main>
+<div class="gallery-popup-overlay" id="galleryPopupOverlay">
+  <button class="gallery-popup-close" id="galleryPopupClose">✕</button>
+  <div class="gallery-popup">
+    <img id="galleryPopupImg" src="">
+    <div class="gallery-popup-caption" id="galleryPopupCaption"></div>
+  </div>
+</div>
 
 <script>
-const tabs = document.querySelectorAll('.tab');
+const navItems = document.querySelectorAll('.nav-item');
 const main = document.getElementById('main');
 const loadedPanes = {};
+const IFRAME_APPS = { todo: '/', diary: '/diary', movie: '/movie', book: '/book', bookmark: '/bookmark' };
 
-function showApp(appKey, src) {
-  tabs.forEach(t => t.classList.toggle('active', t.dataset.app === appKey));
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  // 이미 한 번 연 적 있으면 그 iframe을 그대로 다시 보여줌 (새로고침 안 됨 = 입력하던 내용 유지)
+function showTab(appKey) {
+  navItems.forEach(t => t.classList.toggle('active', t.dataset.app === appKey));
   Object.values(loadedPanes).forEach(p => p.classList.remove('active'));
-  if (loadedPanes[appKey]) {
-    loadedPanes[appKey].classList.add('active');
-    return;
-  }
+
+  if (loadedPanes[appKey]) { loadedPanes[appKey].classList.add('active'); return; }
 
   const pane = document.createElement('div');
   pane.className = 'pane active';
-  pane.innerHTML = `<div class="loading">불러오는 중...</div><iframe src="${src}" title="${appKey}"></iframe>`;
-  main.appendChild(pane);
-  loadedPanes[appKey] = pane;
 
-  const iframe = pane.querySelector('iframe');
-  iframe.addEventListener('load', () => { pane.querySelector('.loading').style.display = 'none'; });
+  if (appKey === 'toisty') {
+    pane.innerHTML = toistyHTML();
+    main.appendChild(pane);
+    loadedPanes[appKey] = pane;
+    loadToistyData(pane);
+  } else if (appKey === 'gallery') {
+    pane.innerHTML = `<div class="gallery-wrap"><div class="gallery-title">GALLERY</div><div class="gallery-grid" id="galleryGrid"><div class="mini-empty">불러오는 중...</div></div></div>`;
+    main.appendChild(pane);
+    loadedPanes[appKey] = pane;
+    loadGallery();
+  } else if (IFRAME_APPS[appKey]) {
+    pane.innerHTML = `<div class="loading">불러오는 중...</div><iframe src="${IFRAME_APPS[appKey]}" title="${appKey}"></iframe>`;
+    main.appendChild(pane);
+    loadedPanes[appKey] = pane;
+    pane.querySelector('iframe').addEventListener('load', () => { pane.querySelector('.loading').style.display = 'none'; });
+  }
 }
 
-tabs.forEach(tab => {
-  tab.addEventListener('click', () => showApp(tab.dataset.app, tab.dataset.src));
-});
+navItems.forEach(item => item.addEventListener('click', () => showTab(item.dataset.app)));
 
-// 첫 화면은 TODO
-showApp('todo', '/');
+/* ════ TOISTY (메인) 화면 ════ */
+function toistyHTML() {
+  return `
+    <div class="toisty-wrap">
+      <div class="toisty-title">toisty</div>
+      <div class="main-photo-box" id="mainPhotoBox"><div class="no-photo">불러오는 중...</div></div>
+      <div class="mini-cards">
+        <div class="mini-card">
+          <div class="mini-card-title">오늘의 할 일</div>
+          <div id="miniTodo"><div class="mini-empty">불러오는 중...</div></div>
+        </div>
+        <div class="mini-card">
+          <div class="mini-card-title">북마크</div>
+          <div id="miniBookmark"><div class="mini-empty">불러오는 중...</div></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function loadToistyData(pane) {
+  // 프로필(메인 사진)
+  try {
+    const r = await fetch('/api/notion?app=profile');
+    const d = await r.json();
+    const p = (d.items || [])[0];
+    const box = pane.querySelector('#mainPhotoBox');
+    if (p && p.mainImage) {
+      const posMap = { Top: 'center top', Center: 'center center', Bottom: 'center bottom' };
+      box.innerHTML = `<img src="${p.mainImage}" style="object-position:${posMap[p.imagePosition] || 'center center'}">`;
+    } else {
+      box.innerHTML = `<div class="no-photo">노션 프로필 DB에 Main Image를 올려주세요</div>`;
+    }
+  } catch (err) { console.warn('프로필 로드 실패:', err.message); }
+
+  // 오늘의 할 일
+  try {
+    const r = await fetch('/api/notion?app=todo');
+    const d = await r.json();
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todays = (d.items || []).filter(t => t.date === todayStr);
+    const el = pane.querySelector('#miniTodo');
+    if (!todays.length) { el.innerHTML = `<div class="mini-empty">오늘 등록된 항목이 없어요</div>`; }
+    else {
+      el.innerHTML = todays.slice(0, 6).map(t => `
+        <div class="mini-todo-item ${t.completed ? 'done' : ''}">
+          <span class="mini-todo-dot ${t.completed ? 'done' : 'undone'}"></span>
+          <span>${esc(t.name)}</span>
+        </div>`).join('');
+    }
+  } catch (err) { pane.querySelector('#miniTodo').innerHTML = `<div class="mini-empty">불러오기 실패</div>`; }
+
+  // 북마크 상위 4개
+  try {
+    const r = await fetch('/api/notion?app=bookmark');
+    const d = await r.json();
+    const top4 = (d.items || []).sort((a, b) => new Date(b.createdTime || 0) - new Date(a.createdTime || 0)).slice(0, 4);
+    const el = pane.querySelector('#miniBookmark');
+    if (!top4.length) { el.innerHTML = `<div class="mini-empty">북마크가 없어요</div>`; }
+    else {
+      el.innerHTML = top4.map(b => `<a class="mini-bm-item" href="${b.url}" target="_blank">→ ${esc(b.name)}</a>`).join('');
+    }
+  } catch (err) { pane.querySelector('#miniBookmark').innerHTML = `<div class="mini-empty">불러오기 실패</div>`; }
+}
+
+/* ════ GALLERY ════ */
+async function loadGallery() {
+  const grid = document.getElementById('galleryGrid');
+  try {
+    const r = await fetch('/api/notion?app=gallery');
+    const d = await r.json();
+    const items = (d.items || []).filter(g => g.photo);
+    if (!items.length) { grid.innerHTML = `<div class="mini-empty">아직 사진이 없어요. 노션 갤러리 DB에 글을 추가해보세요</div>`; return; }
+    grid.innerHTML = '';
+    items.forEach(g => {
+      const div = document.createElement('div');
+      div.className = 'gallery-item';
+      div.innerHTML = `<img src="${g.photo}" loading="lazy">`;
+      div.addEventListener('click', () => openGalleryPopup(g));
+      grid.appendChild(div);
+    });
+  } catch (err) { grid.innerHTML = `<div class="mini-empty">불러오기 실패</div>`; }
+}
+function openGalleryPopup(g) {
+  document.getElementById('galleryPopupImg').src = g.photo;
+  document.getElementById('galleryPopupCaption').textContent = g.caption || '';
+  document.getElementById('galleryPopupOverlay').classList.add('open');
+}
+document.getElementById('galleryPopupClose').addEventListener('click', () => document.getElementById('galleryPopupOverlay').classList.remove('open'));
+document.getElementById('galleryPopupOverlay').addEventListener('click', (e) => { if (e.target.id === 'galleryPopupOverlay') e.currentTarget.classList.remove('open'); });
+
+/* ════ 헤더(메뉴 위) 사진 ════ */
+async function loadHeaderPhoto() {
+  try {
+    const r = await fetch('/api/notion?app=profile');
+    const d = await r.json();
+    const p = (d.items || [])[0];
+    const wrap = document.getElementById('headerPhotoWrap');
+    if (p && p.headerImage) wrap.innerHTML = `<img src="${p.headerImage}">`;
+  } catch (err) { console.warn('헤더 사진 로드 실패:', err.message); }
+}
+
+/* ════ INIT ════ */
+loadHeaderPhoto();
+showTab('toisty');
 </script>
 </body>
 </html>

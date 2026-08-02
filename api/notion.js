@@ -268,6 +268,30 @@ function bookmarkFromPage(page) {
 }
 
 
+// --- Profile(홈 프로필 - 딱 한 개 글만 씀) / Gallery(홈 갤러리) 매핑 — 둘 다 pull(읽기) 전용 ---
+function profileFromPage(page) {
+  const p = page.properties || {};
+  const fileUrl = (prop) => { const f = (prop?.files || [])[0]; if (!f) return null; return (f.file && f.file.url) || (f.external && f.external.url) || null; };
+  return {
+    notionPageId: page.id,
+    headerImage: fileUrl(p['Header Image']),
+    mainImage: fileUrl(p['Main Image']),
+    imagePosition: p['Image Position']?.select?.name || 'Center'
+  };
+}
+function galleryFromPage(page) {
+  const p = page.properties || {};
+  const richText = (prop) => (prop?.rich_text || []).map(t => t.plain_text).join('');
+  const fileUrl = (prop) => { const f = (prop?.files || [])[0]; if (!f) return null; return (f.file && f.file.url) || (f.external && f.external.url) || null; };
+  return {
+    notionPageId: page.id,
+    photo: fileUrl(p['Photo']),
+    caption: richText(p['Caption']),
+    createdTime: page.created_time || null
+  };
+}
+
+
 const APPS = {
   todo: {
     databaseId: () => process.env.NOTION_DATABASE_ID_TODO || process.env.NOTION_DATABASE_ID,
@@ -297,6 +321,18 @@ const APPS = {
     databaseId: () => process.env.NOTION_DATABASE_ID_BOOKMARK,
     toProperties: bookmarkToProperties,
     fromPage: bookmarkFromPage, // 북마크는 노션이 원본이라 목록을 항상 pull(GET)로 가져와요
+    useCover: false
+  },
+  profile: {
+    databaseId: () => process.env.NOTION_DATABASE_ID_PROFILE,
+    toProperties: null, // 읽기 전용 - 앱에서 글을 만들거나 고치지 않음
+    fromPage: profileFromPage,
+    useCover: false
+  },
+  gallery: {
+    databaseId: () => process.env.NOTION_DATABASE_ID_GALLERY,
+    toProperties: null,
+    fromPage: galleryFromPage,
     useCover: false
   }
 };
