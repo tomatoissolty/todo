@@ -119,7 +119,9 @@ main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
 .theme-trigger{
   position:absolute; bottom:10px; right:10px; width:10px; height:10px; border-radius:50%;
   background:var(--ink-soft); opacity:.18; cursor:pointer; z-index:50; transition:opacity .2s;
+  display:none;
 }
+.theme-trigger.visible{display:block}
 .theme-trigger:hover{opacity:.6}
 .theme-panel{
   position:absolute; bottom:26px; right:10px; background:var(--card-bg); border:1px solid var(--line);
@@ -179,6 +181,10 @@ function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt
 function showTab(appKey) {
   navItems.forEach(t => t.classList.toggle('active', t.dataset.app === appKey));
   Object.values(loadedPanes).forEach(p => p.classList.remove('active'));
+
+  const themeTrigger = document.getElementById('themeTrigger');
+  themeTrigger.classList.toggle('visible', appKey === 'toisty' || appKey === 'gallery');
+  if (appKey !== 'toisty' && appKey !== 'gallery') document.getElementById('themePanel').classList.remove('open');
 
   if (appKey === 'toisty') loadRandomSidebarPhoto(); // 홈으로 돌아올 때마다 무작위로 새로 뽑음
 
@@ -330,22 +336,22 @@ async function loadRandomSidebarPhoto() {
 
 /* ════ 테마 색상 ════ */
 const PALETTES = [
-  { name: '기본', outerBg: '#FDF6E3', menuInactiveBg: '#FFE0EC', menuActiveBg: '#ECE3FF', menuActiveText: '#E0FFF3' },
-  { name: 'A', outerBg: '#E9F5A9', menuInactiveBg: '#507255', menuActiveBg: '#C8E6A5', menuActiveText: '#72506D' },
-  { name: 'B', outerBg: '#fefae0', menuInactiveBg: '#ffcad4', menuActiveBg: '#f4acb7', menuActiveText: '#ACF4E9' },
-  { name: 'C', outerBg: '#bad7f2', menuInactiveBg: '#f2bac9', menuActiveBg: '#f2e2ba', menuActiveText: '#F2D5BA' },
-  { name: '하늘1', outerBg: '#EAF6FB', menuInactiveBg: '#CFE9F5', menuActiveBg: '#5BB8DB', menuActiveText: '#DB7E5B' },
-  { name: '하늘2', outerBg: '#EEF5F9', menuInactiveBg: '#D6E8F0', menuActiveBg: '#89B4D4', menuActiveText: '#D4A989' },
-  { name: '하늘3', outerBg: '#E6F7FB', menuInactiveBg: '#BFE6F2', menuActiveBg: '#3AA6C9', menuActiveText: '#C95D3A' },
-  { name: '초록1', outerBg: '#EEFAF3', menuInactiveBg: '#D3F0E0', menuActiveBg: '#5BC990', menuActiveText: '#C95B94' },
-  { name: '초록2', outerBg: '#F2F5EE', menuInactiveBg: '#DBE5CF', menuActiveBg: '#8FAE6F', menuActiveText: '#8E6FAE' },
-  { name: '초록3', outerBg: '#EEF7EE', menuInactiveBg: '#CFE8CF', menuActiveBg: '#6FAE6F', menuActiveText: '#AE6FAE' },
-  { name: '새1', outerBg: '#EFBDBD', menuInactiveBg: '#A2739E', menuActiveBg: '#7C6699', menuActiveText: '#839966' },
-  { name: '새2', outerBg: '#7C86A3', menuInactiveBg: '#D8AC70', menuActiveBg: '#E1CB8E', menuActiveText: '#A3997C' },
-  { name: '새3', outerBg: '#6B4770', menuInactiveBg: '#F0E8B8', menuActiveBg: '#ACCFA3', menuActiveText: '#4C7047' },
-  { name: '새4', outerBg: '#F0BBDA', menuInactiveBg: '#D5E9F4', menuActiveBg: '#E3F6DE', menuActiveText: '#BBF0D1' },
-  { name: '새5', outerBg: '#586386', menuInactiveBg: '#C2C6F1', menuActiveBg: '#FEF5DB', menuActiveText: '#867B58' },
-  { name: '새6', outerBg: '#B0B0CD', menuInactiveBg: '#CDDADF', menuActiveBg: '#DEE6D7', menuActiveText: '#CDCDB0' }
+  { name: '기본', outerBg: '#FDF6E3', menuInactiveBg: '#FFE0EC', menuActiveBg: '#ECE3FF', menuActiveText: '#B8BFAA' },
+  { name: 'A', outerBg: '#E9F5A9', menuInactiveBg: '#507255', menuActiveBg: '#C8E6A5', menuActiveText: '#927CAC' },
+  { name: 'B', outerBg: '#fefae0', menuInactiveBg: '#ffcad4', menuActiveBg: '#f4acb7', menuActiveText: '#81B7AF' },
+  { name: 'C', outerBg: '#bad7f2', menuInactiveBg: '#f2bac9', menuActiveBg: '#f2e2ba', menuActiveText: '#8C98B6' },
+  { name: '하늘1', outerBg: '#EAF6FB', menuInactiveBg: '#CFE9F5', menuActiveBg: '#5BB8DB', menuActiveText: '#A45E44' },
+  { name: '하늘2', outerBg: '#EEF5F9', menuInactiveBg: '#D6E8F0', menuActiveBg: '#89B4D4', menuActiveText: '#9F7F67' },
+  { name: '하늘3', outerBg: '#E6F7FB', menuInactiveBg: '#BFE6F2', menuActiveBg: '#3AA6C9', menuActiveText: '#97462C' },
+  { name: '초록1', outerBg: '#EEFAF3', menuInactiveBg: '#D3F0E0', menuActiveBg: '#5BC990', menuActiveText: '#97446F' },
+  { name: '초록2', outerBg: '#F2F5EE', menuInactiveBg: '#DBE5CF', menuActiveBg: '#8FAE6F', menuActiveText: '#6A5382' },
+  { name: '초록3', outerBg: '#EEF7EE', menuInactiveBg: '#CFE8CF', menuActiveBg: '#6FAE6F', menuActiveText: '#825382' },
+  { name: '새1', outerBg: '#EFBDBD', menuInactiveBg: '#A2739E', menuActiveBg: '#7C6699', menuActiveText: '#62734C' },
+  { name: '새2', outerBg: '#7C86A3', menuInactiveBg: '#D8AC70', menuActiveBg: '#E1CB8E', menuActiveText: '#6A7BA9' },
+  { name: '새3', outerBg: '#6B4770', menuInactiveBg: '#F0E8B8', menuActiveBg: '#ACCFA3', menuActiveText: '#947A9B' },
+  { name: '새4', outerBg: '#F0BBDA', menuInactiveBg: '#D5E9F4', menuActiveBg: '#E3F6DE', menuActiveText: '#B5A6B8' },
+  { name: '새5', outerBg: '#586386', menuInactiveBg: '#C2C6F1', menuActiveBg: '#FEF5DB', menuActiveText: '#A4ABBE' },
+  { name: '새6', outerBg: '#B0B0CD', menuInactiveBg: '#CDDADF', menuActiveBg: '#DEE6D7', menuActiveText: '#A7A1AC' }
 ];
 const PALETTE_KEY = 'toisty_palette';
 
