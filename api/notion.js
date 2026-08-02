@@ -281,6 +281,21 @@ function profileFromPage(page) {
     imagePosition: p['Image Position']?.select?.name || 'Center'
   };
 }
+// 페이지 본문(블록)을 훑어서 제일 처음 나오는 이미지 블록의 URL을 찾아줌
+async function fetchFirstImageBlockUrl(pageId) {
+  const r = await fetch(`https://api.notion.com/v1/blocks/${pageId}/children?page_size=20`, { headers: notionHeaders() });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.message || '본문 조회 실패');
+  for (const block of data.results || []) {
+    if (block.type === 'image') {
+      const img = block.image || {};
+      const url = (img.file && img.file.url) || (img.external && img.external.url) || null;
+      if (url) return url;
+    }
+  }
+  return null;
+}
+
 function galleryFromPage(page) {
   const p = page.properties || {};
   const richText = (prop) => (prop?.rich_text || []).map(t => t.plain_text).join('');
@@ -438,6 +453,18 @@ module.exports = async (req, res) => {
         items = items.concat((data.results || []).map(appConfig.fromPage));
         cursor = data.has_more ? data.next_cursor : undefined;
       } while (cursor);
+
+      // 갤러리는 사진을 페이지 본문에 드래그해서 넣는 경우가 많아서(Photo 속성이 아니라),
+      // Photo 속성이 비어있으면 본문의 첫 이미지 블록에서 대신 가져와요.
+      if (appKey === 'gallery') {
+        for (const item of items) {
+          if (!item.photo && item.notionPageId) {
+            try { item.photo = await fetchFirstImageBlockUrl(item.notionPageId); }
+            catch (e) { /* 본문에도 이미지가 없으면 그냥 넘어감 */ }
+          }
+        }
+      }
+
       res.status(200).json({ items });
       return;
     }

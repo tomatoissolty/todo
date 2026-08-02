@@ -49,6 +49,12 @@ function loginPage(error) {
 }
 
 export default async function middleware(request) {
+  const url = new URL(request.url);
+
+  // 단축어(Shortcuts) 전용 통로는 사이트 비밀번호 화면을 안 거치고 바로 통과 —
+  // 대신 그 안에서 자체 비밀키(SHORTCUT_SECRET)로 따로 확인해요.
+  if (url.pathname === '/api/quick-bookmark') return;
+
   const SITE_PASSWORD = process.env.SITE_PASSWORD;
 
   // 비밀번호가 아직 설정 안 됐으면(설정 전 실수로 잠기는 걸 막기 위해) 그냥 통과시켜요.
@@ -60,8 +66,6 @@ export default async function middleware(request) {
   if (match && match[1] === expected) {
     return; // 인증된 방문자 — 그대로 통과
   }
-
-  const url = new URL(request.url);
 
   // 로그인 폼 제출 처리
   if (request.method === 'POST' && url.pathname === '/__auth') {
