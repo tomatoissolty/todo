@@ -556,7 +556,9 @@ document.getElementById('btn-insert-schedule').onclick = async () => {
     if (!r.ok) { showToast(d.error || '불러오기 실패'); return; }
 
     const now = new Date();
-    const todayStr = now.toISOString().slice(0, 10);
+    // toISOString()은 UTC 기준이라 한국 시간 기준 "오늘"과 어긋날 수 있어요(특히 자정~오전 9시 사이).
+    // 로컬 날짜 그대로 조합해서 진짜 "오늘"을 구해요.
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     // 같은 날 여러 번(또는 수정하면서 또) 불러올 때, 이전에 이미 불러온 데까지는 건너뛰기 위한 커서.
     // 날짜별로 저장해서, 몇 번째 일기든 그날 안에서는 이어서 불러와져요.
     const cutoffKey = 'diary_schedule_cutoff_' + todayStr;
