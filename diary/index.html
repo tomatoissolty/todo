@@ -6,6 +6,7 @@
 <title>✩°｡⋆ diary ⋆｡°✩</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 6' shape-rendering='crispEdges'%3E%3Crect x='1' y='0' width='2' height='1' fill='%23ff6fa8'/%3E%3Crect x='4' y='0' width='2' height='1' fill='%23ff6fa8'/%3E%3Crect x='0' y='1' width='7' height='2' fill='%23ff6fa8'/%3E%3Crect x='1' y='3' width='5' height='1' fill='%23ff6fa8'/%3E%3Crect x='2' y='4' width='3' height='1' fill='%23ff6fa8'/%3E%3Crect x='3' y='5' width='1' height='1' fill='%23ff6fa8'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500&family=Noto+Serif+KR:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/MonadABXY/mona-font/web/mona.css">
 <style>
 :root{
@@ -19,6 +20,8 @@
   --font: 'Mona12', sans-serif;
   --pixel-clip-6: polygon(6px 0,calc(100% - 6px) 0,calc(100% - 6px) 6px,100% 6px,100% calc(100% - 6px),calc(100% - 6px) calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,6px calc(100% - 6px),0 calc(100% - 6px),0 6px,6px 6px);
   --pixel-clip-4: polygon(4px 0,calc(100% - 4px) 0,calc(100% - 4px) 4px,100% 4px,100% calc(100% - 4px),calc(100% - 4px) calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 4px),0 calc(100% - 4px),0 4px,4px 4px);
+  --schedule-font: 'Mona12', sans-serif;
+  --schedule-font-size: 10px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{
@@ -66,7 +69,7 @@ button,input,textarea{font-family:var(--font)}
 .view-month{font-size:8px;letter-spacing:1px;margin-top:3px}
 .view-title{font-size:15px;display:flex;align-items:center;gap:6px}
 .view-block-text{font-size:13px;line-height:1.85;white-space:pre-wrap;margin-bottom:12px;border-radius:6px;transition:background .15s}
-.view-block-text.schedule{font-size:9.1px;line-height:1.7}
+.view-block-text.schedule{font-family:var(--schedule-font);font-size:var(--schedule-font-size);line-height:1.7}
 .view-block-text[style*="background"]{padding:4px 8px}
 .view-block-photo{width:100%;display:block;margin-bottom:12px}
 .view-actions{display:flex;gap:8px;margin-top:16px}
@@ -87,20 +90,18 @@ button,input,textarea{font-family:var(--font)}
 
 .blocks{display:flex;flex-direction:column;gap:3px;margin:14px 0}
 .block-text{position:relative}
-.block-text textarea{width:100%;border:2.5px solid var(--border);border-radius:14px;padding:10px 60px 10px 12px;font-size:14px;line-height:1.7;resize:none;outline:none;min-height:56px;background:var(--card)}
-.block-text.schedule textarea{font-size:10px;min-height:34px;line-height:1.6}
-.btn-highlight{position:absolute;top:6px;right:34px;width:22px;height:22px;border-radius:50%;background:var(--card);border:1.5px solid var(--border);cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center}
-.highlight-swatches{position:absolute;top:32px;right:6px;background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:6px;display:none;gap:5px;z-index:20;box-shadow:0 6px 16px rgba(0,0,0,.12)}
-.highlight-swatches.open{display:flex}
-.highlight-swatches .hs{width:20px;height:20px;border-radius:6px;cursor:pointer;border:1.5px solid var(--border)}
-.highlight-swatches .hs.none{background:#fff;position:relative}
-.highlight-swatches .hs.none::after{content:'✕';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink-soft)}
+.block-text textarea{width:100%;border:2.5px solid var(--border);border-radius:14px;padding:10px 34px 10px 12px;font-size:14px;line-height:1.7;resize:none;outline:none;min-height:56px;background:var(--card)}
+.block-text.schedule textarea{min-height:34px;line-height:1.6;font-family:var(--schedule-font);font-size:var(--schedule-font-size)}
 .block-text textarea:focus{border-color:var(--blue-deep)}
 .block-text .btn-remove-text{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--card);border:2px solid var(--ink);cursor:pointer;font-size:10px;color:var(--ink)}
 .block-photo{position:relative;display:inline-block}
 .block-photo img{width:100%;border-radius:14px;border:2.5px solid var(--border);display:block}
 .block-photo .btn-remove-photo{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:#fff;border:2px solid var(--ink);cursor:pointer;font-size:11px}
 .insert-row{display:flex;gap:6px;justify-content:center}
+.schedule-font-panel{display:none;gap:12px;justify-content:center;align-items:center;margin-top:8px;font-size:11px;color:var(--ink-soft)}
+.schedule-font-panel.open{display:flex}
+.schedule-font-panel select,.schedule-font-panel input{font-family:var(--font);font-size:11px;border:1.5px solid var(--border);border-radius:6px;padding:3px 5px;background:var(--card);color:var(--ink)}
+.schedule-font-panel input{width:44px}
 .block-gap{display:flex;gap:4px;justify-content:center;padding:1px 0;opacity:.35;transition:opacity .15s}
 .block-gap:hover{opacity:1}
 .block-gap button{background:var(--card);border:1.5px dashed var(--ink-soft);border-radius:8px;padding:2px 8px;font-size:10px;cursor:pointer;color:var(--ink-soft)}
@@ -176,6 +177,20 @@ button,input,textarea{font-family:var(--font)}
       <button class="btn-insert" id="btn-insert-text">+ 글 추가</button>
       <button class="btn-insert" id="btn-insert-photo">+ 사진 추가</button>
       <button class="btn-insert" id="btn-insert-schedule">🗓️ 오늘 일정 불러오기</button>
+      <button class="btn-insert" id="btn-schedule-font-settings" title="일정 폰트 설정">Aa</button>
+    </div>
+    <div class="schedule-font-panel" id="scheduleFontPanel">
+      <label>폰트
+        <select id="scheduleFontSelect">
+          <option value="'Mona12', sans-serif">Mona12(기본)</option>
+          <option value="'Noto Sans KR', sans-serif">고딕(산세리프)</option>
+          <option value="'Noto Serif KR', serif">명조(세리프)</option>
+          <option value="monospace">고정폭</option>
+        </select>
+      </label>
+      <label>크기
+        <input type="number" id="scheduleFontSizeInput" min="6" max="20" step="1">px
+      </label>
     </div>
     <input type="file" id="photo-file-input" accept="image/*" multiple style="display:none">
 
@@ -207,29 +222,6 @@ const MAX_LIST_THUMBS = 3;
 const CUTE_PLACEHOLDERS = ['🌟','💫','🌠','✨','🍨','🍮','🥞','🍃'];
 
 /* ═══════════ PIXEL ART DECORATIONS ═══════════ */
-/* ═══════════ 홈(toisty) 테마 팔레트 — 하이라이트 색 고를 때 씀. 이름은 저장된 선택값과 매칭용, 홈 화면 것과 같은 목록이에요. ═══════════ */
-const HOME_PALETTES = [
-  { name: '기본', outerBg: '#FDF6E3', menuInactiveBg: '#FFE0EC', menuActiveBg: '#ECE3FF' },
-  { name: 'A', outerBg: '#E9F5A9', menuInactiveBg: '#507255', menuActiveBg: '#C8E6A5' },
-  { name: 'B', outerBg: '#fefae0', menuInactiveBg: '#ffcad4', menuActiveBg: '#f4acb7' },
-  { name: 'C', outerBg: '#bad7f2', menuInactiveBg: '#f2bac9', menuActiveBg: '#f2e2ba' },
-  { name: '하늘1', outerBg: '#EAF6FB', menuInactiveBg: '#CFE9F5', menuActiveBg: '#5BB8DB' },
-  { name: '하늘2', outerBg: '#EEF5F9', menuInactiveBg: '#D6E8F0', menuActiveBg: '#89B4D4' },
-  { name: '하늘3', outerBg: '#E6F7FB', menuInactiveBg: '#BFE6F2', menuActiveBg: '#3AA6C9' },
-  { name: '초록1', outerBg: '#EEFAF3', menuInactiveBg: '#D3F0E0', menuActiveBg: '#5BC990' },
-  { name: '초록2', outerBg: '#F2F5EE', menuInactiveBg: '#DBE5CF', menuActiveBg: '#8FAE6F' },
-  { name: '초록3', outerBg: '#EEF7EE', menuInactiveBg: '#CFE8CF', menuActiveBg: '#6FAE6F' },
-  { name: '새1', outerBg: '#EFBDBD', menuInactiveBg: '#A2739E', menuActiveBg: '#7C6699' },
-  { name: '새2', outerBg: '#7C86A3', menuInactiveBg: '#D8AC70', menuActiveBg: '#E1CB8E' },
-  { name: '새3', outerBg: '#6B4770', menuInactiveBg: '#F0E8B8', menuActiveBg: '#ACCFA3' },
-  { name: '새4', outerBg: '#F0BBDA', menuInactiveBg: '#D5E9F4', menuActiveBg: '#E3F6DE' },
-  { name: '새5', outerBg: '#586386', menuInactiveBg: '#C2C6F1', menuActiveBg: '#FEF5DB' },
-  { name: '새6', outerBg: '#B0B0CD', menuInactiveBg: '#CDDADF', menuActiveBg: '#DEE6D7' }
-];
-function getCurrentHomePalette() {
-  const savedName = localStorage.getItem('toisty_palette');
-  return HOME_PALETTES.find(p => p.name === savedName) || HOME_PALETTES[0];
-}
 
 const PIXEL_GRIDS = {
   heart:  ['.11.11.','1111111','1111111','.11111.','..111..','...1...'],
@@ -446,7 +438,6 @@ async function showViewScreen(entry) {
       const p = document.createElement('div');
       p.className = 'view-block-text' + (block.isSchedule ? ' schedule' : '');
       p.textContent = block.text;
-      if (block.highlightColor) p.style.background = block.highlightColor;
       body.appendChild(p);
     } else if (block.type === 'photo') {
       const photo = await idbGet('photos', block.photoId);
@@ -498,29 +489,11 @@ function renderEditBlocks() {
     const wrap = document.createElement('div');
     if (block.type === 'text') {
       wrap.className = 'block-text' + (block.isSchedule ? ' schedule' : '');
-      wrap.style.position = 'relative';
-      const palette = getCurrentHomePalette();
-      const swatchColors = [palette.outerBg, palette.menuInactiveBg, palette.menuActiveBg];
       wrap.innerHTML = `
         <textarea placeholder="이어서 적어보세요...">${escapeHtml(block.text)}</textarea>
-        <button class="btn-highlight" data-idx="${idx}" title="하이라이트">✎</button>
-        <button class="btn-remove-text" data-idx="${idx}">✕</button>
-        <div class="highlight-swatches" id="hs-${idx}">
-          <div class="hs none" data-color=""></div>
-          ${swatchColors.map(c => `<div class="hs" data-color="${c}" style="background:${c}"></div>`).join('')}
-        </div>`;
-      if (block.highlightColor) wrap.querySelector('textarea').style.background = block.highlightColor;
+        <button class="btn-remove-text" data-idx="${idx}">✕</button>`;
       wrap.querySelector('textarea').addEventListener('input', (e) => { editBlocks[idx].text = e.target.value; });
       wrap.querySelector('.btn-remove-text').onclick = () => { editBlocks.splice(idx, 1); renderEditBlocks(); };
-      wrap.querySelector('.btn-highlight').onclick = (e) => {
-        e.stopPropagation();
-        document.querySelectorAll('.highlight-swatches.open').forEach(s => { if (s.id !== `hs-${idx}`) s.classList.remove('open'); });
-        wrap.querySelector('.highlight-swatches').classList.toggle('open');
-      };
-      wrap.querySelectorAll('.hs').forEach(sw => sw.addEventListener('click', () => {
-        editBlocks[idx].highlightColor = sw.dataset.color || null;
-        renderEditBlocks();
-      }));
     } else if (block.type === 'photo') {
       wrap.className = 'block-photo';
       wrap.innerHTML = `<img src="${block._dataUrl || ''}"><button class="btn-remove-photo" data-idx="${idx}">✕</button>`;
@@ -547,6 +520,30 @@ function formatTime(iso) {
   const d = new Date(iso);
   return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
+
+/* ═══════════ 일정 폰트 설정 (종류/크기 따로 저장) ═══════════ */
+function applyScheduleFontSettings() {
+  const fam = localStorage.getItem('diary_schedule_font') || "'Mona12', sans-serif";
+  const size = localStorage.getItem('diary_schedule_font_size') || '10';
+  document.documentElement.style.setProperty('--schedule-font', fam);
+  document.documentElement.style.setProperty('--schedule-font-size', size + 'px');
+  document.getElementById('scheduleFontSelect').value = fam;
+  document.getElementById('scheduleFontSizeInput').value = size;
+}
+document.getElementById('btn-schedule-font-settings').onclick = () => {
+  document.getElementById('scheduleFontPanel').classList.toggle('open');
+};
+document.getElementById('scheduleFontSelect').addEventListener('change', (e) => {
+  localStorage.setItem('diary_schedule_font', e.target.value);
+  applyScheduleFontSettings();
+});
+document.getElementById('scheduleFontSizeInput').addEventListener('input', (e) => {
+  const v = parseInt(e.target.value, 10);
+  if (!v) return;
+  localStorage.setItem('diary_schedule_font_size', v);
+  applyScheduleFontSettings();
+});
+applyScheduleFontSettings();
 
 document.getElementById('btn-insert-schedule').onclick = async () => {
   showToast('오늘 일정 불러오는 중...');
@@ -634,7 +631,7 @@ document.getElementById('btn-done').onclick = async () => {
     }
     const cleanContent = editBlocks.map(b => b.type === 'photo'
       ? { type: 'photo', photoId: b.photoId }
-      : { type: 'text', text: b.text || '', isSchedule: !!b.isSchedule, highlightColor: b.highlightColor || null });
+      : { type: 'text', text: b.text || '', isSchedule: !!b.isSchedule });
 
     let entry = currentEntry;
     const isNew = !entry;

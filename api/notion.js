@@ -300,9 +300,8 @@ function calendarFromPage(page) {
   return {
     notionPageId: page.id,
     name: titleText(p['Name']),
-    start: p['Start']?.date?.start || null,
-    end: p['End']?.date?.start || null,
-    color: p['Color']?.select?.name || null
+    start: p['Date']?.date?.start || null,
+    end: p['Date']?.date?.end || null
   };
 }
 
