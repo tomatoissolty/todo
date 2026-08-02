@@ -46,6 +46,9 @@ nav{display:flex;flex-direction:column}
 .nav-item .no{font-size:10px;color:var(--ink-soft);opacity:.7}
 .nav-item.active{background:var(--purple);color:var(--purple-ink)}
 .nav-item:hover:not(.active){filter:brightness(.97)}
+.sidebar-random-photo{flex:1;min-height:120px;overflow:hidden;position:relative;background:var(--pink)}
+.sidebar-random-photo img{width:100%;height:100%;object-fit:cover;transition:transform .4s,opacity .4s}
+.sidebar-random-photo:hover img{transform:scale(1.06)}
 
 /* MAIN */
 main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
@@ -125,6 +128,7 @@ main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
       <div class="nav-item" data-app="bookmark"><span class="no">#6</span> BOOKMARK</div>
       <div class="nav-item" data-app="gallery"><span class="no">#7</span> GALLERY</div>
     </nav>
+    <div class="sidebar-random-photo" id="sidebarRandomPhoto"></div>
   </aside>
   <main id="main"></main>
 </div>
@@ -148,6 +152,8 @@ function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt
 function showTab(appKey) {
   navItems.forEach(t => t.classList.toggle('active', t.dataset.app === appKey));
   Object.values(loadedPanes).forEach(p => p.classList.remove('active'));
+
+  if (appKey === 'toisty') loadRandomSidebarPhoto(); // 홈으로 돌아올 때마다 무작위로 새로 뽑음
 
   if (loadedPanes[appKey]) { loadedPanes[appKey].classList.add('active'); return; }
 
@@ -276,6 +282,23 @@ async function loadHeaderPhoto() {
     const wrap = document.getElementById('headerPhotoWrap');
     if (p && p.headerImage) wrap.innerHTML = `<img src="${p.headerImage}">`;
   } catch (err) { console.warn('헤더 사진 로드 실패:', err.message); }
+}
+
+/* ════ 사이드바 하단 무작위 갤러리 사진 ════ */
+let galleryPhotoCache = null;
+async function loadRandomSidebarPhoto() {
+  const box = document.getElementById('sidebarRandomPhoto');
+  if (!box) return;
+  try {
+    if (!galleryPhotoCache) {
+      const r = await fetch('/api/notion?app=gallery');
+      const d = await r.json();
+      galleryPhotoCache = (d.items || []).filter(g => g.photo);
+    }
+    if (!galleryPhotoCache.length) { box.innerHTML = ''; return; }
+    const pick = galleryPhotoCache[Math.floor(Math.random() * galleryPhotoCache.length)];
+    box.innerHTML = `<img src="${pick.photo}">`;
+  } catch (err) { console.warn('사이드바 사진 로드 실패:', err.message); }
 }
 
 /* ════ INIT ════ */

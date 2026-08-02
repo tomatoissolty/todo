@@ -574,14 +574,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const openModal = id => { document.querySelectorAll('.modal-content').forEach(m => m.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); modalOverlay.classList.remove('hidden'); closeDrawer(); };
   const closeModal = () => modalOverlay.classList.add('hidden');
 
-  // --- APP TITLE (fix: was never saved before) ---
-  titleInput.addEventListener('blur', () => {
-    const val = titleInput.value.trim() || 'Daily';
-    titleInput.value = val;
-    appSettings.title = val;
-    saveSettings();
-  });
-  titleInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') titleInput.blur(); });
+  // --- APP TITLE: 이제 직접 수정 안 되고, 누르면 동기화가 실행됨. 이름 수정은 햄버거 메뉴로 옮김 ---
+  titleInput.addEventListener('click', () => { syncWithNotion(); });
 
   // Input Handlers
   document.body.addEventListener('submit', (e) => {
@@ -1111,6 +1105,14 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   document.getElementById('menu-notion-sync').addEventListener('click', syncWithNotion);
+  document.getElementById('menu-edit-title').addEventListener('click', () => {
+    const val = prompt('타이틀을 입력하세요', appSettings.title);
+    if (val === null) return;
+    const trimmed = val.trim() || 'Daily';
+    titleInput.value = trimmed;
+    appSettings.title = trimmed;
+    saveSettings();
+  });
 
   // 버튼 없이도 자동으로 동기화되도록: 30초마다 노션 쪽 변경사항을 조용히 가져와요.
   // (앱에서 뭔가 바뀔 때는 각 동작이 바로바로 autoPushItem/autoDeleteItem을 호출해서 올려요.)

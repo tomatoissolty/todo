@@ -385,15 +385,24 @@ function del(id) {
 async function renderBackCanvasBook(rec) {
   const cap = document.getElementById('capWrap');
   cap.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+  const fillColor = '#f5a623', emptyColor = '#e4e7eb';
+  let capStars = '';
+  const rt = rec.rating || 0;
+  for (let i = 1; i <= 5; i++) {
+    if (i <= rt) capStars += `<span style="position:relative;display:inline-block;color:${emptyColor};font-size:16px;"><span style="position:absolute;top:0;left:0;width:100%;overflow:hidden;color:${fillColor};">★</span>☆</span>`;
+    else if (i - 0.5 === rt) capStars += `<span style="position:relative;display:inline-block;color:${emptyColor};font-size:16px;"><span style="position:absolute;top:0;left:0;width:50%;overflow:hidden;color:${fillColor};">★</span>☆</span>`;
+    else capStars += `<span style="color:${emptyColor};font-size:16px;">☆</span>`;
+  }
   cap.innerHTML = `
   <div style="width:380px;height:560px;padding:30px;background:#fff;font-family:sans-serif;box-sizing:border-box;display:flex;flex-direction:column;">
     <div style="font-size:11px;letter-spacing:4px;color:#999;margin-bottom:20px;">SHELF</div>
     <div style="display:flex;gap:16px;margin-bottom:16px;">
-      ${rec.cover ? `<img src="${rec.cover}" style="width:70px;height:105px;object-fit:cover;">` : ''}
+      ${rec.cover ? `<img src="${rec.cover}" crossorigin="anonymous" style="width:70px;height:105px;object-fit:cover;">` : ''}
       <div><div style="font-size:17px;margin-bottom:4px;">${esc(rec.title)}</div><div style="font-size:12px;color:#888;">${esc(rec.author || '')}</div></div>
     </div>
     <div style="height:1px;background:#eee;margin-bottom:14px;"></div>
     <div id="capReviewTextBook" style="font-size:14px;color:#555;line-height:1.7;white-space:pre-wrap;word-wrap:break-word;flex:1;overflow:hidden;">${rec.review ? esc(rec.review) : '소감 없음'}</div>
+    <div style="margin-top:auto;padding-top:14px;display:flex;gap:2px;">${capStars}</div>
   </div>`;
   await new Promise(r => setTimeout(r, 250));
   const reviewElBook = cap.querySelector('#capReviewTextBook');
@@ -404,7 +413,7 @@ async function renderBackCanvasBook(rec) {
       reviewElBook.style.fontSize = fs + 'px';
     }
   }
-  const cv = await html2canvas(cap.firstElementChild, { scale: 2, backgroundColor: '#fff' });
+  const cv = await html2canvas(cap.firstElementChild, { scale: 2, backgroundColor: '#fff', useCORS: true, allowTaint: true });
   cap.innerHTML = '';
   return cv;
 }
@@ -413,13 +422,13 @@ async function renderFrontCanvasBook(rec) {
   cap.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
   cap.innerHTML = `
   <div style="width:380px;height:560px;position:relative;overflow:hidden;background:#f6f7f8;font-family:sans-serif;">
-    ${rec.cover ? `<img src="${rec.cover}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">` : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#999;font-size:15px;">${esc(rec.title)}</div>`}
+    ${rec.cover ? `<img src="${rec.cover}" crossorigin="anonymous" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">` : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#999;font-size:15px;">${esc(rec.title)}</div>`}
     <div style="position:absolute;left:0;right:0;bottom:0;padding:20px;background:linear-gradient(to top, rgba(0,0,0,.75), rgba(0,0,0,0));">
       <div style="font-size:16px;color:#fff;font-weight:600;">${esc(rec.title)}</div>
     </div>
   </div>`;
   await new Promise(r => setTimeout(r, 250));
-  const cv = await html2canvas(cap.firstElementChild, { scale: 2, backgroundColor: '#f6f7f8' });
+  const cv = await html2canvas(cap.firstElementChild, { scale: 2, backgroundColor: '#f6f7f8', useCORS: true, allowTaint: true });
   cap.innerHTML = '';
   return cv;
 }

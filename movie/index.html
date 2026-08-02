@@ -706,7 +706,6 @@ function renderGrid() {
         ${rec.poster ? `<img src="${IMG_W500}${rec.poster}" alt="${esc(rec.title)}" loading="lazy" crossorigin="anonymous">` : `<div class="no-poster">🎬</div>`}
         <div class="card-overlay"></div>
         <div class="status-dot ${rec.status||'watched'}"></div>
-        ${rec.year ? `<div class="year-badge">${rec.year}</div>` : ''}
         <div class="card-front-btm">
           <div class="card-title-front">${esc(rec.title)}</div>
           ${starsHTML}
