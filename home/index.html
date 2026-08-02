@@ -123,7 +123,7 @@ main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
 .theme-trigger:hover{opacity:.6}
 .theme-panel{
   position:absolute; bottom:26px; right:10px; background:var(--card-bg); border:1px solid var(--line);
-  border-radius:8px; padding:10px; display:none; grid-template-columns:repeat(3,1fr); gap:8px; z-index:51;
+  border-radius:8px; padding:10px; display:none; grid-template-columns:repeat(4,1fr); gap:8px; z-index:51;
   box-shadow:0 8px 24px rgba(0,0,0,.12);
 }
 .theme-panel.open{display:grid}
@@ -330,15 +330,22 @@ async function loadRandomSidebarPhoto() {
 
 /* ════ 테마 색상 ════ */
 const PALETTES = [
-  { name: 'A', outerBg: '#E9F5A9', menuInactiveBg: '#507255', menuActiveBg: '#C8E6A5', menuActiveText: '#F19C79' },
-  { name: 'B', outerBg: '#fefae0', menuInactiveBg: '#ffcad4', menuActiveBg: '#f4acb7', menuActiveText: '#d8e2dc' },
-  { name: 'C', outerBg: '#bad7f2', menuInactiveBg: '#f2bac9', menuActiveBg: '#f2e2ba', menuActiveText: '#bad7f2' },
-  { name: '하늘1', outerBg: '#EAF6FB', menuInactiveBg: '#CFE9F5', menuActiveBg: '#5BB8DB', menuActiveText: '#FFFFFF' },
-  { name: '하늘2', outerBg: '#EEF5F9', menuInactiveBg: '#D6E8F0', menuActiveBg: '#89B4D4', menuActiveText: '#FEF6E4' },
-  { name: '하늘3', outerBg: '#E6F7FB', menuInactiveBg: '#BFE6F2', menuActiveBg: '#3AA6C9', menuActiveText: '#FFE3D1' },
-  { name: '초록1', outerBg: '#EEFAF3', menuInactiveBg: '#D3F0E0', menuActiveBg: '#5BC990', menuActiveText: '#FFFFFF' },
-  { name: '초록2', outerBg: '#F2F5EE', menuInactiveBg: '#DBE5CF', menuActiveBg: '#8FAE6F', menuActiveText: '#FFF8E7' },
-  { name: '초록3', outerBg: '#EEF7EE', menuInactiveBg: '#CFE8CF', menuActiveBg: '#6FAE6F', menuActiveText: '#FFB08A' }
+  { name: '기본', outerBg: '#FDF6E3', menuInactiveBg: '#FFE0EC', menuActiveBg: '#ECE3FF', menuActiveText: '#E0FFF3' },
+  { name: 'A', outerBg: '#E9F5A9', menuInactiveBg: '#507255', menuActiveBg: '#C8E6A5', menuActiveText: '#72506D' },
+  { name: 'B', outerBg: '#fefae0', menuInactiveBg: '#ffcad4', menuActiveBg: '#f4acb7', menuActiveText: '#ACF4E9' },
+  { name: 'C', outerBg: '#bad7f2', menuInactiveBg: '#f2bac9', menuActiveBg: '#f2e2ba', menuActiveText: '#F2D5BA' },
+  { name: '하늘1', outerBg: '#EAF6FB', menuInactiveBg: '#CFE9F5', menuActiveBg: '#5BB8DB', menuActiveText: '#DB7E5B' },
+  { name: '하늘2', outerBg: '#EEF5F9', menuInactiveBg: '#D6E8F0', menuActiveBg: '#89B4D4', menuActiveText: '#D4A989' },
+  { name: '하늘3', outerBg: '#E6F7FB', menuInactiveBg: '#BFE6F2', menuActiveBg: '#3AA6C9', menuActiveText: '#C95D3A' },
+  { name: '초록1', outerBg: '#EEFAF3', menuInactiveBg: '#D3F0E0', menuActiveBg: '#5BC990', menuActiveText: '#C95B94' },
+  { name: '초록2', outerBg: '#F2F5EE', menuInactiveBg: '#DBE5CF', menuActiveBg: '#8FAE6F', menuActiveText: '#8E6FAE' },
+  { name: '초록3', outerBg: '#EEF7EE', menuInactiveBg: '#CFE8CF', menuActiveBg: '#6FAE6F', menuActiveText: '#AE6FAE' },
+  { name: '새1', outerBg: '#EFBDBD', menuInactiveBg: '#A2739E', menuActiveBg: '#7C6699', menuActiveText: '#839966' },
+  { name: '새2', outerBg: '#7C86A3', menuInactiveBg: '#D8AC70', menuActiveBg: '#E1CB8E', menuActiveText: '#A3997C' },
+  { name: '새3', outerBg: '#6B4770', menuInactiveBg: '#F0E8B8', menuActiveBg: '#ACCFA3', menuActiveText: '#4C7047' },
+  { name: '새4', outerBg: '#F0BBDA', menuInactiveBg: '#D5E9F4', menuActiveBg: '#E3F6DE', menuActiveText: '#BBF0D1' },
+  { name: '새5', outerBg: '#586386', menuInactiveBg: '#C2C6F1', menuActiveBg: '#FEF5DB', menuActiveText: '#867B58' },
+  { name: '새6', outerBg: '#B0B0CD', menuInactiveBg: '#CDDADF', menuActiveBg: '#DEE6D7', menuActiveText: '#CDCDB0' }
 ];
 const PALETTE_KEY = 'toisty_palette';
 
