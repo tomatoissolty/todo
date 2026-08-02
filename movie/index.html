@@ -823,7 +823,7 @@ async function renderBackCanvas(rec) {
         </div>
       </div>
       <div style="height:1px;background:${bd};margin-bottom:16px;"></div>
-      ${rec.review?`<div style="font-size:18px;color:${md};font-style:italic;line-height:1.7;flex:1;overflow:hidden;white-space:pre-wrap;word-wrap:break-word;">"${rec.review}"</div>`:`<div style="flex:1;font-size:18px;color:${dm};opacity:.4;font-style:italic;">소감 없음</div>`}
+      ${rec.review?`<div id="capReviewText" style="font-size:18px;color:${md};font-style:italic;line-height:1.7;flex:1;overflow:hidden;white-space:pre-wrap;word-wrap:break-word;">"${rec.review}"</div>`:`<div style="flex:1;font-size:18px;color:${dm};opacity:.4;font-style:italic;">소감 없음</div>`}
       <div style="margin-top:auto;padding-top:18px;display:flex;align-items:center;justify-content:space-between;">
         <div style="display:flex;gap:2px;">${capStars}</div>
         <div style="font-size:13px;color:${dm};">${new Date(rec.addedAt).toLocaleDateString('ko-KR')}</div>
@@ -831,6 +831,15 @@ async function renderBackCanvas(rec) {
     </div>
   </div>`;
   await new Promise(r=>setTimeout(r,300));
+  // 리뷰가 길어서 넘치면 다 보일 때까지 글자 크기를 조금씩 줄임
+  const reviewEl = cap.querySelector('#capReviewText');
+  if (reviewEl) {
+    let fs = 18;
+    while (reviewEl.scrollHeight > reviewEl.clientHeight + 2 && fs > 9) {
+      fs -= 1;
+      reviewEl.style.fontSize = fs + 'px';
+    }
+  }
   const cv = await html2canvas(cap,{scale:2,useCORS:true,allowTaint:true,backgroundColor:bg});
   cap.innerHTML = '';
   return cv;

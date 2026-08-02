@@ -271,9 +271,11 @@ function bookmarkFromPage(page) {
 // --- Profile(홈 프로필 - 딱 한 개 글만 씀) / Gallery(홈 갤러리) 매핑 — 둘 다 pull(읽기) 전용 ---
 function profileFromPage(page) {
   const p = page.properties || {};
+  const titleText = (prop) => (prop?.title || []).map(t => t.plain_text).join('');
   const fileUrl = (prop) => { const f = (prop?.files || [])[0]; if (!f) return null; return (f.file && f.file.url) || (f.external && f.external.url) || null; };
   return {
     notionPageId: page.id,
+    name: titleText(p['Name']),
     headerImage: fileUrl(p['Header Image']),
     mainImage: fileUrl(p['Main Image']),
     imagePosition: p['Image Position']?.select?.name || 'Center'

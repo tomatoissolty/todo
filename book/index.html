@@ -393,9 +393,17 @@ async function renderBackCanvasBook(rec) {
       <div><div style="font-size:17px;margin-bottom:4px;">${esc(rec.title)}</div><div style="font-size:12px;color:#888;">${esc(rec.author || '')}</div></div>
     </div>
     <div style="height:1px;background:#eee;margin-bottom:14px;"></div>
-    <div style="font-size:14px;color:#555;line-height:1.7;white-space:pre-wrap;word-wrap:break-word;flex:1;overflow:hidden;">${rec.review ? esc(rec.review) : '소감 없음'}</div>
+    <div id="capReviewTextBook" style="font-size:14px;color:#555;line-height:1.7;white-space:pre-wrap;word-wrap:break-word;flex:1;overflow:hidden;">${rec.review ? esc(rec.review) : '소감 없음'}</div>
   </div>`;
   await new Promise(r => setTimeout(r, 250));
+  const reviewElBook = cap.querySelector('#capReviewTextBook');
+  if (reviewElBook) {
+    let fs = 14;
+    while (reviewElBook.scrollHeight > reviewElBook.clientHeight + 2 && fs > 8) {
+      fs -= 1;
+      reviewElBook.style.fontSize = fs + 'px';
+    }
+  }
   const cv = await html2canvas(cap.firstElementChild, { scale: 2, backgroundColor: '#fff' });
   cap.innerHTML = '';
   return cv;

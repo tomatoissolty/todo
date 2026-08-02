@@ -39,8 +39,8 @@ body{
 nav{display:flex;flex-direction:column}
 .nav-item{
   display:flex; align-items:center; gap:10px; padding:14px 16px;
-  border-bottom:1px solid var(--line); cursor:pointer; font-size:15px; font-weight:normal;
-  font-family:'Rebecca',sans-serif;
+  border-bottom:1px solid var(--line); cursor:pointer; font-size:13px; font-weight:normal;
+  font-family:'Rebecca',sans-serif; letter-spacing:1px;
   background:var(--pink); color:var(--ink-soft); transition:background .15s,color .15s;
 }
 .nav-item .no{font-size:10px;color:var(--ink-soft);opacity:.7}
@@ -56,7 +56,7 @@ main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
 
 /* TOISTY (main) PANE */
 .toisty-wrap{padding:28px;max-width:760px;margin:0 auto}
-.toisty-title{font-family:'Rebecca',sans-serif;font-size:32px;margin-bottom:20px}
+.toisty-title{font-family:'Rebecca',sans-serif;font-size:29px;letter-spacing:1.5px;margin-bottom:20px;min-height:1.2em}
 .main-photo-box{
   width:100%; aspect-ratio:16/9; background:var(--purple); border:1px solid var(--line);
   border-radius:6px; overflow:hidden; margin-bottom:24px; cursor:pointer;
@@ -73,7 +73,7 @@ main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
   transition:border-color .2s, background .2s;
 }
 .mini-card:hover{border-color:var(--purple-ink);background:#fbf9ff}
-.mini-card-title{font-family:'Rebecca',sans-serif;font-size:16px;letter-spacing:.5px;color:var(--ink-soft);margin-bottom:10px}
+.mini-card-title{font-family:'Rebecca',sans-serif;font-size:14px;letter-spacing:1.2px;color:var(--ink-soft);margin-bottom:10px}
 .mini-todo-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px solid var(--line)}
 .mini-todo-item:last-child{border-bottom:none}
 .mini-todo-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
@@ -178,7 +178,7 @@ navItems.forEach(item => item.addEventListener('click', () => showTab(item.datas
 function toistyHTML() {
   return `
     <div class="toisty-wrap">
-      <div class="toisty-title">toisty</div>
+      <div class="toisty-title" id="toistyTitle"></div>
       <div class="main-photo-box" id="mainPhotoBox"><div class="no-photo">불러오는 중...</div></div>
       <div class="mini-cards">
         <div class="mini-card">
@@ -201,6 +201,8 @@ async function loadToistyData(pane) {
     const d = await r.json();
     const p = (d.items || [])[0];
     const box = pane.querySelector('#mainPhotoBox');
+    const titleEl = pane.querySelector('#toistyTitle');
+    if (titleEl) titleEl.textContent = (p && p.name) || '';
     if (p && p.mainImage) {
       const posMap = { Top: 'center top', Center: 'center center', Bottom: 'center bottom' };
       box.innerHTML = `<img src="${p.mainImage}" style="object-position:${posMap[p.imagePosition] || 'center center'}">`;

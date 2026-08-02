@@ -1303,6 +1303,12 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAllTodos();
   restoreActiveTimers();
 
+  // 다크모드를 껐다 켜면 "고쳐지던" 것과 똑같은 조합(설정 재적용 + 재렌더)을
+  // 로드 직후에도 한 번 더 실행해서, 초기 리페인트가 안 되는 경우를 확실히 잡아줌.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { applySettings(); renderAllTodos(); });
+  });
+
   // 이 기기에 아직 안 내려와 있던, 노션에만 있던 항목까지 받아온 다음
   // 미룸 처리를 한 번 더 재확인해요 (그래야 다른 기기/세션에서 만든 미완료 항목도 놓치지 않아요).
   pullFromNotion(true)
