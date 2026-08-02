@@ -75,7 +75,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 <body>
 <div class="wrap">
   <header>
-    <div class="logo">BOOKMARK</div>
+    <div class="logo" id="logoSort" style="cursor:pointer" title="눌러서 정렬 바꾸기">BOOKMARK</div>
     <button class="btn-add" id="btnAdd">+ 추가</button>
   </header>
   <input class="form-input" id="searchBox" placeholder="제목이나 메모로 검색..." style="margin-bottom:14px">
@@ -112,6 +112,7 @@ const isHoverCapable = window.matchMedia('(hover: hover) and (pointer: fine)').m
 let items = [];
 let pendingDataUrl = null;
 let searchQuery = '';
+let sortMode = 'newest'; // 'newest' | 'oldest' | 'alpha' — 번호(등록순)와 별개로 화면에 보여지는 순서만 바꿈
 
 function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
@@ -124,7 +125,7 @@ async function loadList() {
     const r = await fetch(NOTION_ENDPOINT);
     const d = await r.json();
     if (!r.ok) { el.innerHTML = `<div class="empty">${esc(d.error || '불러오기 실패')}</div>`; return; }
-    // 오래된 것이 01번이 되도록 등록 순서(생성 시각) 기준 오름차순 정렬
+    // 번호는 항상 등록 순서(생성 시각) 기준 — 오래된 것이 01번
     items = (d.items || []).sort((a, b) => new Date(a.createdTime || 0) - new Date(b.createdTime || 0));
     renderList();
   } catch (err) {
@@ -135,10 +136,16 @@ async function loadList() {
 function renderList() {
   const el = document.getElementById('list');
   const q = searchQuery.trim().toLowerCase();
-  const numbered = items.map((bm, i) => ({ bm, no: i + 1 }));
-  const filtered = q ? numbered.filter(({ bm }) =>
+  const numbered = items.map((bm, i) => ({ bm, no: i + 1 })); // 등록순 오름차순, 번호는 여기서 고정
+
+  let ordered = [...numbered];
+  if (sortMode === 'newest') ordered.reverse();
+  else if (sortMode === 'oldest') { /* 등록순 그대로 */ }
+  else if (sortMode === 'alpha') ordered.sort((a, b) => (a.bm.name || '').localeCompare(b.bm.name || '', 'ko'));
+
+  const filtered = q ? ordered.filter(({ bm }) =>
     (bm.name || '').toLowerCase().includes(q) || (bm.subtitle || '').toLowerCase().includes(q)
-  ) : numbered;
+  ) : ordered;
 
   if (!items.length) { el.innerHTML = `<div class="empty">북마크가 없어요. + 추가로 첫 링크를 남겨보세요</div>`; return; }
   if (!filtered.length) { el.innerHTML = `<div class="empty">검색 결과가 없어요</div>`; return; }
@@ -175,6 +182,13 @@ function renderList() {
     el.appendChild(row);
   });
 }
+
+document.getElementById('logoSort').addEventListener('click', () => {
+  sortMode = sortMode === 'newest' ? 'oldest' : sortMode === 'oldest' ? 'alpha' : 'newest';
+  const label = { newest: '최신순', oldest: '오래된순', alpha: '가나다순' }[sortMode];
+  toast(label);
+  renderList();
+});
 
 document.getElementById('searchBox').addEventListener('input', (e) => {
   searchQuery = e.target.value;

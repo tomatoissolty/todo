@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>부처의 홈</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7; --ink:#2c2a28; --ink-soft:#8a8580; --line:#eee3da;
+  --blue:#dceeff; --blue-ink:#3a6ea8;
+  --purple:#ece3ff; --purple-ink:#6c4fb0;
+  --orange:#ffe4d1; --orange-ink:#b4632a;
+  --green:#ddf5df; --green-ink:#3c8a4c;
+  --pink:#ffe0ec; --pink-ink:#b8517d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',sans-serif;display:flex;flex-direction:column}
+
+header{
+  flex-shrink:0;
+  padding:calc(14px + env(safe-area-inset-top,0px)) 16px 0;
+  background:#fff; border-bottom:1px solid var(--line);
+}
+.brand{text-align:center;font-family:'DM Serif Display',serif;font-size:19px;padding-bottom:10px;letter-spacing:1px}
+nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:12px;-webkit-overflow-scrolling:touch}
+nav::-webkit-scrollbar{display:none}
+.tab{
+  flex-shrink:0; display:flex; align-items:center; gap:6px;
+  padding:9px 14px; border-radius:20px; border:1px solid var(--line);
+  background:#fff; color:var(--ink-soft); font-size:13px; font-weight:500;
+  cursor:pointer; white-space:nowrap; transition:background .15s,color .15s,border-color .15s;
+}
+.tab .dot{width:7px;height:7px;border-radius:50%}
+.tab.blue .dot{background:var(--blue-ink)} .tab.purple .dot{background:var(--purple-ink)}
+.tab.orange .dot{background:var(--orange-ink)} .tab.green .dot{background:var(--green-ink)}
+.tab.pink .dot{background:var(--pink-ink)}
+.tab.active.blue{background:var(--blue);color:var(--blue-ink);border-color:var(--blue)}
+.tab.active.purple{background:var(--purple);color:var(--purple-ink);border-color:var(--purple)}
+.tab.active.orange{background:var(--orange);color:var(--orange-ink);border-color:var(--orange)}
+.tab.active.green{background:var(--green);color:var(--green-ink);border-color:var(--green)}
+.tab.active.pink{background:var(--pink);color:var(--pink-ink);border-color:var(--pink)}
+
+main{flex:1;position:relative;background:#fff}
+.pane{position:absolute;inset:0;display:none}
+.pane.active{display:block}
+.pane iframe{width:100%;height:100%;border:none;display:block}
+.pane .loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:12px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">부처의 홈</div>
+  <nav id="tabs">
+    <div class="tab blue active" data-app="todo" data-src="/"><span class="dot"></span>TODO</div>
+    <div class="tab purple" data-app="diary" data-src="/diary"><span class="dot"></span>DIARY</div>
+    <div class="tab orange" data-app="movie" data-src="/movie"><span class="dot"></span>MOVIES</div>
+    <div class="tab green" data-app="book" data-src="/book"><span class="dot"></span>BOOKS</div>
+    <div class="tab pink" data-app="bookmark" data-src="/bookmark"><span class="dot"></span>BOOKMARK</div>
+  </nav>
+</header>
+
+<main id="main"></main>
+
+<script>
+const tabs = document.querySelectorAll('.tab');
+const main = document.getElementById('main');
+const loadedPanes = {};
+
+function showApp(appKey, src) {
+  tabs.forEach(t => t.classList.toggle('active', t.dataset.app === appKey));
+
+  // 이미 한 번 연 적 있으면 그 iframe을 그대로 다시 보여줌 (새로고침 안 됨 = 입력하던 내용 유지)
+  Object.values(loadedPanes).forEach(p => p.classList.remove('active'));
+  if (loadedPanes[appKey]) {
+    loadedPanes[appKey].classList.add('active');
+    return;
+  }
+
+  const pane = document.createElement('div');
+  pane.className = 'pane active';
+  pane.innerHTML = `<div class="loading">불러오는 중...</div><iframe src="${src}" title="${appKey}"></iframe>`;
+  main.appendChild(pane);
+  loadedPanes[appKey] = pane;
+
+  const iframe = pane.querySelector('iframe');
+  iframe.addEventListener('load', () => { pane.querySelector('.loading').style.display = 'none'; });
+}
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => showApp(tab.dataset.app, tab.dataset.src));
+});
+
+// 첫 화면은 TODO
+showApp('todo', '/');
+</script>
+</body>
+</html>

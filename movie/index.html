@@ -107,13 +107,35 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:54px;display:flex;
 .cb-meta{font-size:10px;color:var(--text-dim);letter-spacing:.7px;line-height:1.5}
 .genre-badge{display:inline-block;padding:1px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;font-size:9px;color:var(--text-mid);margin-right:3px;margin-top:3px}
 .cb-divider{height:1px;background:var(--border);margin-bottom:9px}
-.cb-review{flex:1;font-size:11px;color:var(--text-mid);font-style:italic;line-height:1.65;overflow:hidden;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;white-space:pre-wrap;word-wrap:break-word}
+.cb-review{flex:1;font-size:11px;color:var(--text-mid);font-style:italic;line-height:1.65;overflow:hidden;display:-webkit-box;-webkit-line-clamp:9;-webkit-box-orient:vertical;white-space:pre-wrap;word-wrap:break-word}
 .cb-review-empty{flex:1;font-size:11px;color:var(--text-dim);opacity:.45;font-style:italic}
-.cb-footer{display:flex;align-items:center;justify-content:space-between;margin-top:9px;padding-top:9px;border-top:1px solid var(--border)}
-.cb-actions{display:flex;gap:5px}
+.cb-more{font-size:10px;color:var(--gold);cursor:pointer;margin-top:2px;display:none}
+.cb-footer{display:flex;align-items:center;justify-content:space-between;margin-top:9px;padding-top:9px;border-top:1px solid var(--border);position:relative}
+.cb-hamburger{width:24px;height:24px;border:1px solid var(--border);background:transparent;color:var(--text-dim);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cb-actions{display:none;position:absolute;bottom:34px;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px;gap:5px;flex-direction:column;z-index:5}
+.cb-actions.open{display:flex}
 .card-act{width:24px;height:24px;border:1px solid var(--border);background:transparent;color:var(--text-dim);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .card-act:hover{border-color:var(--text-mid);color:var(--text)}
 .card-act svg{width:11px;height:11px;pointer-events:none}
+
+/* REVIEW VIEW POPUP */
+.view-modal-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:20px}
+.view-modal-overlay.open{opacity:1;pointer-events:all}
+.view-modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;padding:20px}
+.view-modal-hdr{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.view-modal-hdr img{width:52px;height:78px;object-fit:cover;border-radius:6px;flex-shrink:0}
+.view-modal-title{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text)}
+.view-modal-meta{font-size:11px;color:var(--text-dim);margin-top:4px}
+.view-modal-close{margin-left:auto;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px}
+.view-modal-review{font-size:13px;color:var(--text-mid);font-style:italic;line-height:1.8;white-space:pre-wrap;word-wrap:break-word;max-height:45vh;overflow-y:auto;padding-right:4px}
+
+/* CAPTURE CHOICE POPUP */
+.cap-choice-overlay{position:fixed;inset:0;z-index:410;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.cap-choice-overlay.open{opacity:1;pointer-events:all}
+.cap-choice{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;width:220px;text-align:center}
+.cap-choice-title{font-size:12px;color:var(--text-dim);margin-bottom:12px}
+.cap-choice button{width:100%;padding:10px;margin-bottom:6px;border:1px solid var(--border);background:transparent;color:var(--text);border-radius:8px;cursor:pointer;font-size:12px}
+.cap-choice button:hover{border-color:var(--gold);color:var(--gold)}
 
 /* ADD CARD */
 .add-card{width:var(--card-w);height:var(--card-h);border:1px dashed var(--border);border-radius:var(--r-card);background:transparent;color:var(--text-dim);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:all .2s;flex-shrink:0}
@@ -306,6 +328,19 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:54px;display:flex;
 <div class="cap-wrap" id="capWrap"></div>
 
 <!-- STATS MODAL -->
+<div class="view-modal-overlay" id="viewModalOverlay">
+  <div class="view-modal" id="viewModalBody"></div>
+</div>
+
+<div class="cap-choice-overlay" id="capChoiceOverlay">
+  <div class="cap-choice">
+    <div class="cap-choice-title">어떻게 저장할까요?</div>
+    <button data-choice="front">앞면만</button>
+    <button data-choice="back">뒷면만</button>
+    <button data-choice="both">둘 다 (나란히)</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="statsModal">
   <div class="modal">
     <div class="modal-hdr">
@@ -689,13 +724,13 @@ function renderGrid() {
           <div style="min-width:0;flex:1">
             <div class="cb-title">${esc(rec.title)}</div>
             <div class="cb-meta">${meta}</div>
-            ${genbadges || rec.notionPageId ? `<div style="margin-top:4px">${genbadges}${rec.notionPageId ? `<span class="genre-badge" style="border-color:var(--gold);color:var(--gold)">Notion ✓</span>` : ''}</div>` : ''}
           </div>
         </div>
         <div class="cb-divider"></div>
-        ${rec.review ? `<div class="cb-review">"${esc(rec.review)}"</div>` : `<div class="cb-review-empty">소감 없음</div>`}
+        ${rec.review ? `<div class="cb-review" id="review-${rec.id}">"${esc(rec.review)}"</div><div class="cb-more" id="more-${rec.id}">...더보기</div>` : `<div class="cb-review-empty">소감 없음</div>`}
         <div class="cb-footer">
           ${starsHTML}
+          <button class="cb-hamburger" data-a="hamburger">☰</button>
           <div class="cb-actions">
             <button class="card-act" data-a="capture" data-id="${rec.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
             <button class="card-act" data-a="edit"    data-id="${rec.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -706,22 +741,40 @@ function renderGrid() {
     </div>`;
 
     w.querySelector('.card-inner').addEventListener('click', e => {
-      if (e.target.closest('.card-act')) return;
+      if (e.target.closest('.card-act') || e.target.closest('.cb-hamburger') || e.target.closest('.cb-more')) return;
       w.classList.toggle('flipped');
     });
     
     // 더블클릭으로 빠른 수정
     w.querySelector('.card-inner').addEventListener('dblclick', e => {
-      if (e.target.closest('.card-act')) return;
+      if (e.target.closest('.card-act') || e.target.closest('.cb-hamburger') || e.target.closest('.cb-more')) return;
       e.preventDefault();
       openEdit(rec.id);
     });
-    
+
+    const hamburgerBtn = w.querySelector('.cb-hamburger');
+    const actionsMenu = w.querySelector('.cb-actions');
+    if (hamburgerBtn) hamburgerBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      actionsMenu.classList.toggle('open');
+    });
+
+    // 리뷰가 줄여져 잘렸는지 확인해서 "...더보기"를 필요할 때만 보여줌
+    const reviewEl = w.querySelector(`#review-${rec.id}`);
+    const moreEl = w.querySelector(`#more-${rec.id}`);
+    if (reviewEl && moreEl) {
+      requestAnimationFrame(() => {
+        if (reviewEl.scrollHeight > reviewEl.clientHeight + 2) moreEl.style.display = 'block';
+      });
+      moreEl.addEventListener('click', e => { e.stopPropagation(); openReviewPopup(rec.id); });
+    }
+
     w.querySelectorAll('.card-act').forEach(b => b.addEventListener('click', e => {
       e.stopPropagation();
+      actionsMenu.classList.remove('open');
       if (b.dataset.a === 'delete')  del(b.dataset.id);
       if (b.dataset.a === 'edit')    openEdit(b.dataset.id);
-      if (b.dataset.a === 'capture') capture(b.dataset.id);
+      if (b.dataset.a === 'capture') openCaptureChoice(b.dataset.id);
     }));
     
     g.appendChild(w);
@@ -744,32 +797,20 @@ function del(id) {
 }
 
 /* ════ CAPTURE ════ */
-async function capture(id) {
-  const rec = records.find(r => r.id === id); 
-  if (!rec) return;
-  
-  toast('이미지 저장 중...');
+// 뒷면(리뷰) 캔버스를 만들어서 반환 (다운로드는 안 함 - 호출하는 쪽에서 처리)
+async function renderBackCanvas(rec) {
   const cap = document.getElementById('capWrap');
   const bg=dark?'#161616':'#ffffff', tx=dark?'#f0f0f0':'#111', dm=dark?'#555':'#bbb', md=dark?'#888':'#666', sf=dark?'#1e1e1e':'#ebebeb', bd=dark?'#2a2a2a':'#d4d4d4';
   const gs = (rec.genres||[]).map(g=>`<span style="display:inline-block;padding:2px 7px;background:${sf};border:1px solid ${bd};border-radius:3px;font-size:14px;color:${md};margin-right:4px;margin-top:4px;">${g}</span>`).join('');
-  
-  // 캡처용 별점 (Overflow 방식 - 반개 단위 지원)
+
   let capStars = '';
   const r = rec.rating || 0;
   const fillColor = '#d4a843';
   const emptyColor = dark ? '#3a3a3a' : '#d0d0d0';
-  
   for(let i=1; i<=5; i++) {
-    if (i <= r) {
-      // 완전히 채워진 별
-      capStars += `<span style="position:relative;display:inline-block;color:${emptyColor};font-size:20px;"><span style="position:absolute;top:0;left:0;width:100%;overflow:hidden;color:${fillColor};">★</span>☆</span>`;
-    } else if (i - 0.5 === r) {
-      // 반개 별 - 50%만 채움
-      capStars += `<span style="position:relative;display:inline-block;color:${emptyColor};font-size:20px;"><span style="position:absolute;top:0;left:0;width:50%;overflow:hidden;color:${fillColor};">★</span>☆</span>`;
-    } else {
-      // 빈 별
-      capStars += `<span style="color:${emptyColor};font-size:20px;">☆</span>`;
-    }
+    if (i <= r) capStars += `<span style="position:relative;display:inline-block;color:${emptyColor};font-size:20px;"><span style="position:absolute;top:0;left:0;width:100%;overflow:hidden;color:${fillColor};">★</span>☆</span>`;
+    else if (i - 0.5 === r) capStars += `<span style="position:relative;display:inline-block;color:${emptyColor};font-size:20px;"><span style="position:absolute;top:0;left:0;width:50%;overflow:hidden;color:${fillColor};">★</span>☆</span>`;
+    else capStars += `<span style="color:${emptyColor};font-size:20px;">☆</span>`;
   }
 
   cap.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:400px;height:600px;background:${bg}`;
@@ -795,21 +836,119 @@ async function capture(id) {
       </div>
     </div>
   </div>`;
-  
   await new Promise(r=>setTimeout(r,300));
-  try {
-    const cv = await html2canvas(cap,{scale:2,useCORS:true,allowTaint:true,backgroundColor:bg});
-    const a  = document.createElement('a'); 
-    a.download=`${rec.title}_reel.png`; 
-    a.href=cv.toDataURL('image/png'); 
-    a.click();
-    toast('저장됐습니다 ↓');
-  } catch(err) { 
-    console.error(err);
-    toast('저장 중 오류가 발생했습니다'); 
-  }
+  const cv = await html2canvas(cap,{scale:2,useCORS:true,allowTaint:true,backgroundColor:bg});
   cap.innerHTML = '';
+  return cv;
 }
+
+// 앞면(포스터+별점) 캔버스를 만들어서 반환
+async function renderFrontCanvas(rec) {
+  const cap = document.getElementById('capWrap');
+  const bg=dark?'#161616':'#ffffff';
+  const fillColor = '#d4a843', emptyColor = 'rgba(255,255,255,.35)';
+  let capStars = '';
+  const r = rec.rating || 0;
+  for(let i=1; i<=5; i++) {
+    if (i <= r) capStars += `<span style="position:relative;display:inline-block;color:${emptyColor};font-size:18px;"><span style="position:absolute;top:0;left:0;width:100%;overflow:hidden;color:${fillColor};">★</span>☆</span>`;
+    else if (i - 0.5 === r) capStars += `<span style="position:relative;display:inline-block;color:${emptyColor};font-size:18px;"><span style="position:absolute;top:0;left:0;width:50%;overflow:hidden;color:${fillColor};">★</span>☆</span>`;
+    else capStars += `<span style="color:${emptyColor};font-size:18px;">☆</span>`;
+  }
+  cap.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:400px;height:600px;background:${bg}`;
+  cap.innerHTML=`
+  <div style="width:400px;height:600px;position:relative;overflow:hidden;background:${bg};font-family:sans-serif;">
+    ${rec.poster?`<img src="${IMG_W500}${rec.poster}" crossorigin="anonymous" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">`:`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#666;font-size:16px;">${rec.title}</div>`}
+    <div style="position:absolute;left:0;right:0;bottom:0;padding:24px 22px;background:linear-gradient(to top, rgba(0,0,0,.85), rgba(0,0,0,0));">
+      <div style="font-size:20px;color:#fff;font-weight:600;line-height:1.3;margin-bottom:8px;">${rec.title}</div>
+      <div style="display:flex;gap:2px;">${capStars}</div>
+    </div>
+  </div>`;
+  await new Promise(r=>setTimeout(r,300));
+  const cv = await html2canvas(cap,{scale:2,useCORS:true,allowTaint:true,backgroundColor:bg});
+  cap.innerHTML = '';
+  return cv;
+}
+
+function downloadCanvas(cv, filename) {
+  const a = document.createElement('a');
+  a.download = filename;
+  a.href = cv.toDataURL('image/png');
+  a.click();
+}
+
+async function doCapture(id, choice) {
+  const rec = records.find(r => r.id === id);
+  if (!rec) return;
+  toast('이미지 저장 중...');
+  try {
+    if (choice === 'front') {
+      downloadCanvas(await renderFrontCanvas(rec), `${rec.title}_reel_front.png`);
+    } else if (choice === 'back') {
+      downloadCanvas(await renderBackCanvas(rec), `${rec.title}_reel_back.png`);
+    } else {
+      const front = await renderFrontCanvas(rec);
+      const back = await renderBackCanvas(rec);
+      const combined = document.createElement('canvas');
+      combined.width = front.width + back.width;
+      combined.height = Math.max(front.height, back.height);
+      const ctx = combined.getContext('2d');
+      ctx.fillStyle = dark ? '#161616' : '#ffffff';
+      ctx.fillRect(0, 0, combined.width, combined.height);
+      ctx.drawImage(front, 0, 0);
+      ctx.drawImage(back, front.width, 0);
+      downloadCanvas(combined, `${rec.title}_reel_both.png`);
+    }
+    toast('저장됐습니다 ↓');
+  } catch (err) {
+    console.error(err);
+    toast('저장 중 오류가 발생했습니다');
+  }
+}
+
+let captureTargetId = null;
+function openCaptureChoice(id) {
+  captureTargetId = id;
+  document.getElementById('capChoiceOverlay').classList.add('open');
+}
+function closeCaptureChoice() {
+  document.getElementById('capChoiceOverlay').classList.remove('open');
+}
+document.querySelectorAll('.cap-choice button').forEach(b => {
+  b.addEventListener('click', () => {
+    const choice = b.dataset.choice;
+    closeCaptureChoice();
+    if (captureTargetId) doCapture(captureTargetId, choice);
+  });
+});
+document.getElementById('capChoiceOverlay').addEventListener('click', e => {
+  if (e.target.id === 'capChoiceOverlay') closeCaptureChoice();
+});
+
+/* ════ REVIEW VIEW POPUP ════ */
+function openReviewPopup(id) {
+  const rec = records.find(r => r.id === id);
+  if (!rec) return;
+  const meta2 = [rec.year, rec.type === 'tv' ? '시리즈' : '필름', rec.runtime ? rec.runtime + 'min' : ''].filter(Boolean).join(' · ');
+  document.getElementById('viewModalBody').innerHTML = `
+    <div class="view-modal-hdr">
+      ${rec.poster ? `<img src="${IMG_W500}${rec.poster}">` : ''}
+      <div style="min-width:0;flex:1">
+        <div class="view-modal-title">${esc(rec.title)}</div>
+        <div class="view-modal-meta">${meta2}</div>
+      </div>
+      <button class="view-modal-close" id="viewModalClose">✕</button>
+    </div>
+    <div class="view-modal-review">"${esc(rec.review || '')}"</div>
+  `;
+  document.getElementById('viewModalOverlay').classList.add('open');
+  document.getElementById('viewModalClose').addEventListener('click', closeReviewPopup);
+}
+function closeReviewPopup() {
+  document.getElementById('viewModalOverlay').classList.remove('open');
+}
+document.getElementById('viewModalOverlay').addEventListener('click', e => {
+  if (e.target.id === 'viewModalOverlay') closeReviewPopup();
+});
 
 /* ════ MODAL ════ */
 function openAdd() {

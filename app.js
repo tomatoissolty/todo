@@ -153,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     if (changed) saveTodos();
+    return changed;
   };
 
   // --- CARDS RENDER ---
@@ -1071,7 +1072,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    if (changed) { saveTodos(); renderAllTodos(); }
+    if (changed) saveTodos();
     return changed;
   };
 
@@ -1097,7 +1098,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         saveTodos();
       }
-      await pullFromNotion(false);
+      const pullChanged = await pullFromNotion(false);
+      const rolloverChanged = rolloverIncompleteTodos();
+      if (pullChanged || rolloverChanged || flat.length > 0) renderAllTodos();
       alert('노션과 동기화됐어요!');
     } catch (err) {
       alert(`동기화 실패: ${err.message}`);
@@ -1110,9 +1113,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 버튼 없이도 자동으로 동기화되도록: 30초마다 노션 쪽 변경사항을 조용히 가져와요.
   // (앱에서 뭔가 바뀔 때는 각 동작이 바로바로 autoPushItem/autoDeleteItem을 호출해서 올려요.)
+  // 실제로 뭔가 바뀌었을 때만, 그리고 스와이프 중이 아닐 때만 다시 그려서 불필요한 렌더링을 줄여요.
   setInterval(() => {
-    if (isEditingSomething()) return; // 입력 중이면 이번 주기는 건너뜀
-    pullFromNotion(true).catch(err => console.warn('백그라운드 노션 동기화 실패:', err.message));
+    if (isEditingSomething() || isSwiping) return; // 입력/스와이프 중이면 이번 주기는 건너뜀
+    pullFromNotion(true)
+      .then((pullChanged) => {
+        const rolloverChanged = rolloverIncompleteTodos();
+        if (pullChanged || rolloverChanged) renderAllTodos();
+      })
+      .catch(err => console.warn('백그라운드 노션 동기화 실패:', err.message));
   }, 30000);
 
   // --- EMOTICON PICKER ---
@@ -1255,12 +1264,26 @@ document.addEventListener('DOMContentLoaded', () => {
   function escapeHtml(unsafe) { return unsafe?.replace(/&/g, "&amp;")?.replace(/</g, "&lt;")?.replace(/>/g, "&gt;")?.replace(/"/g, "&quot;")?.replace(/'/g, "&#039;") || ""; }
 
   applySettings();
-  rolloverIncompleteTodos();
+  rolloverIncompleteTodos(); // 우선 로컬에 있는 데이터 기준으로 즉시 한 번 처리
   dateCards.forEach(date => swiperWrapper.appendChild(createCardElement(date)));
+
+  // 혹시라도 새로고침되더라도 보고 있던 날짜로 돌아오도록, 마지막 위치를 기억해둠
+  let isSwiping = false;
+  const savedSlide = parseInt(sessionStorage.getItem('swipe-last-slide') || '30', 10);
+  const startSlide = (savedSlide >= 0 && savedSlide <= 60) ? savedSlide : 30;
+
   const swiper = new Swiper('.todo-swiper', {
-    effect: 'coverflow', centeredSlides: true, slidesPerView: 'auto', initialSlide: 30,
+    effect: 'coverflow', centeredSlides: true, slidesPerView: 'auto', initialSlide: startSlide,
     coverflowEffect: { rotate: 0, stretch: -30, depth: 150, modifier: 1, slideShadows: false },
-    on: { slideChange: function () { btnToday.classList.toggle('hidden', this.activeIndex === 30); } }
+    on: {
+      slideChange: function () {
+        btnToday.classList.toggle('hidden', this.activeIndex === 30);
+        sessionStorage.setItem('swipe-last-slide', this.activeIndex);
+      },
+      touchStart: () => { isSwiping = true; },
+      touchEnd: () => { isSwiping = false; },
+      transitionEnd: () => { isSwiping = false; }
+    }
   });
   btnToday.onclick = () => swiper.slideTo(30, 400);
 
@@ -1278,4 +1301,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   renderAllTodos();
   restoreActiveTimers();
+
+  // 이 기기에 아직 안 내려와 있던, 노션에만 있던 항목까지 받아온 다음
+  // 미룸 처리를 한 번 더 재확인해요 (그래야 다른 기기/세션에서 만든 미완료 항목도 놓치지 않아요).
+  pullFromNotion(true)
+    .then((pullChanged) => {
+      const rolloverChanged = rolloverIncompleteTodos();
+      if (pullChanged || rolloverChanged) renderAllTodos();
+    })
+    .catch(err => console.warn('초기 pull 실패:', err.message));
 });

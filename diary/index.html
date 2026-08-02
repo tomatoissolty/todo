@@ -44,13 +44,13 @@ button,input,textarea{font-family:var(--font)}
 .entry-row{background:var(--card);border:2.5px solid var(--border);border-radius:0;clip-path:var(--pixel-clip-6);padding:12px 14px;margin-bottom:4px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:transform .1s,border-color .15s;position:relative}
 .entry-row:hover{border-color:var(--purple-deep);transform:translateY(-2px)}
 .entry-no{font-size:11px;color:var(--ink-soft);width:22px;flex-shrink:0}
-.entry-date{background:var(--blue);border-radius:10px;padding:6px 8px;font-size:11px;text-align:center;flex-shrink:0;min-width:44px}
+.entry-date{background:var(--blue);border-radius:0;clip-path:var(--pixel-clip-4);padding:6px 8px;font-size:11px;text-align:center;flex-shrink:0;min-width:44px;box-shadow:inset -2px -2px 0 rgba(0,0,0,.15), inset 2px 2px 0 rgba(255,255,255,.6)}
 .entry-title{flex:1;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px}
 .entry-pics{display:flex;gap:4px;flex-shrink:0}
-.pic-thumb{width:30px;height:30px;border-radius:8px;object-fit:cover;border:2px solid var(--border)}
+.pic-thumb{width:30px;height:30px;border-radius:0;object-fit:cover}
 .pic-placeholder{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid var(--border)}
 .pic-more{width:30px;height:30px;border-radius:8px;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid var(--border)}
-.btn-edit-row{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;background:var(--yellow-deep);border:2px solid var(--ink);display:none;align-items:center;justify-content:center;font-size:11px;cursor:pointer}
+.btn-edit-row{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:0;clip-path:var(--pixel-clip-4);background:var(--yellow-deep);border:none;box-shadow:inset -2px -2px 0 rgba(0,0,0,.15), inset 2px 2px 0 rgba(255,255,255,.6);display:none;align-items:center;justify-content:center;font-size:11px;cursor:pointer}
 .entry-row:hover .btn-edit-row{display:flex}
 .empty{text-align:center;padding:60px 20px;color:var(--ink-soft);font-size:13px}
 
@@ -196,9 +196,10 @@ const CUTE_PLACEHOLDERS = ['🌟','💫','🌠','✨','🍨','🍮','🥞','🍃
 /* ═══════════ PIXEL ART DECORATIONS ═══════════ */
 const PIXEL_GRIDS = {
   heart:  ['.11.11.','1111111','1111111','.11111.','..111..','...1...'],
-  star:   ['...1...','...1...','.11111.','1111111','.11111.','..1.1..'],
+  blob:   ['.1111..','111111.','1.11.1.','1111111','.11111.','..111..'],
   cloud:  ['..111..','.11111.','1111111','1111111','.......','.......'],
-  flower: ['.1.1.1.','1.1.1.1','.11111.','1111111','.11111.','...1...']
+  flower: ['.1.1.1.','1.1.1.1','.11111.','1111111','.11111.','...1...'],
+  sync:   ['.111.','1...1','1...1','1...1','.111.']
 };
 function pixelIcon(gridName, color, scale) {
   const grid = PIXEL_GRIDS[gridName];
@@ -213,7 +214,9 @@ function pixelIcon(gridName, color, scale) {
 function renderPixelDeco() {
   const el = document.getElementById('pixel-deco');
   if (!el) return;
-  el.innerHTML = pixelIcon('heart', '#ff9ec7') + pixelIcon('star', '#ffe066') + pixelIcon('cloud', '#93c8ff') + pixelIcon('flower', '#b79bf5');
+  el.innerHTML = pixelIcon('heart', '#ff9ec7') + pixelIcon('blob', '#ffe066') + pixelIcon('cloud', '#93c8ff') + pixelIcon('flower', '#b79bf5');
+  const syncEl = document.getElementById('sync-icon');
+  if (syncEl) syncEl.innerHTML = pixelIcon('sync', 'var(--ink)', 3);
 }
 
 
@@ -320,7 +323,7 @@ function pastelFor(seed) {
 }
 
 async function renderList() {
-  entries.sort((a, b) => b.updatedAt - a.updatedAt);
+  entries.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   const el = document.getElementById('entry-list');
   if (!entries.length) {
     el.innerHTML = `<div class="empty">${pixelIcon('star','#ffe066',6)}<br>아직 쓴 일기가 없어요 ⋆｡°✩<br>+ADD를 눌러 첫 일기를 남겨보세요</div>`;
