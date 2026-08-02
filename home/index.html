@@ -15,9 +15,10 @@
 </style>
 <style>
 :root{
-  --outer-bg:#fdf6e3; --card-bg:#ffffff; --ink:#2c2a28; --ink-soft:#8a8580; --line:#eee3da;
-  --purple:#ece3ff; --purple-ink:#6c4fb0;
-  --pink:#ffe0ec; --pink-ink:#b8517d;
+  --outer-bg:#fdf6e3; --card-bg:#ffffff; --ink:#2c2a28; --ink-soft:#8a8580; --line:#fdf6e3;
+  --menu-inactive-bg:#ece3ff; --menu-inactive-text:#FFFCF5;
+  --menu-active-bg:#ffe0ec; --menu-active-text:#b8517d;
+  --border-w:0.5px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -27,26 +28,27 @@ body{
 }
 .shell{
   width:100%; max-width:1200px; height:calc(100vh - 32px); max-height:800px;
-  background:var(--card-bg); border:1px solid var(--line); border-radius:8px;
-  display:flex; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,.08);
+  background:var(--card-bg); border:var(--border-w) solid var(--line); border-radius:8px;
+  display:flex; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,.08); position:relative;
 }
 
 /* SIDEBAR */
-.sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto}
-.header-photo-wrap{aspect-ratio:1/1;background:var(--purple);overflow:hidden;position:relative}
+.sidebar{width:220px;flex-shrink:0;border-right:var(--border-w) solid var(--line);display:flex;flex-direction:column;overflow-y:auto}
+.header-photo-wrap{aspect-ratio:1/1;background:var(--menu-active-bg);overflow:hidden;position:relative}
 .header-photo-wrap img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
 .header-photo-wrap:hover img{transform:scale(1.06)}
 nav{display:flex;flex-direction:column}
 .nav-item{
   display:flex; align-items:center; gap:10px; padding:14px 16px;
-  border-bottom:1px solid var(--line); cursor:pointer; font-size:13px; font-weight:normal;
+  border-bottom:var(--border-w) solid var(--line); cursor:pointer; font-size:13px; font-weight:normal;
   font-family:'Rebecca',sans-serif; letter-spacing:1px;
-  background:var(--pink); color:var(--ink-soft); transition:background .15s,color .15s;
+  background:var(--menu-inactive-bg); color:var(--menu-inactive-text); transition:background .15s,color .15s;
 }
-.nav-item .no{font-size:10px;color:var(--ink-soft);opacity:.7}
-.nav-item.active{background:var(--purple);color:var(--purple-ink)}
+.nav-item .no{font-size:10px;color:var(--menu-inactive-text);opacity:.7}
+.nav-item.active{background:var(--menu-active-bg);color:var(--menu-active-text)}
 .nav-item:hover:not(.active){filter:brightness(.97)}
-.sidebar-random-photo{flex:1;min-height:120px;overflow:hidden;position:relative;background:var(--pink)}
+.sidebar-bottom-space{flex:1;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;min-height:120px}
+.sidebar-random-photo{height:50%;overflow:hidden;position:relative;background:var(--menu-inactive-bg)}
 .sidebar-random-photo img{width:100%;height:100%;object-fit:cover;transition:transform .4s,opacity .4s}
 .sidebar-random-photo:hover img{transform:scale(1.06)}
 
@@ -61,38 +63,38 @@ main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
 .toisty-wrap{padding:28px;max-width:760px;margin:0 auto}
 .toisty-title{font-family:'Rebecca',sans-serif;font-size:29px;letter-spacing:1.5px;margin-bottom:20px;min-height:1.2em}
 .main-photo-box{
-  width:100%; aspect-ratio:16/9; background:var(--purple); border:1px solid var(--line);
+  width:100%; aspect-ratio:16/9; background:var(--menu-active-bg); border:var(--border-w) solid var(--line);
   border-radius:6px; overflow:hidden; margin-bottom:24px; cursor:pointer;
   transition:border-color .2s;
 }
-.main-photo-box:hover{border-color:var(--purple-ink)}
+.main-photo-box:hover{border-color:var(--menu-active-text)}
 .main-photo-box img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
 .main-photo-box:hover img{transform:scale(1.04)}
 .main-photo-box .no-photo{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:12px}
 
 .mini-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .mini-card{
-  border:1px solid var(--line); border-radius:6px; padding:16px;
+  border:var(--border-w) solid var(--line); border-radius:6px; padding:16px;
   transition:border-color .2s, background .2s;
 }
-.mini-card:hover{border-color:var(--purple-ink);background:#fbf9ff}
+.mini-card:hover{border-color:var(--menu-active-text);background:#fbf9ff}
 .mini-card-title{font-family:'Rebecca',sans-serif;font-size:14px;letter-spacing:1.2px;color:var(--ink-soft);margin-bottom:10px}
-.mini-todo-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px solid var(--line)}
+.mini-todo-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 0;border-bottom:var(--border-w) solid var(--line)}
 .mini-todo-item:last-child{border-bottom:none}
 .mini-todo-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .mini-todo-dot.done{background:#8fd19e}
 .mini-todo-dot.undone{background:#f0a5c0}
 .mini-todo-item.done span{text-decoration:line-through;color:var(--ink-soft)}
-.mini-bm-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink);transition:color .15s}
+.mini-bm-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0;border-bottom:var(--border-w) solid var(--line);text-decoration:none;color:var(--ink);transition:color .15s}
 .mini-bm-item:last-child{border-bottom:none}
-.mini-bm-item:hover{color:var(--purple-ink)}
+.mini-bm-item:hover{color:var(--menu-active-text)}
 .mini-empty{font-size:12px;color:var(--ink-soft);padding:6px 0}
 
 /* GALLERY PANE */
 .gallery-wrap{padding:28px}
 .gallery-title{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:20px}
 .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
-.gallery-item{aspect-ratio:1/1;overflow:hidden;border-radius:4px;cursor:pointer;background:var(--purple)}
+.gallery-item{aspect-ratio:1/1;overflow:hidden;border-radius:4px;cursor:pointer;background:var(--menu-active-bg)}
 .gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform .3s,opacity .3s}
 .gallery-item:hover img{transform:scale(1.08);opacity:.9}
 
@@ -109,9 +111,30 @@ main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
   .sidebar{width:100%;flex-direction:row;overflow-x:auto}
   .header-photo-wrap{display:none}
   nav{flex-direction:row}
-  .nav-item{border-bottom:none;border-right:1px solid var(--line);white-space:nowrap}
+  .nav-item{border-bottom:none;border-right:var(--border-w) solid var(--line);white-space:nowrap}
   .mini-cards{grid-template-columns:1fr}
 }
+
+/* 테마 색상 - 평소엔 안 보이는 작은 트리거 */
+.theme-trigger{
+  position:absolute; bottom:10px; right:10px; width:10px; height:10px; border-radius:50%;
+  background:var(--ink-soft); opacity:.18; cursor:pointer; z-index:50; transition:opacity .2s;
+}
+.theme-trigger:hover{opacity:.6}
+.theme-panel{
+  position:absolute; bottom:26px; right:10px; background:var(--card-bg); border:1px solid var(--line);
+  border-radius:8px; padding:10px; display:none; grid-template-columns:repeat(3,1fr); gap:8px; z-index:51;
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+}
+.theme-panel.open{display:grid}
+.theme-swatch{
+  width:34px; height:34px; border-radius:6px; cursor:pointer; border:2px solid transparent;
+  position:relative; overflow:hidden; transition:transform .15s;
+}
+.theme-swatch:hover{transform:scale(1.08)}
+.theme-swatch.selected{border-color:var(--ink)}
+.theme-swatch .sw-half{position:absolute; inset:0}
+.theme-swatch .sw-active{position:absolute; left:0; right:0; bottom:0; height:50%}
 </style>
 </head>
 <body>
@@ -128,9 +151,13 @@ main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
       <div class="nav-item" data-app="bookmark"><span class="no">#6</span> BOOKMARK</div>
       <div class="nav-item" data-app="gallery"><span class="no">#7</span> GALLERY</div>
     </nav>
-    <div class="sidebar-random-photo" id="sidebarRandomPhoto"></div>
+    <div class="sidebar-bottom-space">
+      <div class="sidebar-random-photo" id="sidebarRandomPhoto"></div>
+    </div>
   </aside>
   <main id="main"></main>
+  <div class="theme-trigger" id="themeTrigger" title="테마 색상"></div>
+  <div class="theme-panel" id="themePanel"></div>
 </div>
 
 <div class="gallery-popup-overlay" id="galleryPopupOverlay">
@@ -300,6 +327,64 @@ async function loadRandomSidebarPhoto() {
     box.innerHTML = `<img src="${pick.photo}">`;
   } catch (err) { console.warn('사이드바 사진 로드 실패:', err.message); }
 }
+
+/* ════ 테마 색상 ════ */
+const PALETTES = [
+  { name: 'A', outerBg: '#E9F5A9', menuInactiveBg: '#507255', menuActiveBg: '#C8E6A5', menuActiveText: '#F19C79' },
+  { name: 'B', outerBg: '#fefae0', menuInactiveBg: '#ffcad4', menuActiveBg: '#f4acb7', menuActiveText: '#d8e2dc' },
+  { name: 'C', outerBg: '#bad7f2', menuInactiveBg: '#f2bac9', menuActiveBg: '#f2e2ba', menuActiveText: '#bad7f2' },
+  { name: '하늘1', outerBg: '#EAF6FB', menuInactiveBg: '#CFE9F5', menuActiveBg: '#5BB8DB', menuActiveText: '#FFFFFF' },
+  { name: '하늘2', outerBg: '#EEF5F9', menuInactiveBg: '#D6E8F0', menuActiveBg: '#89B4D4', menuActiveText: '#FEF6E4' },
+  { name: '하늘3', outerBg: '#E6F7FB', menuInactiveBg: '#BFE6F2', menuActiveBg: '#3AA6C9', menuActiveText: '#FFE3D1' },
+  { name: '초록1', outerBg: '#EEFAF3', menuInactiveBg: '#D3F0E0', menuActiveBg: '#5BC990', menuActiveText: '#FFFFFF' },
+  { name: '초록2', outerBg: '#F2F5EE', menuInactiveBg: '#DBE5CF', menuActiveBg: '#8FAE6F', menuActiveText: '#FFF8E7' },
+  { name: '초록3', outerBg: '#EEF7EE', menuInactiveBg: '#CFE8CF', menuActiveBg: '#6FAE6F', menuActiveText: '#FFB08A' }
+];
+const PALETTE_KEY = 'toisty_palette';
+
+function applyPalette(p) {
+  const root = document.documentElement.style;
+  root.setProperty('--outer-bg', p.outerBg);
+  root.setProperty('--line', p.outerBg);
+  root.setProperty('--menu-inactive-bg', p.menuInactiveBg);
+  root.setProperty('--menu-active-bg', p.menuActiveBg);
+  root.setProperty('--menu-active-text', p.menuActiveText);
+  localStorage.setItem(PALETTE_KEY, p.name);
+  document.querySelectorAll('.theme-swatch').forEach(sw => sw.classList.toggle('selected', sw.dataset.name === p.name));
+}
+
+function renderThemePanel() {
+  const panel = document.getElementById('themePanel');
+  panel.innerHTML = '';
+  const savedName = localStorage.getItem(PALETTE_KEY);
+  PALETTES.forEach(p => {
+    const sw = document.createElement('div');
+    sw.className = 'theme-swatch' + (p.name === savedName ? ' selected' : '');
+    sw.dataset.name = p.name;
+    sw.title = p.name;
+    sw.style.background = p.menuInactiveBg;
+    sw.innerHTML = `<div class="sw-active" style="background:${p.menuActiveBg}"></div>`;
+    sw.addEventListener('click', () => applyPalette(p));
+    panel.appendChild(sw);
+  });
+}
+
+document.getElementById('themeTrigger').addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('themePanel').classList.toggle('open');
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.theme-panel') && !e.target.closest('.theme-trigger')) {
+    document.getElementById('themePanel').classList.remove('open');
+  }
+});
+
+(function initPalette() {
+  renderThemePanel();
+  const savedName = localStorage.getItem(PALETTE_KEY);
+  const initial = PALETTES.find(p => p.name === savedName) || PALETTES[0];
+  applyPalette(initial);
+})();
 
 /* ════ INIT ════ */
 loadHeaderPhoto();
