@@ -365,7 +365,8 @@ document.addEventListener('DOMContentLoaded', () => {
     `).join('');
   };
 
-  const renderAllTodos = () => { dateCards.forEach(date => renderTodos(date.format('YYYY-MM-DD'))); };
+  let swiper = null; // 아래에서 생성됨; renderAllTodos가 매번 update()를 불러줘야 코버플로우 3D 카드가 새 내용으로 다시 그려짐(사파리에서 리페인트 안 되는 버그 방지)
+  const renderAllTodos = () => { dateCards.forEach(date => renderTodos(date.format('YYYY-MM-DD'))); if (swiper) swiper.update(); };
 
   // --- UNDO DELETE ---
   const showUndoToast = (text) => {
@@ -1272,7 +1273,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedSlide = parseInt(sessionStorage.getItem('swipe-last-slide') || '30', 10);
   const startSlide = (savedSlide >= 0 && savedSlide <= 60) ? savedSlide : 30;
 
-  const swiper = new Swiper('.todo-swiper', {
+  swiper = new Swiper('.todo-swiper', {
     effect: 'coverflow', centeredSlides: true, slidesPerView: 'auto', initialSlide: startSlide,
     coverflowEffect: { rotate: 0, stretch: -30, depth: 150, modifier: 1, slideShadows: false },
     on: {

@@ -127,7 +127,9 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:54px;display:flex;
 .view-modal-title{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text)}
 .view-modal-meta{font-size:11px;color:var(--text-dim);margin-top:4px}
 .view-modal-close{margin-left:auto;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px}
-.view-modal-review{font-size:13px;color:var(--text-mid);font-style:italic;line-height:1.8;white-space:pre-wrap;word-wrap:break-word;max-height:45vh;overflow-y:auto;padding-right:4px}
+.view-modal-review{font-size:13px;color:var(--text-mid);font-style:italic;line-height:1.8;white-space:pre-wrap;word-wrap:break-word;max-height:40vh;overflow-y:auto;padding-right:4px}
+.view-modal-footer{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.view-modal-actions{display:flex;gap:6px}
 
 /* CAPTURE CHOICE POPUP */
 .cap-choice-overlay{position:fixed;inset:0;z-index:410;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -258,12 +260,6 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:54px;display:flex;
 <header>
   <div class="logo">REEL</div>
   <div class="hdr-r">
-    <button class="icon-btn" id="exportBtn" title="데이터 백업">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-    </button>
-    <button class="icon-btn" id="importBtn" title="데이터 복원">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-    </button>
     <button class="icon-btn" id="notionSyncAllBtn" title="노션 동기화 (새 항목·수정분만)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
     </button>
@@ -275,8 +271,6 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:54px;display:flex;
     </button>
   </div>
 </header>
-
-<input type="file" id="importFile" accept=".json" style="display:none">
 
 <div class="stats-bar">
   <div class="stat-item"><span class="stat-num" id="sTotal">0</span><span class="stat-lbl">Total</span></div>
@@ -924,24 +918,39 @@ document.getElementById('capChoiceOverlay').addEventListener('click', e => {
   if (e.target.id === 'capChoiceOverlay') closeCaptureChoice();
 });
 
-/* ════ REVIEW VIEW POPUP ════ */
+/* ════ REVIEW VIEW POPUP — 카드가 그대로 커지는 느낌으로 ════ */
 function openReviewPopup(id) {
   const rec = records.find(r => r.id === id);
   if (!rec) return;
   const meta2 = [rec.year, rec.type === 'tv' ? '시리즈' : '필름', rec.runtime ? rec.runtime + 'min' : ''].filter(Boolean).join(' · ');
+  const genreTags = (rec.genres || []).map(g => `<span class="genre-badge">${esc(g)}</span>`).join('');
   document.getElementById('viewModalBody').innerHTML = `
     <div class="view-modal-hdr">
       ${rec.poster ? `<img src="${IMG_W500}${rec.poster}">` : ''}
       <div style="min-width:0;flex:1">
         <div class="view-modal-title">${esc(rec.title)}</div>
         <div class="view-modal-meta">${meta2}</div>
+        ${genreTags ? `<div style="margin-top:6px">${genreTags}</div>` : ''}
       </div>
       <button class="view-modal-close" id="viewModalClose">✕</button>
     </div>
-    <div class="view-modal-review">"${esc(rec.review || '')}"</div>
+    <div class="view-modal-review">${rec.review ? '"' + esc(rec.review) + '"' : '<span style="opacity:.5">소감 없음</span>'}</div>
+    <div class="view-modal-footer">
+      ${renderStars(rec.rating)}
+      <div class="view-modal-actions">
+        <button class="card-act" data-a="capture"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+        <button class="card-act" data-a="edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="card-act" data-a="delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
+      </div>
+    </div>
   `;
   document.getElementById('viewModalOverlay').classList.add('open');
   document.getElementById('viewModalClose').addEventListener('click', closeReviewPopup);
+  document.querySelectorAll('#viewModalBody .card-act').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.a === 'capture') openCaptureChoice(id);
+    if (b.dataset.a === 'edit') { closeReviewPopup(); openEdit(id); }
+    if (b.dataset.a === 'delete') { closeReviewPopup(); del(id); }
+  }));
 }
 function closeReviewPopup() {
   document.getElementById('viewModalOverlay').classList.remove('open');
@@ -1325,54 +1334,6 @@ function showStats() {
 }
 
 /* ════ EXPORT / IMPORT ════ */
-document.getElementById('exportBtn').onclick = () => {
-  const data = JSON.stringify(records, null, 2);
-  const blob = new Blob([data], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `reel-backup-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('백업 파일 다운로드 ↓');
-};
-
-document.getElementById('importBtn').onclick = () => {
-  document.getElementById('importFile').click();
-};
-
-document.getElementById('importFile').onchange = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    try {
-      const imported = JSON.parse(ev.target.result);
-      if (!Array.isArray(imported)) {
-        toast('⚠️ 잘못된 파일 형식입니다');
-        return;
-      }
-      
-      if (records.length > 0) {
-        if (!confirm('기존 데이터를 덮어쓰시겠습니까?\n\n현재 기록: ' + records.length + '개\n가져올 기록: ' + imported.length + '개')) {
-          return;
-        }
-      }
-      
-      records = imported;
-      records.forEach(r => { if (!r.updatedAt) r.updatedAt = r.addedAt || Date.now(); });
-      save();
-      renderGrid();
-      toast('✓ ' + imported.length + '개 기록 복원됨');
-      e.target.value = '';
-    } catch (err) {
-      console.error(err);
-      toast('⚠️ 파일 읽기 실패');
-    }
-  };
-  reader.readAsText(file);
-};
 </script>
 <style>
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

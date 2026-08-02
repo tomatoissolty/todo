@@ -70,7 +70,9 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:54px;display:flex;
 .view-modal-title{font-family:'DM Serif Display',serif;font-size:15px}
 .view-modal-meta{font-size:11px;color:var(--text-dim);margin-top:4px}
 .view-modal-close{margin-left:auto;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:15px}
-.view-modal-review{font-size:12px;color:var(--text-mid);line-height:1.8;white-space:pre-wrap;word-wrap:break-word;max-height:45vh;overflow-y:auto}
+.view-modal-review{font-size:12px;color:var(--text-mid);line-height:1.8;white-space:pre-wrap;word-wrap:break-word;max-height:38vh;overflow-y:auto}
+.view-modal-footer{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.view-modal-actions{display:flex;gap:6px}
 
 .cap-choice-overlay{position:fixed;inset:0;z-index:410;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
 .cap-choice-overlay.open{opacity:1;pointer-events:all}
@@ -470,10 +472,23 @@ function openReviewPopup(id) {
       </div>
       <button class="view-modal-close" id="viewModalClose">✕</button>
     </div>
-    <div class="view-modal-review">${esc(rec.review || '')}</div>
+    <div class="view-modal-review">${rec.review ? esc(rec.review) : '<span style="opacity:.4">소감 없음</span>'}</div>
+    <div class="view-modal-footer">
+      ${renderStarsDisplay(rec.rating)}
+      <div class="view-modal-actions">
+        <button class="card-act" data-a="capture"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+        <button class="card-act" data-a="edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="card-act" data-a="delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>
+      </div>
+    </div>
   `;
   document.getElementById('viewModalOverlay').classList.add('open');
   document.getElementById('viewModalClose').addEventListener('click', closeReviewPopup);
+  document.querySelectorAll('#viewModalBody .card-act').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.a === 'capture') openCaptureChoice(id);
+    if (b.dataset.a === 'edit') { closeReviewPopup(); openEdit(id); }
+    if (b.dataset.a === 'delete') { closeReviewPopup(); del(id); }
+  }));
 }
 function closeReviewPopup() { document.getElementById('viewModalOverlay').classList.remove('open'); }
 document.getElementById('viewModalOverlay').addEventListener('click', (e) => { if (e.target.id === 'viewModalOverlay') closeReviewPopup(); });

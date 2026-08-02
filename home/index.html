@@ -6,6 +6,14 @@
 <title>toisty</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+@font-face {
+  font-family: 'Rebecca';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2210-EF@1.0/EF_Rebecca.woff2') format('woff2');
+  font-weight: normal;
+  font-display: swap;
+}
+</style>
+<style>
 :root{
   --outer-bg:#fdf6e3; --card-bg:#ffffff; --ink:#2c2a28; --ink-soft:#8a8580; --line:#eee3da;
   --purple:#ece3ff; --purple-ink:#6c4fb0;
@@ -31,7 +39,8 @@ body{
 nav{display:flex;flex-direction:column}
 .nav-item{
   display:flex; align-items:center; gap:10px; padding:14px 16px;
-  border-bottom:1px solid var(--line); cursor:pointer; font-size:13px; font-weight:500;
+  border-bottom:1px solid var(--line); cursor:pointer; font-size:15px; font-weight:normal;
+  font-family:'Rebecca',sans-serif;
   background:var(--pink); color:var(--ink-soft); transition:background .15s,color .15s;
 }
 .nav-item .no{font-size:10px;color:var(--ink-soft);opacity:.7}
@@ -47,7 +56,7 @@ main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
 
 /* TOISTY (main) PANE */
 .toisty-wrap{padding:28px;max-width:760px;margin:0 auto}
-.toisty-title{font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:20px}
+.toisty-title{font-family:'Rebecca',sans-serif;font-size:32px;margin-bottom:20px}
 .main-photo-box{
   width:100%; aspect-ratio:16/9; background:var(--purple); border:1px solid var(--line);
   border-radius:6px; overflow:hidden; margin-bottom:24px; cursor:pointer;
@@ -64,7 +73,7 @@ main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
   transition:border-color .2s, background .2s;
 }
 .mini-card:hover{border-color:var(--purple-ink);background:#fbf9ff}
-.mini-card-title{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px}
+.mini-card-title{font-family:'Rebecca',sans-serif;font-size:16px;letter-spacing:.5px;color:var(--ink-soft);margin-bottom:10px}
 .mini-todo-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px solid var(--line)}
 .mini-todo-item:last-child{border-bottom:none}
 .mini-todo-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
@@ -173,11 +182,11 @@ function toistyHTML() {
       <div class="main-photo-box" id="mainPhotoBox"><div class="no-photo">불러오는 중...</div></div>
       <div class="mini-cards">
         <div class="mini-card">
-          <div class="mini-card-title">오늘의 할 일</div>
+          <div class="mini-card-title">TODO</div>
           <div id="miniTodo"><div class="mini-empty">불러오는 중...</div></div>
         </div>
         <div class="mini-card">
-          <div class="mini-card-title">북마크</div>
+          <div class="mini-card-title">BOOKMARK</div>
           <div id="miniBookmark"><div class="mini-empty">불러오는 중...</div></div>
         </div>
       </div>
