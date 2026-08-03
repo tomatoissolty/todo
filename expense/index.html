@@ -13,13 +13,13 @@
 :root{
   --bg:#f7f9f6; --card:#ffffff; --ink:#233026; --ink-soft:#7c8c80; --line:#e2e8de;
   --mint:#3fae7a; --mint-soft:#e3f5ec; --red:#e2635b; --red-soft:#fbe8e6;
-  --sky:#8fd0e8; --sky-soft:#e5f6fb; --sand:#f0c48a; --sand-soft:#fdf1e0;
+  --sky:#8fd0e8; --sky-soft:#e5f6fb; --sky-deep:#2b90b8; --sand:#f0c48a; --sand-soft:#fdf1e0; --sand-deep:#d9822b;
   --font-body:'ImHyeMin','Noto Sans KR',sans-serif;
   --font-btn:'ImHyeMin','Noto Sans KR',sans-serif; /* 세종글꽃체 웹폰트 배포처가 없어서 임시로 이 폰트로 대체 - 파일 주시면 바로 교체할게요 */
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--ink);font-family:var(--font-body);padding-bottom:0}
-.wrap{max-width:520px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 176px}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);min-height:100vh;display:flex;flex-direction:column}
+.wrap{max-width:520px;width:100%;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 176px;flex:1;display:flex;flex-direction:column}
 header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .title{font-family:'JejuStoneWall',sans-serif;font-size:26px;letter-spacing:1px}
 .hdr-btns{display:flex;gap:8px}
@@ -29,11 +29,11 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .board-tabs{display:flex;gap:4px;margin-bottom:8px}
 .board-tab{flex:1;padding:3px 2px;border:1px solid var(--line);border-radius:5px;background:var(--card);font-size:8px;color:var(--ink-soft);cursor:pointer;font-family:var(--font-body)}
 .board-tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
-.split-board{background:#181f16;border-radius:8px;padding:6px 8px;display:flex;align-items:center;justify-content:flex-start;gap:1px;margin-bottom:8px;overflow:hidden}
-.led-won{color:#7a8f6a;font-size:9px;align-self:center;margin-left:4px;font-family:var(--font-body);flex-shrink:0}
+.split-board{background:#181614;border-radius:8px;padding:6px 8px;display:flex;align-items:center;justify-content:flex-end;gap:1px;margin-bottom:8px;overflow:hidden}
+.led-won{color:#ff9900;font-size:14px;align-self:center;margin-right:4px;font-family:var(--font-body);flex-shrink:0;font-weight:700}
 
 .list-entry{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer}
-.list-entry:hover{border-color:var(--mint)}
+.list-entry:hover{border-color:var(--sky-deep)}
 .le-date-badge{width:36px;height:36px;border-radius:9px;background:var(--sky-soft);color:#2b6b82;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
 .le-date-badge.income{background:var(--sand-soft);color:#96652b}
 .le-date-badge .d{font-size:15px;font-weight:700;line-height:1}
@@ -45,7 +45,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .le-share{font-size:14px;font-weight:700}
 .le-total{font-size:10px;color:var(--ink-soft)}
 .empty{text-align:center;padding:40px 20px;color:var(--ink-soft);font-size:12px}
-.list-wrap{padding-bottom:16px}
+.list-wrap{padding-bottom:16px;margin-top:auto}
 
 /* ═══ 픽셀 바다 (클릭하면 추가 모달) ═══ */
 .ocean{position:fixed;left:0;right:0;bottom:0;width:100%;height:156px;overflow:hidden;cursor:pointer;image-rendering:pixelated;z-index:10}
@@ -58,15 +58,17 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 @media(min-width:560px){.modal{border-radius:18px}}
 .modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
 .modal-title{font-family:'JejuStoneWall',sans-serif;font-size:19px}
-.type-toggle{display:flex;gap:6px;margin-bottom:14px}
-.type-btn{flex:1;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card);cursor:pointer;font-size:15px;color:var(--ink-soft)}
+.type-toggle{display:flex;gap:18px;margin-bottom:16px;align-items:baseline}
+.type-btn{background:none;border:none;cursor:pointer;font-size:26px;color:var(--ink);opacity:.32;transition:opacity .2s,transform .2s;padding:0}
+.type-btn:hover{opacity:.6}
 .type-btn[data-t="expense"]{font-family:'KkuBulLim',var(--font-btn)}
 .type-btn[data-t="income"]{font-family:'OkDandan',var(--font-btn)}
-.type-btn.active[data-t="expense"]{background:var(--sky-soft);border-color:var(--sky);color:#2b6b82}
-.type-btn.active[data-t="income"]{background:var(--sand-soft);border-color:var(--sand);color:#96652b}
+.type-btn.active{opacity:1;transform:scale(1.08)}
+.type-btn.active[data-t="expense"]{color:#2b90b8}
+.type-btn.active[data-t="income"]{color:#c97a2b}
 .form-lbl{font-size:11px;color:var(--ink-soft);margin:12px 0 6px;display:block}
 .form-input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:var(--font-body);outline:none}
-.form-input:focus{border-color:var(--mint)}
+.form-input:focus{border-color:var(--sky-deep)}
 .form-input[type="number"]{-moz-appearance:textfield}
 .form-input[type="number"]::-webkit-outer-spin-button,.form-input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
@@ -74,24 +76,26 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .amount-row .form-input{width:50%;flex:none}
 .amount-btns{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
 .amt-btn{border:1px solid var(--line);background:var(--card);border-radius:8px;font-size:11px;cursor:pointer;color:var(--ink-soft);font-family:var(--font-btn);padding:0}
-.amt-btn.plus{color:var(--mint)}
+.amt-btn.plus{color:var(--sky-deep)}
 .amt-btn.minus{color:var(--red)}
 
 .method-grid{display:flex;flex-wrap:wrap;gap:6px}
 .method-opt{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);cursor:pointer;font-size:12px;color:var(--ink-soft);font-family:var(--font-btn)}
-.method-opt.active{background:var(--mint-soft);border-color:var(--mint);color:var(--mint)}
+.method-opt.active{background:var(--sky-soft);border-color:var(--sky-deep);color:var(--sky-deep)}
 .card-sub-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .card-sub-opt{padding:6px 11px;border:1px dashed var(--ink-soft);border-radius:8px;background:var(--card);cursor:pointer;font-size:11px;color:var(--ink-soft);font-family:var(--font-btn)}
-.card-sub-opt.active{background:var(--mint);border-color:var(--mint);color:#fff;border-style:solid}
+.card-sub-opt.active{background:var(--sky-deep);border-color:var(--sky-deep);color:#fff;border-style:solid}
 
 .split-mode-toggle{display:flex;gap:6px;margin-bottom:8px}
 .split-mode-btn{flex:1;padding:7px;border:1px solid var(--line);border-radius:8px;background:var(--card);cursor:pointer;font-size:11px;color:var(--ink-soft);font-family:var(--font-btn)}
-.split-mode-btn.active{background:var(--mint-soft);border-color:var(--mint);color:var(--mint)}
+.split-mode-btn.active{background:var(--sky-soft);border-color:var(--sky-deep);color:var(--sky-deep)}
 .split-row{display:flex;align-items:center;gap:10px}
 .split-row input{width:70px}
-.share-preview{font-size:12px;color:var(--ink-soft);background:var(--mint-soft);padding:8px 10px;border-radius:8px;margin-top:8px}
-.share-preview b{color:var(--mint);font-size:14px}
-.save-btn{width:100%;padding:13px;border:none;border-radius:12px;background:var(--mint);color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:18px;font-family:var(--font-btn)}
+.share-preview{font-size:12px;color:var(--ink-soft);background:var(--sky-soft);padding:8px 10px;border-radius:8px;margin-top:8px}
+.share-preview b{color:var(--sky-deep);font-size:14px}
+#inDirectShare{background:var(--sky-soft);border-color:var(--sky-soft);font-weight:700;color:var(--sky-deep)}
+.save-btn{width:100%;padding:13px;border:none;border-radius:12px;background:var(--sky-deep);color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:18px;font-family:var(--font-btn)}
+.save-btn.income{background:var(--sand-deep)}
 .delete-btn{width:100%;padding:11px;border:1px solid var(--red);border-radius:12px;background:var(--red-soft);color:var(--red);font-size:13px;cursor:pointer;margin-top:8px;font-family:var(--font-btn)}
 .close-btn{background:none;border:none;font-size:18px;color:var(--ink-soft);cursor:pointer}
 
@@ -116,9 +120,9 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
   </header>
 
   <div class="board-tabs">
-    <button class="board-tab active" data-p="today">오늘</button>
-    <button class="board-tab" data-p="week">이번 주</button>
-    <button class="board-tab" data-p="month">이번 달</button>
+    <button class="board-tab active" data-p="today">TODAY</button>
+    <button class="board-tab" data-p="week">WEEK</button>
+    <button class="board-tab" data-p="month">MONTH</button>
   </div>
   <div class="split-board" id="splitBoard"></div>
 
@@ -268,7 +272,7 @@ function dotDigitSVG(digit, size) {
   let dots = '';
   grid.forEach((row, y) => {
     [...row].forEach((ch, x) => {
-      dots += `<circle cx="${x * size + size / 2}" cy="${y * size + size / 2}" r="${size * 0.38}" fill="${ch === '1' ? '#ffb020' : '#3a3320'}"/>`;
+      dots += `<circle cx="${x * size + size / 2}" cy="${y * size + size / 2}" r="${size * 0.38}" fill="${ch === '1' ? '#ff9900' : '#33210c'}"/>`;
     });
   });
   const w = 5 * size, h = 7 * size;
@@ -287,7 +291,7 @@ function renderBoard() {
   const availableW = board.getBoundingClientRect().width || 100;
   // 자릿수만큼 안에 다 들어가도록 도트 크기를 자동으로 줄임
   const dotSize = Math.max(1.4, Math.min(3, (availableW - 20) / (digitsStr.length * 5 + 2)));
-  board.innerHTML = [...digitsStr].map(d => dotDigitSVG(d, dotSize)).join('') + `<span class="led-won">원</span>`;
+  board.innerHTML = `<span class="led-won">₩</span>` + [...digitsStr].map(d => dotDigitSVG(d, dotSize)).join('');
 }
 document.querySelectorAll('.board-tab').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('.board-tab').forEach(x => x.classList.remove('active'));
@@ -382,6 +386,7 @@ document.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', 
   document.getElementById('modalTitle').textContent = curType === 'expense' ? '지출' : '수입';
   document.getElementById('expenseOnlyFields').style.display = curType === 'expense' ? '' : 'none';
   document.getElementById('amountLbl').textContent = curType === 'expense' ? '금액 (실제 결제한 총액)' : '금액';
+  document.getElementById('btnSave').classList.toggle('income', curType === 'income');
 }));
 
 function resetAddModal() {
@@ -391,6 +396,7 @@ function resetAddModal() {
   document.getElementById('modalTitle').textContent = '지출';
   document.getElementById('expenseOnlyFields').style.display = '';
   document.getElementById('amountLbl').textContent = '금액 (실제 결제한 총액)';
+  document.getElementById('btnSave').classList.remove('income');
   document.getElementById('inAmount').value = '';
   document.getElementById('inCategory').value = '';
   document.getElementById('inSplit').value = 1;
@@ -416,6 +422,7 @@ function openEdit(id) {
   document.getElementById('modalTitle').textContent = r.type === 'expense' ? '지출' : '수입';
   document.getElementById('expenseOnlyFields').style.display = r.type === 'expense' ? '' : 'none';
   document.getElementById('amountLbl').textContent = r.type === 'expense' ? '금액 (실제 결제한 총액)' : '금액';
+  document.getElementById('btnSave').classList.toggle('income', r.type === 'income');
   document.getElementById('inAmount').value = r.amount;
   document.getElementById('inCategory').value = r.name || r.category || '';
   document.getElementById('inSplit').value = r.splitCount || 1;
