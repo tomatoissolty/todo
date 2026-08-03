@@ -19,7 +19,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font-body);min-height:100vh;display:flex;flex-direction:column}
-.wrap{max-width:520px;width:100%;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 70px;flex:1;display:flex;flex-direction:column}
+.wrap{max-width:520px;width:100%;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 130px;flex:1;display:flex;flex-direction:column}
 header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .title{font-family:'JejuStoneWall',sans-serif;font-size:26px;letter-spacing:1px}
 .hdr-btns{display:flex;gap:8px}
@@ -44,12 +44,12 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .le-share{font-size:14px;font-weight:700}
 .le-total{font-size:10px;color:var(--ink-soft)}
 .empty{text-align:center;padding:40px 20px;color:var(--ink-soft);font-size:12px}
-.add-btn-wrap{position:fixed;left:0;right:0;bottom:14px;display:flex;justify-content:center;z-index:10;pointer-events:none}
+.add-btn-wrap{position:fixed;left:0;right:0;bottom:42px;display:flex;justify-content:center;z-index:10;pointer-events:none}
 .add-text-btn{pointer-events:all;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:0;margin:0}
-.add-label{font-family:'KkuBulLim',var(--font-btn);font-size:19.5px;color:var(--ink);padding:8px 16px}
+.add-label{font-family:'KkuBulLim',var(--font-btn);font-size:39px;color:var(--ink);padding:8px 16px}
 .an-char{transition:opacity .2s}
 .add-text-btn:hover .an-char{opacity:.12}
-.arrow-slot{font-size:19.5px;line-height:1;color:var(--sky-deep);visibility:hidden;margin-bottom:1px}
+.arrow-slot{font-size:39px;line-height:1;color:var(--sky-deep);visibility:hidden;margin-bottom:1px}
 .add-text-btn:hover .arrow-slot{visibility:visible}
 .list-wrap{padding-bottom:16px;margin-top:auto}
 
@@ -97,7 +97,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .split-row input{width:70px}
 .share-preview{font-size:12px;color:var(--ink-soft);background:var(--sky-soft);padding:8px 10px;border-radius:8px;margin-top:8px}
 .share-preview b{color:var(--sky-deep);font-size:14px}
-#inDirectShare{background:var(--sky-soft);border-color:var(--sky-soft);font-weight:700;color:var(--sky-deep)}
+#inDirectShare{background:transparent;border:none;font-weight:700;color:var(--sky-deep);width:80px;padding:0;font-family:inherit;font-size:14px}
+#inDirectShare:focus{outline:none}
 .save-btn{width:100%;padding:13px;border:none;border-radius:12px;background:var(--sky-deep);color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:18px;font-family:var(--font-btn)}
 .save-btn.income{background:var(--sand-deep)}
 .delete-btn{width:100%;padding:11px;border:1px solid var(--red);border-radius:12px;background:var(--red-soft);color:var(--red);font-size:13px;cursor:pointer;margin-top:8px;font-family:var(--font-btn)}
@@ -162,8 +163,18 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
       </div>
     </div>
 
-    <label class="form-lbl">카테고리/메모</label>
-    <input class="form-input" id="inCategory" placeholder="예: 티빙 구독, 점심식사...">
+    <label class="form-lbl">카테고리</label>
+    <select class="form-input" id="inCategorySelect">
+      <option value="">선택 안 함 (기타로 집계)</option>
+      <option value="식">식</option>
+      <option value="주">주</option>
+      <option value="의">의</option>
+      <option value="야옹">야옹</option>
+      <option value="개인">개인</option>
+    </select>
+
+    <label class="form-lbl">메모 (선택)</label>
+    <input class="form-input" id="inMemo" placeholder="예: 티빙 구독, 점심식사...">
 
     <div id="expenseOnlyFields">
       <label class="form-lbl">결제수단</label>
@@ -180,8 +191,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         <div class="share-preview" id="sharePreview" style="flex:1">내 몫: <b>0원</b></div>
       </div>
       <div class="split-row" id="splitDirectRow" style="display:none">
-        <span style="font-size:12px;color:var(--ink-soft);flex-shrink:0">내 몫 :</span>
-        <input class="form-input" id="inDirectShare" type="number" placeholder="내가 실제 낸 금액" style="width:100%">
+        <div class="share-preview share-preview-input" style="flex:1;margin-top:0">내 몫: <input id="inDirectShare" type="number" placeholder="0">원</div>
       </div>
     </div>
 
@@ -414,7 +424,8 @@ function resetAddModal() {
   document.getElementById('amountLbl').textContent = '금액 (실제 결제한 총액)';
   document.getElementById('btnSave').classList.remove('income');
   document.getElementById('inAmount').value = '';
-  document.getElementById('inCategory').value = '';
+  document.getElementById('inCategorySelect').value = '';
+  document.getElementById('inMemo').value = '';
   document.getElementById('inSplit').value = 1;
   document.getElementById('inDirectShare').value = '';
   document.getElementById('inDate').value = todayStr();
@@ -439,7 +450,14 @@ function openEdit(id) {
   document.getElementById('amountLbl').textContent = r.type === 'expense' ? '금액 (실제 결제한 총액)' : '금액';
   document.getElementById('btnSave').classList.toggle('income', r.type === 'income');
   document.getElementById('inAmount').value = r.amount;
-  document.getElementById('inCategory').value = r.name || r.category || '';
+  const knownCats = ['식', '주', '의', '야옹', '개인'];
+  if (knownCats.includes(r.category)) {
+    document.getElementById('inCategorySelect').value = r.category;
+    document.getElementById('inMemo').value = (r.name && r.name !== r.category) ? r.name : '';
+  } else {
+    document.getElementById('inCategorySelect').value = '';
+    document.getElementById('inMemo').value = r.name || r.category || '';
+  }
   document.getElementById('inSplit').value = r.splitCount || 1;
   document.getElementById('inDirectShare').value = r.myShare;
   document.getElementById('inDate').value = r.date;
@@ -454,9 +472,11 @@ function openEdit(id) {
 
 document.getElementById('btnSave').onclick = () => {
   const amount = parseFloat(document.getElementById('inAmount').value);
-  const category = document.getElementById('inCategory').value.trim();
+  const category = document.getElementById('inCategorySelect').value || '기타';
+  const memo = document.getElementById('inMemo').value.trim();
+  const category_name = memo || category;
   const date = document.getElementById('inDate').value || todayStr();
-  if (!amount || !category) { toast('금액과 카테고리를 입력해주세요'); return; }
+  if (!amount) { toast('금액을 입력해주세요'); return; }
 
   let splitCount = 1, myShare = amount;
   if (curType === 'expense') {
@@ -473,7 +493,7 @@ document.getElementById('btnSave').onclick = () => {
   if (editingId) {
     const r = records.find(x => x.id === editingId);
     Object.assign(r, {
-      type: curType, name: category, category, amount,
+      type: curType, name: category_name, category, amount,
       splitCount: curType === 'expense' ? splitCount : 1,
       myShare: curType === 'expense' ? myShare : amount,
       method: curType === 'expense' ? curMethod : null,
@@ -486,7 +506,7 @@ document.getElementById('btnSave').onclick = () => {
     autoPush(r);
   } else {
     const rec = {
-      id: generateId(), type: curType, name: category, category, amount,
+      id: generateId(), type: curType, name: category_name, category, amount,
       splitCount: curType === 'expense' ? splitCount : 1,
       myShare: curType === 'expense' ? myShare : amount,
       method: curType === 'expense' ? curMethod : null,
