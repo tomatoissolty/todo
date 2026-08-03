@@ -30,7 +30,6 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .board-tab{flex:1;padding:3px 2px;border:1px solid var(--line);border-radius:5px;background:var(--card);font-size:8px;color:var(--ink-soft);cursor:pointer;font-family:var(--font-body)}
 .board-tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 .split-board{background:#181614;border-radius:8px;padding:6px 8px;display:flex;align-items:center;justify-content:flex-end;gap:1px;margin-bottom:8px;overflow:hidden}
-.led-won{color:#ff9900;font-size:14px;align-self:center;margin-right:4px;font-family:var(--font-body);flex-shrink:0;font-weight:700}
 
 .list-entry{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer}
 .list-entry:hover{border-color:var(--sky-deep)}
@@ -48,7 +47,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .list-wrap{padding-bottom:16px;margin-top:auto}
 
 /* ═══ 픽셀 바다 (클릭하면 추가 모달) ═══ */
-.ocean{position:fixed;left:0;right:0;bottom:0;width:100%;height:156px;overflow:hidden;cursor:pointer;image-rendering:pixelated;z-index:10}
+.ocean{position:fixed;left:0;right:0;bottom:0;width:100%;height:156px;overflow:hidden;cursor:pointer;z-index:10;background-image:url('ocean-bg.jpg');background-size:cover;background-position:right bottom;box-shadow:0 -8px 16px -8px rgba(0,0,0,.15) inset}
 .ocean svg{width:100%;height:100%;display:block}
 
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;z-index:100}
@@ -134,7 +133,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
 <div class="modal-overlay" id="addModal">
   <div class="modal">
-    <div class="modal-hdr"><span class="modal-title" id="modalTitle">지출</span><button class="close-btn" id="closeAdd">✕</button></div>
+    <div class="modal-hdr" style="justify-content:flex-end"><button class="close-btn" id="closeAdd">✕</button></div>
     <div class="type-toggle">
       <button class="type-btn active" data-t="expense">지출</button>
       <button class="type-btn" data-t="income">수입</button>
@@ -171,7 +170,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         <div class="share-preview" id="sharePreview" style="flex:1">내 몫: <b>0원</b></div>
       </div>
       <div class="split-row" id="splitDirectRow" style="display:none">
-        <input class="form-input" id="inDirectShare" type="number" placeholder="내가 실제 낸 금액">
+        <span style="font-size:12px;color:var(--ink-soft);flex-shrink:0">내 몫 :</span>
+        <input class="form-input" id="inDirectShare" type="number" placeholder="내가 실제 낸 금액" style="width:100%">
       </div>
     </div>
 
@@ -283,15 +283,27 @@ function matchBoardWidthToTitle() {
   document.getElementById('splitBoard').style.maxWidth = titleW + 'px';
   document.querySelector('.board-tabs').style.maxWidth = titleW + 'px';
 }
+// ₩ 기호도 도트로 (W 모양 + 가로줄 두 개)
+const WON_DOTS = ['10001', '11111', '10001', '11111', '10101', '11011', '10001'];
+function dotWonSVG(size) {
+  let dots = '';
+  WON_DOTS.forEach((row, y) => {
+    [...row].forEach((ch, x) => {
+      dots += `<circle cx="${x * size + size / 2}" cy="${y * size + size / 2}" r="${size * 0.38}" fill="${ch === '1' ? '#ff9900' : '#33210c'}"/>`;
+    });
+  });
+  const w = 5 * size, h = 7 * size;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${dots}</svg>`;
+}
 function renderBoard() {
   matchBoardWidthToTitle();
   const total = Math.round(computeTotal(boardPeriod));
   const digitsStr = String(total);
   const board = document.getElementById('splitBoard');
   const availableW = board.getBoundingClientRect().width || 100;
-  // 자릿수만큼 안에 다 들어가도록 도트 크기를 자동으로 줄임
-  const dotSize = Math.max(1.4, Math.min(3, (availableW - 20) / (digitsStr.length * 5 + 2)));
-  board.innerHTML = `<span class="led-won">₩</span>` + [...digitsStr].map(d => dotDigitSVG(d, dotSize)).join('');
+  // 자릿수만큼(₩ 기호 포함) 다 들어가도록 도트 크기를 자동으로 줄임
+  const dotSize = Math.max(1.4, Math.min(3, (availableW - 12) / ((digitsStr.length + 1) * 5 + 2)));
+  board.innerHTML = [...digitsStr].map(d => dotDigitSVG(d, dotSize)).join('') + dotWonSVG(dotSize);
 }
 document.querySelectorAll('.board-tab').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('.board-tab').forEach(x => x.classList.remove('active'));
@@ -383,7 +395,6 @@ document.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', 
   document.querySelectorAll('.type-btn').forEach(x => x.classList.remove('active'));
   b.classList.add('active');
   curType = b.dataset.t;
-  document.getElementById('modalTitle').textContent = curType === 'expense' ? '지출' : '수입';
   document.getElementById('expenseOnlyFields').style.display = curType === 'expense' ? '' : 'none';
   document.getElementById('amountLbl').textContent = curType === 'expense' ? '금액 (실제 결제한 총액)' : '금액';
   document.getElementById('btnSave').classList.toggle('income', curType === 'income');
@@ -393,7 +404,6 @@ function resetAddModal() {
   editingId = null;
   curType = 'expense'; curMethod = '카드'; curCardType = null; curSplitMode = 'count';
   document.querySelectorAll('.type-btn').forEach(x => x.classList.toggle('active', x.dataset.t === 'expense'));
-  document.getElementById('modalTitle').textContent = '지출';
   document.getElementById('expenseOnlyFields').style.display = '';
   document.getElementById('amountLbl').textContent = '금액 (실제 결제한 총액)';
   document.getElementById('btnSave').classList.remove('income');
@@ -419,7 +429,6 @@ function openEdit(id) {
   curType = r.type; curMethod = r.method || '카드'; curCardType = r.cardType || null;
   curSplitMode = (r.splitCount && r.splitCount > 1) ? 'count' : (r.myShare !== r.amount ? 'direct' : 'count');
   document.querySelectorAll('.type-btn').forEach(x => x.classList.toggle('active', x.dataset.t === r.type));
-  document.getElementById('modalTitle').textContent = r.type === 'expense' ? '지출' : '수입';
   document.getElementById('expenseOnlyFields').style.display = r.type === 'expense' ? '' : 'none';
   document.getElementById('amountLbl').textContent = r.type === 'expense' ? '금액 (실제 결제한 총액)' : '금액';
   document.getElementById('btnSave').classList.toggle('income', r.type === 'income');
@@ -565,49 +574,12 @@ document.getElementById('btnSync').onclick = async () => {
   toast('동기화 완료');
 };
 
-/* ═══════ 픽셀 바다 (도트 그래픽) ═══════ */
-function renderOcean() {
-  const el = document.getElementById('ocean');
-  const W = 80, H = 26; // 작은 도트 격자
-  let rects = '';
-  const px = (x, y, w, h, color) => { rects += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${color}"/>`; };
-
-  // 물결(작은 도트 줄무늬, 2톤 파랑)
-  const waveColors = ['#7fc7e0', '#6bb6d1'];
-  for (let y = 0; y < H; y++) {
-    const offset = (y % 2 === 0) ? 0 : 2;
-    for (let x = -offset; x < W; x += 4) {
-      px(x, y, 2, 1, waveColors[(x + y) % 4 === 0 ? 0 : 1]);
-    }
-  }
-  // 바닥(더 어두운 파랑)
-  px(0, H - 6, W, 6, '#3f7a95');
-
-  // 가라앉은 배(선체)
-  const shipX = 44, shipY = H - 11;
-  px(shipX, shipY + 4, 20, 3, '#8a5a3c');
-  px(shipX + 2, shipY + 2, 16, 2, '#a9754f');
-  px(shipX + 5, shipY, 2, 3, '#6e4429');
-  px(shipX + 12, shipY - 1, 2, 4, '#6e4429');
-  px(shipX - 1, shipY + 6, 22, 1, '#2f5a70');
-
-  // 보물상자
-  const chestX = shipX - 10, chestY = H - 8;
-  px(chestX, chestY, 6, 4, '#7a4a2a');
-  px(chestX, chestY, 6, 1, '#c99a4a');
-  px(chestX + 2, chestY + 1, 2, 1, '#f2c94c');
-
-  // 금화 흩뿌리기
-  const coinSpots = [[chestX + 7, chestY + 3], [chestX + 9, chestY + 4], [shipX - 2, H - 4], [shipX + 22, H - 3], [chestX + 3, chestY + 5]];
-  coinSpots.forEach(([cx, cy]) => px(cx, cy, 1, 1, '#f7d34a'));
-
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" shape-rendering="crispEdges">${rects}</svg>`;
-}
-
 /* ═══════ INIT ═══════ */
 spawnRecurring();
 renderList();
-renderOcean();
+// 커스텀 폰트(제주돌담체)가 로드되기 전에 타이틀 너비를 재면 좁게 측정돼서
+// 전광판이 작게 나오는 버그가 있었음 - 폰트 로딩 완료 후 다시 그림
+document.fonts.ready.then(() => { renderBoard(); });
 </script>
 <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>
 </body>
