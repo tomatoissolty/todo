@@ -321,6 +321,41 @@ function calendarFromPage(page) {
 }
 
 
+// --- Expense(가계부 앱) 매핑 ---
+function expenseToProperties(item) {
+  return {
+    'Name': { title: [{ text: { content: item.name || '(제목 없음)' } }] },
+    'Date': item.date ? { date: { start: item.date } } : { date: null },
+    'Amount': { number: typeof item.amount === 'number' ? item.amount : null },
+    'Split Count': { number: typeof item.splitCount === 'number' ? item.splitCount : 1 },
+    'My Share': { number: typeof item.myShare === 'number' ? item.myShare : null },
+    'Method': item.method ? { select: { name: item.method } } : { select: null },
+    'Category': { rich_text: item.category ? [{ text: { content: item.category } }] : [] },
+    'Type': { select: { name: item.type === 'income' ? '수입' : '지출' } },
+    'App ID': { rich_text: [{ text: { content: String(item.appId || '') } }] },
+    'Last Updated': item.updatedAt ? { date: { start: item.updatedAt } } : { date: null }
+  };
+}
+function expenseFromPage(page) {
+  const p = page.properties || {};
+  const richText = (prop) => (prop?.rich_text || []).map(t => t.plain_text).join('');
+  const titleText = (prop) => (prop?.title || []).map(t => t.plain_text).join('');
+  return {
+    notionPageId: page.id,
+    appId: richText(p['App ID']),
+    name: titleText(p['Name']),
+    date: p['Date']?.date?.start || null,
+    amount: typeof p['Amount']?.number === 'number' ? p['Amount'].number : 0,
+    splitCount: typeof p['Split Count']?.number === 'number' ? p['Split Count'].number : 1,
+    myShare: typeof p['My Share']?.number === 'number' ? p['My Share'].number : 0,
+    method: p['Method']?.select?.name || null,
+    category: richText(p['Category']),
+    type: p['Type']?.select?.name === '수입' ? 'income' : 'expense',
+    lastUpdated: p['Last Updated']?.date?.start || null
+  };
+}
+
+
 const APPS = {
   todo: {
     databaseId: () => process.env.NOTION_DATABASE_ID_TODO || process.env.NOTION_DATABASE_ID,
@@ -368,6 +403,12 @@ const APPS = {
     databaseId: () => process.env.NOTION_DATABASE_ID_CALENDAR,
     toProperties: null, // 읽기 전용 - 일정은 Notion Calendar 앱에서 만듦
     fromPage: calendarFromPage,
+    useCover: false
+  },
+  expense: {
+    databaseId: () => process.env.NOTION_DATABASE_ID_EXPENSE,
+    toProperties: expenseToProperties,
+    fromPage: expenseFromPage,
     useCover: false
   }
 };

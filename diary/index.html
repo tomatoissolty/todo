@@ -123,6 +123,22 @@ button,input,textarea{font-family:var(--font)}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 .pixel-row{display:flex;gap:10px;justify-content:center;margin:6px 0 16px;opacity:.9}
 .pixel-row svg{image-rendering:pixelated;shape-rendering:crispEdges}
+
+/* SEARCH */
+.search-tabs{display:flex;gap:8px;margin-bottom:16px}
+.search-tab{flex:1;padding:9px;border:2px solid var(--border);border-radius:0;clip-path:var(--pixel-clip-4);background:var(--card);color:var(--ink-soft);font-family:var(--font);font-size:12px;cursor:pointer}
+.search-tab.active{background:var(--purple);color:var(--ink);border-color:var(--ink)}
+.search-result-row{background:var(--card);border:2px solid var(--border);border-radius:0;clip-path:var(--pixel-clip-6);padding:10px 14px;margin-bottom:8px;cursor:pointer;font-size:13px}
+.search-result-row:hover{border-color:var(--purple-deep)}
+.search-result-date{font-size:10px;color:var(--ink-soft);margin-bottom:2px}
+.search-result-snippet{font-size:11px;color:var(--ink-soft);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:18px}
+.cal-dow{font-size:10px;color:var(--ink-soft);text-align:center;padding:4px 0}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:6px;cursor:pointer;color:var(--ink-soft)}
+.cal-day.has-entry{color:var(--ink);font-weight:700;background:var(--pink)}
+.cal-day.empty{visibility:hidden;cursor:default}
+.cal-day.in-week{background:var(--purple)}
 </style>
 </head>
 <body>
@@ -133,12 +149,37 @@ button,input,textarea{font-family:var(--font)}
     <div class="app-header">
       <div class="app-title">✩°｡⋆ diary ⋆｡°✩</div>
       <div style="display:flex;gap:8px;align-items:center">
+        <div class="icon-btn" id="btn-search" title="검색"><span>🔍</span></div>
         <div class="icon-btn" id="btn-sync" title="지금 바로 동기화"><span id="sync-icon">🔄</span></div>
         <button class="btn-add" id="btn-add">+ ADD</button>
       </div>
     </div>
     <div class="pixel-row" id="pixel-deco"></div>
     <div id="entry-list"></div>
+  </div>
+
+  <!-- SEARCH SCREEN -->
+  <div class="screen" id="screen-search">
+    <div class="icon-btn" id="btn-back-search" style="margin-bottom:14px">←</div>
+    <div class="search-tabs">
+      <button class="search-tab active" id="tab-text-search">텍스트 검색</button>
+      <button class="search-tab" id="tab-date-search">날짜 검색</button>
+    </div>
+
+    <div id="text-search-panel">
+      <input class="field-input" id="search-text-input" placeholder="제목이나 내용으로 검색..." style="width:100%;margin-bottom:14px">
+      <div id="search-results"></div>
+    </div>
+
+    <div id="date-search-panel" style="display:none">
+      <div class="cal-nav">
+        <button class="icon-btn" id="cal-prev">‹</button>
+        <div id="cal-month-label"></div>
+        <button class="icon-btn" id="cal-next">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div id="week-results"></div>
+    </div>
   </div>
 
   <!-- VIEW SCREEN -->
@@ -663,6 +704,110 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
 }
 document.getElementById('btn-add').onclick = () => { currentEntry = null; showEditScreen(null); };
+
+/* ═══════════ SEARCH ═══════════ */
+let calViewDate = new Date();
+
+function getSnippet(entry, query) {
+  const q = query.toLowerCase();
+  for (const block of entry.content || []) {
+    if (block.type === 'text' && block.text && block.text.toLowerCase().includes(q)) return block.text;
+  }
+  return (entry.content || []).find(b => b.type === 'text' && b.text)?.text || '';
+}
+
+function renderSearchResults(list, container, query) {
+  container.innerHTML = '';
+  if (!list.length) { container.innerHTML = `<div class="empty">결과가 없어요</div>`; return; }
+  list.forEach(entry => {
+    const row = document.createElement('div');
+    row.className = 'search-result-row';
+    const snippet = query ? getSnippet(entry, query) : (entry.content || []).find(b => b.type === 'text' && b.text)?.text || '';
+    row.innerHTML = `
+      <div class="search-result-date">${entry.date}${entry.locked ? ' 🔒' : ''}</div>
+      <div>${escapeHtml(entry.title || '(제목 없음)')}</div>
+      ${snippet ? `<div class="search-result-snippet">${escapeHtml(snippet)}</div>` : ''}
+    `;
+    row.onclick = () => openEntry(entry.id, false);
+    container.appendChild(row);
+  });
+}
+
+document.getElementById('search-text-input').addEventListener('input', (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  const container = document.getElementById('search-results');
+  if (!q) { container.innerHTML = ''; return; }
+  const matched = entries.filter(en => {
+    if ((en.title || '').toLowerCase().includes(q)) return true;
+    return (en.content || []).some(b => b.type === 'text' && (b.text || '').toLowerCase().includes(q));
+  }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  renderSearchResults(matched, container, q);
+});
+
+function renderCalendar() {
+  const label = document.getElementById('cal-month-label');
+  const grid = document.getElementById('cal-grid');
+  const y = calViewDate.getFullYear(), m = calViewDate.getMonth();
+  label.textContent = `${y}. ${String(m + 1).padStart(2, '0')}`;
+
+  const entryDates = new Set(entries.map(en => en.date));
+  const firstDay = new Date(y, m, 1);
+  const startOffset = firstDay.getDay(); // 0=일요일
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+
+  grid.innerHTML = '';
+  ['일', '월', '화', '수', '목', '금', '토'].forEach(d => {
+    const el = document.createElement('div'); el.className = 'cal-dow'; el.textContent = d; grid.appendChild(el);
+  });
+  for (let i = 0; i < startOffset; i++) {
+    const el = document.createElement('div'); el.className = 'cal-day empty'; grid.appendChild(el);
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const el = document.createElement('div');
+    el.className = 'cal-day' + (entryDates.has(dateStr) ? ' has-entry' : '');
+    el.textContent = d;
+    el.onclick = () => showWeekResults(new Date(y, m, d));
+    grid.appendChild(el);
+  }
+}
+
+function showWeekResults(clickedDate) {
+  const dow = clickedDate.getDay(); // 0(일)~6(토)
+  const weekStart = new Date(clickedDate); weekStart.setDate(clickedDate.getDate() - dow);
+  const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
+  const toStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const startStr = toStr(weekStart), endStr = toStr(weekEnd);
+
+  const inWeek = entries.filter(en => en.date >= startStr && en.date <= endStr)
+    .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  renderSearchResults(inWeek, document.getElementById('week-results'), '');
+}
+
+document.getElementById('btn-search').onclick = () => {
+  calViewDate = new Date();
+  document.getElementById('search-text-input').value = '';
+  document.getElementById('search-results').innerHTML = '';
+  document.getElementById('week-results').innerHTML = '';
+  renderCalendar();
+  showScreen('screen-search');
+};
+document.getElementById('btn-back-search').onclick = () => showScreen('screen-list');
+document.getElementById('tab-text-search').onclick = () => {
+  document.getElementById('tab-text-search').classList.add('active');
+  document.getElementById('tab-date-search').classList.remove('active');
+  document.getElementById('text-search-panel').style.display = '';
+  document.getElementById('date-search-panel').style.display = 'none';
+};
+document.getElementById('tab-date-search').onclick = () => {
+  document.getElementById('tab-date-search').classList.add('active');
+  document.getElementById('tab-text-search').classList.remove('active');
+  document.getElementById('date-search-panel').style.display = '';
+  document.getElementById('text-search-panel').style.display = 'none';
+  renderCalendar();
+};
+document.getElementById('cal-prev').onclick = () => { calViewDate.setMonth(calViewDate.getMonth() - 1); renderCalendar(); };
+document.getElementById('cal-next').onclick = () => { calViewDate.setMonth(calViewDate.getMonth() + 1); renderCalendar(); };
 document.getElementById('btn-back-view').onclick = () => showScreen('screen-list');
 document.getElementById('btn-back-edit').onclick = () => showScreen('screen-list');
 document.getElementById('btn-goto-edit').onclick = () => showEditScreen(currentEntry);
