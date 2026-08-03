@@ -19,28 +19,25 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font-body);padding-bottom:0}
-.wrap{max-width:520px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 0}
+.wrap{max-width:520px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 176px}
 header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .title{font-family:'JejuStoneWall',sans-serif;font-size:26px;letter-spacing:1px}
 .hdr-btns{display:flex;gap:8px}
 .icon-btn{height:34px;padding:0 12px;border:1px solid var(--line);background:var(--card);border-radius:10px;cursor:pointer;font-size:12px;font-family:var(--font-body);display:flex;align-items:center;justify-content:center;gap:5px;color:var(--ink)}
 
 /* ═══ 전광막(split-flap) 전광판 ═══ */
-.board-tabs{display:flex;gap:6px;margin-bottom:10px}
-.board-tab{flex:1;padding:7px;border:1px solid var(--line);border-radius:8px;background:var(--card);font-size:11px;color:var(--ink-soft);cursor:pointer;font-family:var(--font-body)}
+.board-tabs{display:flex;gap:4px;margin-bottom:8px}
+.board-tab{flex:1;padding:3px 2px;border:1px solid var(--line);border-radius:5px;background:var(--card);font-size:8px;color:var(--ink-soft);cursor:pointer;font-family:var(--font-body)}
 .board-tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
-.split-board{background:#1c2620;border-radius:14px;padding:16px;display:flex;justify-content:center;gap:4px;margin-bottom:8px}
-.flap-digit{background:#2a382f;color:#e8f5ee;font-family:'Courier New',monospace;font-weight:700;font-size:26px;width:26px;text-align:center;border-radius:4px;padding:6px 2px;position:relative;box-shadow:inset 0 0 0 1px #3a4a3e}
-.flap-digit::after{content:'';position:absolute;left:2px;right:2px;top:50%;height:1px;background:rgba(0,0,0,.35)}
-.flap-won{color:#8fae9e;font-size:16px;align-self:center;margin-left:4px;font-family:var(--font-body)}
-.method-stats{display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px}
-.method-chip{flex-shrink:0;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:6px 12px;font-size:11px;color:var(--ink-soft);white-space:nowrap}
-.method-chip b{color:var(--ink)}
+.split-board{background:#181f16;border-radius:8px;padding:6px 8px;display:flex;align-items:center;justify-content:flex-start;gap:1px;margin-bottom:8px;overflow:hidden}
+.led-won{color:#7a8f6a;font-size:9px;align-self:center;margin-left:4px;font-family:var(--font-body);flex-shrink:0}
 
 .list-entry{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer}
 .list-entry:hover{border-color:var(--mint)}
-.le-icon{width:34px;height:34px;border-radius:9px;background:var(--sky-soft);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
-.le-icon.income{background:var(--sand-soft)}
+.le-date-badge{width:36px;height:36px;border-radius:9px;background:var(--sky-soft);color:#2b6b82;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.le-date-badge.income{background:var(--sand-soft);color:#96652b}
+.le-date-badge .d{font-size:15px;font-weight:700;line-height:1}
+.le-date-badge .m{font-size:8px;opacity:.8}
 .le-main{flex:1;min-width:0}
 .le-cat{font-size:13px;font-weight:500}
 .le-meta{font-size:10px;color:var(--ink-soft);margin-top:2px}
@@ -51,7 +48,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .list-wrap{padding-bottom:16px}
 
 /* ═══ 픽셀 바다 (클릭하면 추가 모달) ═══ */
-.ocean{position:relative;width:100%;height:130px;overflow:hidden;cursor:pointer;margin-top:10px;image-rendering:pixelated}
+.ocean{position:fixed;left:0;right:0;bottom:0;width:100%;height:156px;overflow:hidden;cursor:pointer;image-rendering:pixelated;z-index:10}
 .ocean svg{width:100%;height:100%;display:block}
 
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;z-index:100}
@@ -124,7 +121,6 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
     <button class="board-tab" data-p="month">이번 달</button>
   </div>
   <div class="split-board" id="splitBoard"></div>
-  <div class="method-stats" id="methodStats"></div>
 
   <div class="list-wrap" id="list"></div>
 </div>
@@ -134,13 +130,13 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
 <div class="modal-overlay" id="addModal">
   <div class="modal">
-    <div class="modal-hdr"><span class="modal-title" id="modalTitle">지출 추가</span><button class="close-btn" id="closeAdd">✕</button></div>
+    <div class="modal-hdr"><span class="modal-title" id="modalTitle">지출</span><button class="close-btn" id="closeAdd">✕</button></div>
     <div class="type-toggle">
       <button class="type-btn active" data-t="expense">지출</button>
       <button class="type-btn" data-t="income">수입</button>
     </div>
 
-    <label class="form-lbl">금액 (실제 결제한 총액)</label>
+    <label class="form-lbl" id="amountLbl">금액 (실제 결제한 총액)</label>
     <div class="amount-row">
       <input class="form-input" id="inAmount" type="number" placeholder="예: 17000">
       <div class="amount-btns">
@@ -254,11 +250,44 @@ function computeTotal(period) {
   if (period === 'week') return sum(expenses.filter(r => r.date >= weekStartStr));
   return sum(expenses.filter(r => r.date >= monthStart));
 }
+// 5x7 도트매트릭스 숫자 패턴 (LED 전광판 폰트)
+const DOT_DIGITS = {
+  '0': ['01110','10001','10011','10101','11001','10001','01110'],
+  '1': ['00100','01100','00100','00100','00100','00100','01110'],
+  '2': ['01110','10001','00001','00010','00100','01000','11111'],
+  '3': ['11111','00010','00100','00010','00001','10001','01110'],
+  '4': ['00010','00110','01010','10010','11111','00010','00010'],
+  '5': ['11111','10000','11110','00001','00001','10001','01110'],
+  '6': ['00110','01000','10000','11110','10001','10001','01110'],
+  '7': ['11111','00001','00010','00100','01000','01000','01000'],
+  '8': ['01110','10001','10001','01110','10001','10001','01110'],
+  '9': ['01110','10001','10001','01111','00001','00010','01100']
+};
+function dotDigitSVG(digit, size) {
+  const grid = DOT_DIGITS[digit] || DOT_DIGITS['0'];
+  let dots = '';
+  grid.forEach((row, y) => {
+    [...row].forEach((ch, x) => {
+      dots += `<circle cx="${x * size + size / 2}" cy="${y * size + size / 2}" r="${size * 0.38}" fill="${ch === '1' ? '#ffb020' : '#3a3320'}"/>`;
+    });
+  });
+  const w = 5 * size, h = 7 * size;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${dots}</svg>`;
+}
+function matchBoardWidthToTitle() {
+  const titleW = document.querySelector('.title').getBoundingClientRect().width;
+  document.getElementById('splitBoard').style.maxWidth = titleW + 'px';
+  document.querySelector('.board-tabs').style.maxWidth = titleW + 'px';
+}
 function renderBoard() {
+  matchBoardWidthToTitle();
   const total = Math.round(computeTotal(boardPeriod));
-  const digits = String(total).split('');
+  const digitsStr = String(total);
   const board = document.getElementById('splitBoard');
-  board.innerHTML = digits.map(d => `<div class="flap-digit">${d}</div>`).join('') + `<div class="flap-won">원</div>`;
+  const availableW = board.getBoundingClientRect().width || 100;
+  // 자릿수만큼 안에 다 들어가도록 도트 크기를 자동으로 줄임
+  const dotSize = Math.max(1.4, Math.min(3, (availableW - 20) / (digitsStr.length * 5 + 2)));
+  board.innerHTML = [...digitsStr].map(d => dotDigitSVG(d, dotSize)).join('') + `<span class="led-won">원</span>`;
 }
 document.querySelectorAll('.board-tab').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('.board-tab').forEach(x => x.classList.remove('active'));
@@ -267,38 +296,34 @@ document.querySelectorAll('.board-tab').forEach(b => b.addEventListener('click',
   renderBoard();
 }));
 
-function updateMethodStats() {
-  const now = new Date();
-  const monthStart = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-  const expenses = records.filter(r => r.type === 'expense' && r.date >= monthStart);
-  const methodTotals = {};
-  expenses.forEach(r => { const label = methodLabel(r); methodTotals[label] = (methodTotals[label] || 0) + (r.myShare || 0); });
-  const mEl = document.getElementById('methodStats');
-  mEl.innerHTML = Object.keys(methodTotals).length
-    ? Object.entries(methodTotals).map(([m, v]) => `<div class="method-chip">${m} <b>${won(v)}</b></div>`).join('')
-    : '';
-}
 
 /* ═══════ 목록 렌더 (클릭하면 수정화면) ═══════ */
 function renderList() {
   const el = document.getElementById('list');
   const sorted = [...records].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.addedAt - a.addedAt);
-  if (!sorted.length) { el.innerHTML = `<div class="empty">기록이 없어요. 아래 바다를 눌러 추가해보세요</div>`; renderBoard(); updateMethodStats(); return; }
-  el.innerHTML = sorted.map(r => `
+  if (!sorted.length) { el.innerHTML = `<div class="empty">기록이 없어요. 아래 바다를 눌러 추가해보세요</div>`; renderBoard(); return; }
+  el.innerHTML = sorted.map(r => {
+    const d = new Date(r.date + 'T00:00:00');
+    const dayNum = d.getDate();
+    const monLabel = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'][d.getMonth()];
+    const metaParts = [];
+    if (r.type === 'expense') { metaParts.push(esc(methodLabel(r))); if (r.splitCount > 1) metaParts.push(`${r.splitCount}명 분할`); }
+    return `
     <div class="list-entry" data-id="${r.id}">
-      <div class="le-icon ${r.type}">${r.type === 'income' ? '＋' : '－'}</div>
+      <div class="le-date-badge ${r.type}"><div class="d">${dayNum}</div><div class="m">${monLabel}</div></div>
       <div class="le-main">
         <div class="le-cat">${esc(r.name || r.category || '(제목 없음)')}</div>
-        <div class="le-meta">${r.date}${r.type === 'expense' ? ` · ${esc(methodLabel(r))}` : ''}${r.splitCount > 1 ? ` · ${r.splitCount}명 분할` : ''}</div>
+        ${metaParts.length ? `<div class="le-meta">${metaParts.join(' · ')}</div>` : ''}
       </div>
       <div class="le-amt">
         <div class="le-share">${won(r.myShare)}</div>
         ${r.splitCount > 1 || (r.myShare !== r.amount && r.type === 'expense') ? `<div class="le-total">총 ${won(r.amount)}</div>` : ''}
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
   el.querySelectorAll('.list-entry').forEach(row => row.addEventListener('click', () => openEdit(row.dataset.id)));
-  renderBoard(); updateMethodStats();
+  renderBoard();
 }
 
 /* ═══════ 결제수단/카드종류 그리드 ═══════ */
@@ -354,16 +379,18 @@ document.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', 
   document.querySelectorAll('.type-btn').forEach(x => x.classList.remove('active'));
   b.classList.add('active');
   curType = b.dataset.t;
-  document.getElementById('modalTitle').textContent = (editingId ? '수정 - ' : '') + (curType === 'expense' ? '지출' : '수입');
+  document.getElementById('modalTitle').textContent = curType === 'expense' ? '지출' : '수입';
   document.getElementById('expenseOnlyFields').style.display = curType === 'expense' ? '' : 'none';
+  document.getElementById('amountLbl').textContent = curType === 'expense' ? '금액 (실제 결제한 총액)' : '금액';
 }));
 
 function resetAddModal() {
   editingId = null;
   curType = 'expense'; curMethod = '카드'; curCardType = null; curSplitMode = 'count';
   document.querySelectorAll('.type-btn').forEach(x => x.classList.toggle('active', x.dataset.t === 'expense'));
-  document.getElementById('modalTitle').textContent = '지출 추가';
+  document.getElementById('modalTitle').textContent = '지출';
   document.getElementById('expenseOnlyFields').style.display = '';
+  document.getElementById('amountLbl').textContent = '금액 (실제 결제한 총액)';
   document.getElementById('inAmount').value = '';
   document.getElementById('inCategory').value = '';
   document.getElementById('inSplit').value = 1;
@@ -386,8 +413,9 @@ function openEdit(id) {
   curType = r.type; curMethod = r.method || '카드'; curCardType = r.cardType || null;
   curSplitMode = (r.splitCount && r.splitCount > 1) ? 'count' : (r.myShare !== r.amount ? 'direct' : 'count');
   document.querySelectorAll('.type-btn').forEach(x => x.classList.toggle('active', x.dataset.t === r.type));
-  document.getElementById('modalTitle').textContent = '수정 - ' + (r.type === 'expense' ? '지출' : '수입');
+  document.getElementById('modalTitle').textContent = r.type === 'expense' ? '지출' : '수입';
   document.getElementById('expenseOnlyFields').style.display = r.type === 'expense' ? '' : 'none';
+  document.getElementById('amountLbl').textContent = r.type === 'expense' ? '금액 (실제 결제한 총액)' : '금액';
   document.getElementById('inAmount').value = r.amount;
   document.getElementById('inCategory').value = r.name || r.category || '';
   document.getElementById('inSplit').value = r.splitCount || 1;
