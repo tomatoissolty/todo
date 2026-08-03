@@ -19,7 +19,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font-body);min-height:100vh;display:flex;flex-direction:column}
-.wrap{max-width:520px;width:100%;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 176px;flex:1;display:flex;flex-direction:column}
+.wrap{max-width:520px;width:100%;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 70px;flex:1;display:flex;flex-direction:column}
 header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .title{font-family:'JejuStoneWall',sans-serif;font-size:26px;letter-spacing:1px}
 .hdr-btns{display:flex;gap:8px}
@@ -44,21 +44,26 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .le-share{font-size:14px;font-weight:700}
 .le-total{font-size:10px;color:var(--ink-soft)}
 .empty{text-align:center;padding:40px 20px;color:var(--ink-soft);font-size:12px}
+.add-btn-wrap{position:fixed;left:0;right:0;bottom:14px;display:flex;justify-content:center;z-index:10;pointer-events:none}
+.add-text-btn{pointer-events:all;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:0;margin:0}
+.add-label{font-family:'KkuBulLim',var(--font-btn);font-size:19.5px;color:var(--ink);padding:8px 16px}
+.an-char{transition:opacity .2s}
+.add-text-btn:hover .an-char{opacity:.12}
+.arrow-slot{font-size:19.5px;line-height:1;color:var(--sky-deep);visibility:hidden;margin-bottom:1px}
+.add-text-btn:hover .arrow-slot{visibility:visible}
 .list-wrap{padding-bottom:16px;margin-top:auto}
 
 /* ═══ 픽셀 바다 (클릭하면 추가 모달) ═══ */
-.ocean{position:fixed;left:0;right:0;bottom:0;width:100%;height:156px;overflow:hidden;cursor:pointer;z-index:10;background-image:url('ocean-bg.jpg');background-size:cover;background-position:right bottom;box-shadow:0 -8px 16px -8px rgba(0,0,0,.15) inset}
-.ocean svg{width:100%;height:100%;display:block}
 
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;z-index:100}
 @media(min-width:560px){.modal-overlay{align-items:center}}
 .modal-overlay.open{opacity:1;pointer-events:all}
 .modal{background:var(--card);border-radius:18px 18px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;padding:22px}
 @media(min-width:560px){.modal{border-radius:18px}}
-.modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
 .modal-title{font-family:'JejuStoneWall',sans-serif;font-size:19px}
-.type-toggle{display:flex;gap:18px;margin-bottom:16px;align-items:baseline}
-.type-btn{background:none;border:none;cursor:pointer;font-size:26px;color:var(--ink);opacity:.32;transition:opacity .2s,transform .2s;padding:0}
+.type-toggle{display:flex;gap:22px;margin-bottom:16px;align-items:baseline}
+.type-btn{background:none;border:none;cursor:pointer;font-size:39px;color:var(--ink);opacity:.32;transition:opacity .2s,transform .2s;padding:0}
 .type-btn:hover{opacity:.6}
 .type-btn[data-t="expense"]{font-family:'KkuBulLim',var(--font-btn)}
 .type-btn[data-t="income"]{font-family:'OkDandan',var(--font-btn)}
@@ -128,7 +133,12 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
   <div class="list-wrap" id="list"></div>
 </div>
 
-<div class="ocean" id="ocean"></div>
+<div class="add-btn-wrap">
+  <button class="add-text-btn" id="btnAddText">
+    <span class="arrow-slot">▲</span>
+    <span class="add-label">돈을 <span class="an-char">안</span>쓴다</span>
+  </button>
+</div>
 <div class="toast" id="toast"></div>
 
 <div class="modal-overlay" id="addModal">
@@ -284,26 +294,22 @@ function matchBoardWidthToTitle() {
   document.querySelector('.board-tabs').style.maxWidth = titleW + 'px';
 }
 // ₩ 기호도 도트로 (W 모양 + 가로줄 두 개)
-const WON_DOTS = ['10001', '11111', '10001', '11111', '10101', '11011', '10001'];
-function dotWonSVG(size) {
-  let dots = '';
-  WON_DOTS.forEach((row, y) => {
-    [...row].forEach((ch, x) => {
-      dots += `<circle cx="${x * size + size / 2}" cy="${y * size + size / 2}" r="${size * 0.38}" fill="${ch === '1' ? '#ff9900' : '#33210c'}"/>`;
-    });
-  });
-  const w = 5 * size, h = 7 * size;
-  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${dots}</svg>`;
+function dotCommaSVG(size) {
+  // 쉼표는 자릿수 사이 작은 점+꼬리 표시 (숫자보다 살짝 작게, 아래쪽에 배치)
+  const w = 3 * size, h = 7 * size;
+  const cx = w / 2, cy = h - size * 1.3;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><circle cx="${cx}" cy="${cy}" r="${size * 0.38}" fill="#ff9900"/><rect x="${cx - size * 0.22}" y="${cy}" width="${size * 0.44}" height="${size * 0.9}" fill="#ff9900"/></svg>`;
 }
 function renderBoard() {
   matchBoardWidthToTitle();
   const total = Math.round(computeTotal(boardPeriod));
-  const digitsStr = String(total);
+  const formatted = total.toLocaleString('ko-KR'); // 천단위 콤마 포함, 예: "15,500"
+  const chars = [...formatted];
   const board = document.getElementById('splitBoard');
   const availableW = board.getBoundingClientRect().width || 100;
-  // 자릿수만큼(₩ 기호 포함) 다 들어가도록 도트 크기를 자동으로 줄임
-  const dotSize = Math.max(1.4, Math.min(3, (availableW - 12) / ((digitsStr.length + 1) * 5 + 2)));
-  board.innerHTML = [...digitsStr].map(d => dotDigitSVG(d, dotSize)).join('') + dotWonSVG(dotSize);
+  const unitCount = chars.reduce((n, c) => n + (c === ',' ? 3 : 5), 0);
+  const dotSize = Math.max(1.4, Math.min(3, (availableW - 12) / (unitCount + 4)));
+  board.innerHTML = chars.map(c => c === ',' ? dotCommaSVG(dotSize) : dotDigitSVG(c, dotSize)).join('');
 }
 document.querySelectorAll('.board-tab').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('.board-tab').forEach(x => x.classList.remove('active'));
@@ -317,7 +323,7 @@ document.querySelectorAll('.board-tab').forEach(b => b.addEventListener('click',
 function renderList() {
   const el = document.getElementById('list');
   const sorted = [...records].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.addedAt - a.addedAt);
-  if (!sorted.length) { el.innerHTML = `<div class="empty">기록이 없어요. 아래 바다를 눌러 추가해보세요</div>`; renderBoard(); return; }
+  if (!sorted.length) { el.innerHTML = `<div class="empty">기록이 없어요. 아래 버튼을 눌러 추가해보세요</div>`; renderBoard(); return; }
   el.innerHTML = sorted.map(r => {
     const d = new Date(r.date + 'T00:00:00');
     const dayNum = d.getDate();
@@ -419,7 +425,7 @@ function resetAddModal() {
   buildMethodGrid(document.getElementById('methodGrid'), document.getElementById('cardSubGrid'), curMethod, curCardType, (m) => curMethod = m, (c) => curCardType = c);
   updateSharePreview();
 }
-document.getElementById('ocean').onclick = () => { resetAddModal(); document.getElementById('addModal').classList.add('open'); };
+document.getElementById('btnAddText').onclick = () => { resetAddModal(); document.getElementById('addModal').classList.add('open'); };
 document.getElementById('closeAdd').onclick = () => document.getElementById('addModal').classList.remove('open');
 
 function openEdit(id) {
