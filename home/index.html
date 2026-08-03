@@ -319,19 +319,34 @@ async function loadHeaderPhoto() {
 
 /* ════ 사이드바 하단 무작위 갤러리 사진 ════ */
 let galleryPhotoCache = null;
+let galleryPhotoCacheAt = 0;
+const GALLERY_CACHE_MS = 5 * 60 * 1000; // 5분 지나면 다시 받아옴 - 노션 사진 링크가 시간이 지나면 만료될 수 있어서
+
 async function loadRandomSidebarPhoto() {
   const box = document.getElementById('sidebarRandomPhoto');
   if (!box) return;
   try {
-    if (!galleryPhotoCache) {
+    const stale = !galleryPhotoCache || (Date.now() - galleryPhotoCacheAt > GALLERY_CACHE_MS);
+    if (stale) {
       const r = await fetch('/api/notion?app=gallery');
       const d = await r.json();
       galleryPhotoCache = (d.items || []).filter(g => g.photo);
+      galleryPhotoCacheAt = Date.now();
     }
-    if (!galleryPhotoCache.length) { box.innerHTML = ''; return; }
-    const pick = galleryPhotoCache[Math.floor(Math.random() * galleryPhotoCache.length)];
-    box.innerHTML = `<img src="${pick.photo}">`;
+    showRandomSidebarPhoto(0);
   } catch (err) { console.warn('사이드바 사진 로드 실패:', err.message); }
+}
+
+function showRandomSidebarPhoto(attempt) {
+  const box = document.getElementById('sidebarRandomPhoto');
+  if (!box || !galleryPhotoCache || !galleryPhotoCache.length) { if (box) box.innerHTML = ''; return; }
+  if (attempt >= galleryPhotoCache.length) { box.innerHTML = ''; return; } // 다 깨져있으면 그냥 비워둠
+
+  const pick = galleryPhotoCache[Math.floor(Math.random() * galleryPhotoCache.length)];
+  const img = new Image();
+  img.onload = () => { box.innerHTML = ''; box.appendChild(img); };
+  img.onerror = () => showRandomSidebarPhoto(attempt + 1); // 깨진 링크면 조용히 다른 사진으로 재시도
+  img.src = pick.photo;
 }
 
 /* ════ 테마 색상 ════ */

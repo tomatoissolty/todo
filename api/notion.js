@@ -457,12 +457,12 @@ module.exports = async (req, res) => {
       // 갤러리는 사진을 페이지 본문에 드래그해서 넣는 경우가 많아서(Photo 속성이 아니라),
       // Photo 속성이 비어있으면 본문의 첫 이미지 블록에서 대신 가져와요.
       if (appKey === 'gallery') {
-        for (const item of items) {
+        await Promise.all(items.map(async (item) => {
           if (!item.photo && item.notionPageId) {
             try { item.photo = await fetchFirstImageBlockUrl(item.notionPageId); }
             catch (e) { /* 본문에도 이미지가 없으면 그냥 넘어감 */ }
           }
-        }
+        }));
       }
 
       res.status(200).json({ items });
