@@ -3,49 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>가계부</title>
+<title>EXPENSE</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-@font-face {
-  font-family: 'IsYun';
-  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2202-2@1.0/LeeSeoyun.woff') format('woff');
-  font-weight: normal; font-display: swap;
-}
+@font-face { font-family:'JejuStoneWall'; src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2210-EF@1.0/EF_jejudoldam.woff2') format('woff2'); font-weight:normal; font-display:swap; }
+@font-face { font-family:'ImHyeMin'; src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2106@1.1/IM_Hyemin-Regular.woff2') format('woff2'); font-weight:normal; font-display:swap; }
+@font-face { font-family:'OkDandan'; src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2508-2@1.0/OkDanDan-Bold.woff2') format('woff2'); font-weight:normal; font-display:swap; }
+@font-face { font-family:'KkuBulLim'; src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2410-1@1.0/BMkkubulimTTF-Regular.woff2') format('woff2'); font-weight:normal; font-display:swap; }
 :root{
   --bg:#f7f9f6; --card:#ffffff; --ink:#233026; --ink-soft:#7c8c80; --line:#e2e8de;
   --mint:#3fae7a; --mint-soft:#e3f5ec; --red:#e2635b; --red-soft:#fbe8e6;
+  --sky:#8fd0e8; --sky-soft:#e5f6fb; --sand:#f0c48a; --sand-soft:#fdf1e0;
+  --font-body:'ImHyeMin','Noto Sans KR',sans-serif;
+  --font-btn:'ImHyeMin','Noto Sans KR',sans-serif; /* 세종글꽃체 웹폰트 배포처가 없어서 임시로 이 폰트로 대체 - 파일 주시면 바로 교체할게요 */
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',sans-serif;padding-bottom:60px}
-.wrap{max-width:520px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 20px}
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.title{font-family:'IsYun',sans-serif;font-size:26px}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);padding-bottom:0}
+.wrap{max-width:520px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 0}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.title{font-family:'JejuStoneWall',sans-serif;font-size:26px;letter-spacing:1px}
 .hdr-btns{display:flex;gap:8px}
-.icon-btn{width:34px;height:34px;border:1px solid var(--line);background:var(--card);border-radius:10px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.icon-btn{height:34px;padding:0 12px;border:1px solid var(--line);background:var(--card);border-radius:10px;cursor:pointer;font-size:12px;font-family:var(--font-body);display:flex;align-items:center;justify-content:center;gap:5px;color:var(--ink)}
 
-.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
-.stat-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
-.stat-label{font-size:10px;color:var(--ink-soft);letter-spacing:.5px}
-.stat-value{font-size:16px;font-weight:700;margin-top:4px}
-
+/* ═══ 전광막(split-flap) 전광판 ═══ */
+.board-tabs{display:flex;gap:6px;margin-bottom:10px}
+.board-tab{flex:1;padding:7px;border:1px solid var(--line);border-radius:8px;background:var(--card);font-size:11px;color:var(--ink-soft);cursor:pointer;font-family:var(--font-body)}
+.board-tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.split-board{background:#1c2620;border-radius:14px;padding:16px;display:flex;justify-content:center;gap:4px;margin-bottom:8px}
+.flap-digit{background:#2a382f;color:#e8f5ee;font-family:'Courier New',monospace;font-weight:700;font-size:26px;width:26px;text-align:center;border-radius:4px;padding:6px 2px;position:relative;box-shadow:inset 0 0 0 1px #3a4a3e}
+.flap-digit::after{content:'';position:absolute;left:2px;right:2px;top:50%;height:1px;background:rgba(0,0,0,.35)}
+.flap-won{color:#8fae9e;font-size:16px;align-self:center;margin-left:4px;font-family:var(--font-body)}
 .method-stats{display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px}
 .method-chip{flex-shrink:0;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:6px 12px;font-size:11px;color:var(--ink-soft);white-space:nowrap}
 .method-chip b{color:var(--ink)}
 
 .list-entry{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer}
 .list-entry:hover{border-color:var(--mint)}
-.le-icon{width:34px;height:34px;border-radius:9px;background:var(--mint-soft);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
-.le-icon.income{background:var(--red-soft)}
+.le-icon{width:34px;height:34px;border-radius:9px;background:var(--sky-soft);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.le-icon.income{background:var(--sand-soft)}
 .le-main{flex:1;min-width:0}
 .le-cat{font-size:13px;font-weight:500}
 .le-meta{font-size:10px;color:var(--ink-soft);margin-top:2px}
 .le-amt{text-align:right;flex-shrink:0}
 .le-share{font-size:14px;font-weight:700}
 .le-total{font-size:10px;color:var(--ink-soft)}
-.empty{text-align:center;padding:50px 20px;color:var(--ink-soft);font-size:12px}
+.empty{text-align:center;padding:40px 20px;color:var(--ink-soft);font-size:12px}
+.list-wrap{padding-bottom:16px}
 
-.fab{position:fixed;bottom:24px;right:50%;transform:translateX(260px);width:52px;height:52px;border-radius:50%;background:var(--mint);color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 6px 16px rgba(63,174,122,.4)}
-@media(max-width:560px){.fab{right:20px;transform:none}}
+/* ═══ 픽셀 바다 (클릭하면 추가 모달) ═══ */
+.ocean{position:relative;width:100%;height:130px;overflow:hidden;cursor:pointer;margin-top:10px;image-rendering:pixelated}
+.ocean svg{width:100%;height:100%;display:block}
 
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;z-index:100}
 @media(min-width:560px){.modal-overlay{align-items:center}}
@@ -53,31 +60,50 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .modal{background:var(--card);border-radius:18px 18px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;padding:22px}
 @media(min-width:560px){.modal{border-radius:18px}}
 .modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.modal-title{font-family:'IsYun',sans-serif;font-size:19px}
+.modal-title{font-family:'JejuStoneWall',sans-serif;font-size:19px}
 .type-toggle{display:flex;gap:6px;margin-bottom:14px}
-.type-btn{flex:1;padding:9px;border:1px solid var(--line);border-radius:10px;background:var(--card);cursor:pointer;font-size:13px;color:var(--ink-soft)}
-.type-btn.active[data-t="expense"]{background:var(--red-soft);border-color:var(--red);color:var(--red)}
-.type-btn.active[data-t="income"]{background:var(--mint-soft);border-color:var(--mint);color:var(--mint)}
+.type-btn{flex:1;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card);cursor:pointer;font-size:15px;color:var(--ink-soft)}
+.type-btn[data-t="expense"]{font-family:'KkuBulLim',var(--font-btn)}
+.type-btn[data-t="income"]{font-family:'OkDandan',var(--font-btn)}
+.type-btn.active[data-t="expense"]{background:var(--sky-soft);border-color:var(--sky);color:#2b6b82}
+.type-btn.active[data-t="income"]{background:var(--sand-soft);border-color:var(--sand);color:#96652b}
 .form-lbl{font-size:11px;color:var(--ink-soft);margin:12px 0 6px;display:block}
-.form-input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;outline:none}
+.form-input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:var(--font-body);outline:none}
 .form-input:focus{border-color:var(--mint)}
+.form-input[type="number"]{-moz-appearance:textfield}
+.form-input[type="number"]::-webkit-outer-spin-button,.form-input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+.amount-row{display:flex;gap:8px;align-items:stretch}
+.amount-row .form-input{width:50%;flex:none}
+.amount-btns{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.amt-btn{border:1px solid var(--line);background:var(--card);border-radius:8px;font-size:11px;cursor:pointer;color:var(--ink-soft);font-family:var(--font-btn);padding:0}
+.amt-btn.plus{color:var(--mint)}
+.amt-btn.minus{color:var(--red)}
+
 .method-grid{display:flex;flex-wrap:wrap;gap:6px}
-.method-opt{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);cursor:pointer;font-size:12px;color:var(--ink-soft)}
+.method-opt{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);cursor:pointer;font-size:12px;color:var(--ink-soft);font-family:var(--font-btn)}
 .method-opt.active{background:var(--mint-soft);border-color:var(--mint);color:var(--mint)}
+.card-sub-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.card-sub-opt{padding:6px 11px;border:1px dashed var(--ink-soft);border-radius:8px;background:var(--card);cursor:pointer;font-size:11px;color:var(--ink-soft);font-family:var(--font-btn)}
+.card-sub-opt.active{background:var(--mint);border-color:var(--mint);color:#fff;border-style:solid}
+
+.split-mode-toggle{display:flex;gap:6px;margin-bottom:8px}
+.split-mode-btn{flex:1;padding:7px;border:1px solid var(--line);border-radius:8px;background:var(--card);cursor:pointer;font-size:11px;color:var(--ink-soft);font-family:var(--font-btn)}
+.split-mode-btn.active{background:var(--mint-soft);border-color:var(--mint);color:var(--mint)}
 .split-row{display:flex;align-items:center;gap:10px}
 .split-row input{width:70px}
 .share-preview{font-size:12px;color:var(--ink-soft);background:var(--mint-soft);padding:8px 10px;border-radius:8px;margin-top:8px}
 .share-preview b{color:var(--mint);font-size:14px}
-.save-btn{width:100%;padding:13px;border:none;border-radius:12px;background:var(--mint);color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:18px}
+.save-btn{width:100%;padding:13px;border:none;border-radius:12px;background:var(--mint);color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:18px;font-family:var(--font-btn)}
+.delete-btn{width:100%;padding:11px;border:1px solid var(--red);border-radius:12px;background:var(--red-soft);color:var(--red);font-size:13px;cursor:pointer;margin-top:8px;font-family:var(--font-btn)}
 .close-btn{background:none;border:none;font-size:18px;color:var(--ink-soft);cursor:pointer}
 
-/* 정기지출 관리 */
 .recur-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
 .recur-item:last-child{border-bottom:none}
 .recur-main{flex:1;font-size:13px}
 .recur-meta{font-size:10px;color:var(--ink-soft);margin-top:2px}
 .recur-del{background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer}
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:9px 20px;border-radius:20px;font-size:12px;z-index:999;transition:transform .3s}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:9px 20px;border-radius:20px;font-size:12px;z-index:999;transition:transform .25s}
 .toast.show{transform:translateX(-50%) translateY(0)}
 </style>
 </head>
@@ -85,24 +111,25 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
 <div class="wrap">
   <header>
-    <div class="title">가계부</div>
+    <div class="title">EXPENSE</div>
     <div class="hdr-btns">
-      <button class="icon-btn" id="btnSync" title="동기화">🔄</button>
-      <button class="icon-btn" id="btnRecur" title="정기 지출 관리">🔁</button>
+      <button class="icon-btn" id="btnSync">🔄</button>
+      <button class="icon-btn" id="btnRecur">정기지출</button>
     </div>
   </header>
 
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-label">오늘</div><div class="stat-value" id="statToday">0원</div></div>
-    <div class="stat-card"><div class="stat-label">이번 주</div><div class="stat-value" id="statWeek">0원</div></div>
-    <div class="stat-card"><div class="stat-label">이번 달</div><div class="stat-value" id="statMonth">0원</div></div>
+  <div class="board-tabs">
+    <button class="board-tab active" data-p="today">오늘</button>
+    <button class="board-tab" data-p="week">이번 주</button>
+    <button class="board-tab" data-p="month">이번 달</button>
   </div>
+  <div class="split-board" id="splitBoard"></div>
   <div class="method-stats" id="methodStats"></div>
 
-  <div id="list"></div>
+  <div class="list-wrap" id="list"></div>
 </div>
 
-<button class="fab" id="btnAdd">+</button>
+<div class="ocean" id="ocean"></div>
 <div class="toast" id="toast"></div>
 
 <div class="modal-overlay" id="addModal">
@@ -112,20 +139,46 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
       <button class="type-btn active" data-t="expense">지출</button>
       <button class="type-btn" data-t="income">수입</button>
     </div>
+
     <label class="form-lbl">금액 (실제 결제한 총액)</label>
-    <input class="form-input" id="inAmount" type="number" placeholder="예: 17000">
+    <div class="amount-row">
+      <input class="form-input" id="inAmount" type="number" placeholder="예: 17000">
+      <div class="amount-btns">
+        <button class="amt-btn plus" data-add="10000">+만</button>
+        <button class="amt-btn plus" data-add="1000">+천</button>
+        <button class="amt-btn plus" data-add="100">+백</button>
+        <button class="amt-btn minus" data-add="-10000">−만</button>
+        <button class="amt-btn minus" data-add="-1000">−천</button>
+        <button class="amt-btn minus" data-add="-100">−백</button>
+      </div>
+    </div>
+
     <label class="form-lbl">카테고리/메모</label>
     <input class="form-input" id="inCategory" placeholder="예: 티빙 구독, 점심식사...">
-    <label class="form-lbl">결제수단</label>
-    <div class="method-grid" id="methodGrid"></div>
-    <label class="form-lbl">몇 명이서 나눴나요? (혼자면 1)</label>
-    <div class="split-row">
-      <input class="form-input" id="inSplit" type="number" min="1" value="1">
-      <div class="share-preview" id="sharePreview" style="flex:1">내 몫: <b>0원</b></div>
+
+    <div id="expenseOnlyFields">
+      <label class="form-lbl">결제수단</label>
+      <div class="method-grid" id="methodGrid"></div>
+      <div class="card-sub-grid" id="cardSubGrid" style="display:none"></div>
+
+      <label class="form-lbl">몇 명이서 나눴나요?</label>
+      <div class="split-mode-toggle">
+        <button class="split-mode-btn active" data-m="count">인원수로 나누기</button>
+        <button class="split-mode-btn" data-m="direct">내 몫 직접 입력</button>
+      </div>
+      <div class="split-row" id="splitCountRow">
+        <input class="form-input" id="inSplit" type="number" min="1" value="1">
+        <div class="share-preview" id="sharePreview" style="flex:1">내 몫: <b>0원</b></div>
+      </div>
+      <div class="split-row" id="splitDirectRow" style="display:none">
+        <input class="form-input" id="inDirectShare" type="number" placeholder="내가 실제 낸 금액">
+      </div>
     </div>
+
     <label class="form-lbl">날짜</label>
     <input class="form-input" id="inDate" type="date">
     <button class="save-btn" id="btnSave">저장</button>
+    <button class="delete-btn" id="btnDelete" style="display:none">삭제</button>
   </div>
 </div>
 
@@ -140,6 +193,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
     <input class="form-input" id="recurAmount" type="number">
     <label class="form-lbl">결제수단</label>
     <div class="method-grid" id="recurMethodGrid"></div>
+    <div class="card-sub-grid" id="recurCardSubGrid" style="display:none"></div>
     <label class="form-lbl">분할 인원</label>
     <input class="form-input" id="recurSplit" type="number" min="1" value="1">
     <label class="form-lbl">매달 며칠에 결제되나요?</label>
@@ -150,19 +204,23 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
 <script>
 const METHODS = ['카드', '카카오페이', '네이버페이', '계좌이체', '현금'];
+const CARD_TYPES = ['카카오', '현대', '토스', '우리'];
 let records = JSON.parse(localStorage.getItem('expense_records_v1') || '[]');
 let templates = JSON.parse(localStorage.getItem('expense_templates_v1') || '[]');
-let curType = 'expense', curMethod = '카드', curRecurMethod = '카드';
+let curType = 'expense', curMethod = '카드', curCardType = null, curSplitMode = 'count', curRecurMethod = '카드', curRecurCardType = null;
+let editingId = null;
+let boardPeriod = 'month';
 
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 function save() { localStorage.setItem('expense_records_v1', JSON.stringify(records)); }
 function saveTemplates() { localStorage.setItem('expense_templates_v1', JSON.stringify(templates)); }
 function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function won(n) { return Math.round(n).toLocaleString('ko-KR') + '원'; }
-function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+function won(n) { return Math.round(n || 0).toLocaleString('ko-KR') + '원'; }
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1100); }
 function todayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function methodLabel(r) { return r.cardType ? `카드(${r.cardType})` : r.method; }
 
-/* ═══════ 정기 지출 자동 생성 (Daily 루틴과 같은 방식) ═══════ */
+/* ═══════ 정기 지출 자동 생성 ═══════ */
 function spawnRecurring() {
   const today = new Date();
   const y = today.getFullYear(), m = today.getMonth();
@@ -170,12 +228,12 @@ function spawnRecurring() {
   templates.forEach(tpl => {
     const day = Math.min(tpl.day, new Date(y, m + 1, 0).getDate());
     const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    if (dateStr > todayStr()) return; // 아직 안 지난 날짜면 생성 안 함
+    if (dateStr > todayStr()) return;
     const already = records.some(r => r.templateId === tpl.id && r.date.slice(0, 7) === dateStr.slice(0, 7));
     if (already) return;
     records.push({
       id: generateId(), type: 'expense', name: tpl.name, amount: tpl.amount, splitCount: tpl.splitCount || 1,
-      myShare: tpl.amount / (tpl.splitCount || 1), method: tpl.method, category: tpl.name,
+      myShare: tpl.amount / (tpl.splitCount || 1), method: tpl.method, cardType: tpl.cardType || null, category: tpl.name,
       date: dateStr, templateId: tpl.id, addedAt: Date.now(), updatedAt: Date.now(), notionPageId: null
     });
     changed = true;
@@ -183,67 +241,93 @@ function spawnRecurring() {
   if (changed) { save(); autoPushAll(); }
 }
 
-/* ═══════ 통계 ═══════ */
-function updateStats() {
+/* ═══════ 전광판(split-flap) ═══════ */
+function computeTotal(period) {
   const t = todayStr();
   const now = new Date();
   const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
-  const monthStart = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
   const weekStartStr = `${weekStart.getFullYear()}-${String(weekStart.getMonth()+1).padStart(2,'0')}-${String(weekStart.getDate()).padStart(2,'0')}`;
-
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
   const expenses = records.filter(r => r.type === 'expense');
   const sum = (list) => list.reduce((s, r) => s + (r.myShare || 0), 0);
+  if (period === 'today') return sum(expenses.filter(r => r.date === t));
+  if (period === 'week') return sum(expenses.filter(r => r.date >= weekStartStr));
+  return sum(expenses.filter(r => r.date >= monthStart));
+}
+function renderBoard() {
+  const total = Math.round(computeTotal(boardPeriod));
+  const digits = String(total).split('');
+  const board = document.getElementById('splitBoard');
+  board.innerHTML = digits.map(d => `<div class="flap-digit">${d}</div>`).join('') + `<div class="flap-won">원</div>`;
+}
+document.querySelectorAll('.board-tab').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.board-tab').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  boardPeriod = b.dataset.p;
+  renderBoard();
+}));
 
-  document.getElementById('statToday').textContent = won(sum(expenses.filter(r => r.date === t)));
-  document.getElementById('statWeek').textContent = won(sum(expenses.filter(r => r.date >= weekStartStr)));
-  document.getElementById('statMonth').textContent = won(sum(expenses.filter(r => r.date >= monthStart)));
-
+function updateMethodStats() {
+  const now = new Date();
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+  const expenses = records.filter(r => r.type === 'expense' && r.date >= monthStart);
   const methodTotals = {};
-  expenses.filter(r => r.date >= monthStart).forEach(r => { methodTotals[r.method] = (methodTotals[r.method] || 0) + (r.myShare || 0); });
+  expenses.forEach(r => { const label = methodLabel(r); methodTotals[label] = (methodTotals[label] || 0) + (r.myShare || 0); });
   const mEl = document.getElementById('methodStats');
   mEl.innerHTML = Object.keys(methodTotals).length
     ? Object.entries(methodTotals).map(([m, v]) => `<div class="method-chip">${m} <b>${won(v)}</b></div>`).join('')
     : '';
 }
 
-/* ═══════ 목록 렌더 ═══════ */
+/* ═══════ 목록 렌더 (클릭하면 수정화면) ═══════ */
 function renderList() {
   const el = document.getElementById('list');
   const sorted = [...records].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.addedAt - a.addedAt);
-  if (!sorted.length) { el.innerHTML = `<div class="empty">기록이 없어요. + 버튼으로 추가해보세요</div>`; updateStats(); return; }
+  if (!sorted.length) { el.innerHTML = `<div class="empty">기록이 없어요. 아래 바다를 눌러 추가해보세요</div>`; renderBoard(); updateMethodStats(); return; }
   el.innerHTML = sorted.map(r => `
     <div class="list-entry" data-id="${r.id}">
       <div class="le-icon ${r.type}">${r.type === 'income' ? '＋' : '－'}</div>
       <div class="le-main">
         <div class="le-cat">${esc(r.name || r.category || '(제목 없음)')}</div>
-        <div class="le-meta">${r.date} · ${esc(r.method || '')}${r.splitCount > 1 ? ` · ${r.splitCount}명 분할` : ''}</div>
+        <div class="le-meta">${r.date}${r.type === 'expense' ? ` · ${esc(methodLabel(r))}` : ''}${r.splitCount > 1 ? ` · ${r.splitCount}명 분할` : ''}</div>
       </div>
       <div class="le-amt">
         <div class="le-share">${won(r.myShare)}</div>
-        ${r.splitCount > 1 ? `<div class="le-total">총 ${won(r.amount)}</div>` : ''}
+        ${r.splitCount > 1 || (r.myShare !== r.amount && r.type === 'expense') ? `<div class="le-total">총 ${won(r.amount)}</div>` : ''}
       </div>
     </div>
   `).join('');
-  el.querySelectorAll('.list-entry').forEach(row => row.addEventListener('click', () => {
-    if (confirm('이 기록을 삭제할까요?')) {
-      const rec = records.find(r => r.id === row.dataset.id);
-      records = records.filter(r => r.id !== row.dataset.id);
-      save(); renderList();
-      if (rec && rec.notionPageId) autoDelete(rec.notionPageId);
-    }
-  }));
-  updateStats();
+  el.querySelectorAll('.list-entry').forEach(row => row.addEventListener('click', () => openEdit(row.dataset.id)));
+  renderBoard(); updateMethodStats();
 }
 
-/* ═══════ 추가 모달 ═══════ */
-function buildMethodGrid(container, selected, onSelect) {
-  container.innerHTML = METHODS.map(m => `<div class="method-opt${m === selected ? ' active' : ''}" data-m="${m}">${m}</div>`).join('');
+/* ═══════ 결제수단/카드종류 그리드 ═══════ */
+function buildMethodGrid(container, subContainer, selectedMethod, selectedCard, onMethod, onCard) {
+  container.innerHTML = METHODS.map(m => `<div class="method-opt${m === selectedMethod ? ' active' : ''}" data-m="${m}">${m}</div>`).join('');
+  const renderSub = () => {
+    if (selectedMethod === '카드') {
+      subContainer.style.display = 'flex';
+      subContainer.innerHTML = CARD_TYPES.map(c => `<div class="card-sub-opt${c === selectedCard ? ' active' : ''}" data-c="${c}">${c}</div>`).join('');
+      subContainer.querySelectorAll('.card-sub-opt').forEach(el => el.addEventListener('click', () => {
+        subContainer.querySelectorAll('.card-sub-opt').forEach(x => x.classList.remove('active'));
+        el.classList.add('active');
+        onCard(el.dataset.c);
+      }));
+    } else {
+      subContainer.style.display = 'none';
+      onCard(null);
+    }
+  };
   container.querySelectorAll('.method-opt').forEach(el => el.addEventListener('click', () => {
     container.querySelectorAll('.method-opt').forEach(x => x.classList.remove('active'));
     el.classList.add('active');
-    onSelect(el.dataset.m);
+    selectedMethod = el.dataset.m;
+    onMethod(selectedMethod);
+    renderSub();
   }));
+  renderSub();
 }
+
 function updateSharePreview() {
   const amt = parseFloat(document.getElementById('inAmount').value) || 0;
   const split = parseInt(document.getElementById('inSplit').value) || 1;
@@ -251,45 +335,129 @@ function updateSharePreview() {
 }
 document.getElementById('inAmount').addEventListener('input', updateSharePreview);
 document.getElementById('inSplit').addEventListener('input', updateSharePreview);
+document.querySelectorAll('.amt-btn').forEach(b => b.addEventListener('click', () => {
+  const cur = parseFloat(document.getElementById('inAmount').value) || 0;
+  const next = Math.max(0, cur + parseInt(b.dataset.add));
+  document.getElementById('inAmount').value = next;
+  updateSharePreview();
+}));
+
+document.querySelectorAll('.split-mode-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.split-mode-btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  curSplitMode = b.dataset.m;
+  document.getElementById('splitCountRow').style.display = curSplitMode === 'count' ? 'flex' : 'none';
+  document.getElementById('splitDirectRow').style.display = curSplitMode === 'direct' ? 'flex' : 'none';
+}));
 
 document.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('.type-btn').forEach(x => x.classList.remove('active'));
   b.classList.add('active');
   curType = b.dataset.t;
-  document.getElementById('modalTitle').textContent = curType === 'expense' ? '지출 추가' : '수입 추가';
+  document.getElementById('modalTitle').textContent = (editingId ? '수정 - ' : '') + (curType === 'expense' ? '지출' : '수입');
+  document.getElementById('expenseOnlyFields').style.display = curType === 'expense' ? '' : 'none';
 }));
 
-document.getElementById('btnAdd').onclick = () => {
-  curType = 'expense'; curMethod = '카드';
+function resetAddModal() {
+  editingId = null;
+  curType = 'expense'; curMethod = '카드'; curCardType = null; curSplitMode = 'count';
   document.querySelectorAll('.type-btn').forEach(x => x.classList.toggle('active', x.dataset.t === 'expense'));
   document.getElementById('modalTitle').textContent = '지출 추가';
+  document.getElementById('expenseOnlyFields').style.display = '';
   document.getElementById('inAmount').value = '';
   document.getElementById('inCategory').value = '';
   document.getElementById('inSplit').value = 1;
+  document.getElementById('inDirectShare').value = '';
   document.getElementById('inDate').value = todayStr();
-  buildMethodGrid(document.getElementById('methodGrid'), curMethod, (m) => curMethod = m);
+  document.querySelectorAll('.split-mode-btn').forEach(x => x.classList.toggle('active', x.dataset.m === 'count'));
+  document.getElementById('splitCountRow').style.display = 'flex';
+  document.getElementById('splitDirectRow').style.display = 'none';
+  document.getElementById('btnDelete').style.display = 'none';
+  buildMethodGrid(document.getElementById('methodGrid'), document.getElementById('cardSubGrid'), curMethod, curCardType, (m) => curMethod = m, (c) => curCardType = c);
+  updateSharePreview();
+}
+document.getElementById('ocean').onclick = () => { resetAddModal(); document.getElementById('addModal').classList.add('open'); };
+document.getElementById('closeAdd').onclick = () => document.getElementById('addModal').classList.remove('open');
+
+function openEdit(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+  editingId = id;
+  curType = r.type; curMethod = r.method || '카드'; curCardType = r.cardType || null;
+  curSplitMode = (r.splitCount && r.splitCount > 1) ? 'count' : (r.myShare !== r.amount ? 'direct' : 'count');
+  document.querySelectorAll('.type-btn').forEach(x => x.classList.toggle('active', x.dataset.t === r.type));
+  document.getElementById('modalTitle').textContent = '수정 - ' + (r.type === 'expense' ? '지출' : '수입');
+  document.getElementById('expenseOnlyFields').style.display = r.type === 'expense' ? '' : 'none';
+  document.getElementById('inAmount').value = r.amount;
+  document.getElementById('inCategory').value = r.name || r.category || '';
+  document.getElementById('inSplit').value = r.splitCount || 1;
+  document.getElementById('inDirectShare').value = r.myShare;
+  document.getElementById('inDate').value = r.date;
+  document.querySelectorAll('.split-mode-btn').forEach(x => x.classList.toggle('active', x.dataset.m === curSplitMode));
+  document.getElementById('splitCountRow').style.display = curSplitMode === 'count' ? 'flex' : 'none';
+  document.getElementById('splitDirectRow').style.display = curSplitMode === 'direct' ? 'flex' : 'none';
+  document.getElementById('btnDelete').style.display = '';
+  buildMethodGrid(document.getElementById('methodGrid'), document.getElementById('cardSubGrid'), curMethod, curCardType, (m) => curMethod = m, (c) => curCardType = c);
   updateSharePreview();
   document.getElementById('addModal').classList.add('open');
-};
-document.getElementById('closeAdd').onclick = () => document.getElementById('addModal').classList.remove('open');
+}
 
 document.getElementById('btnSave').onclick = () => {
   const amount = parseFloat(document.getElementById('inAmount').value);
   const category = document.getElementById('inCategory').value.trim();
-  const split = parseInt(document.getElementById('inSplit').value) || 1;
   const date = document.getElementById('inDate').value || todayStr();
   if (!amount || !category) { toast('금액과 카테고리를 입력해주세요'); return; }
 
-  const rec = {
-    id: generateId(), type: curType, name: category, amount, splitCount: split,
-    myShare: curType === 'income' ? amount : amount / split, method: curMethod, category,
-    date, templateId: null, addedAt: Date.now(), updatedAt: Date.now(), notionPageId: null
-  };
-  records.push(rec);
+  let splitCount = 1, myShare = amount;
+  if (curType === 'expense') {
+    if (curSplitMode === 'count') {
+      splitCount = parseInt(document.getElementById('inSplit').value) || 1;
+      myShare = amount / splitCount;
+    } else {
+      myShare = parseFloat(document.getElementById('inDirectShare').value);
+      if (isNaN(myShare)) myShare = amount;
+      splitCount = 1;
+    }
+  }
+
+  if (editingId) {
+    const r = records.find(x => x.id === editingId);
+    Object.assign(r, {
+      type: curType, name: category, category, amount,
+      splitCount: curType === 'expense' ? splitCount : 1,
+      myShare: curType === 'expense' ? myShare : amount,
+      method: curType === 'expense' ? curMethod : null,
+      cardType: curType === 'expense' ? curCardType : null,
+      date, updatedAt: Date.now()
+    });
+    save(); renderList();
+    document.getElementById('addModal').classList.remove('open');
+    toast('수정했어요');
+    autoPush(r);
+  } else {
+    const rec = {
+      id: generateId(), type: curType, name: category, category, amount,
+      splitCount: curType === 'expense' ? splitCount : 1,
+      myShare: curType === 'expense' ? myShare : amount,
+      method: curType === 'expense' ? curMethod : null,
+      cardType: curType === 'expense' ? curCardType : null,
+      date, templateId: null, addedAt: Date.now(), updatedAt: Date.now(), notionPageId: null
+    };
+    records.push(rec);
+    save(); renderList();
+    document.getElementById('addModal').classList.remove('open');
+    toast('저장했어요');
+    autoPush(rec);
+  }
+};
+document.getElementById('btnDelete').onclick = () => {
+  if (!editingId || !confirm('이 기록을 삭제할까요?')) return;
+  const rec = records.find(r => r.id === editingId);
+  records = records.filter(r => r.id !== editingId);
   save(); renderList();
   document.getElementById('addModal').classList.remove('open');
-  toast('저장했어요');
-  autoPush(rec);
+  if (rec && rec.notionPageId) autoDelete(rec.notionPageId);
+  toast('삭제했어요');
 };
 
 /* ═══════ 정기 지출 모달 ═══════ */
@@ -298,7 +466,7 @@ function renderRecurList() {
   if (!templates.length) { el.innerHTML = `<div class="empty" style="padding:16px">등록된 정기 지출이 없어요</div>`; return; }
   el.innerHTML = templates.map(t => `
     <div class="recur-item">
-      <div class="recur-main">${esc(t.name)}<div class="recur-meta">매달 ${t.day}일 · ${won(t.amount)}${t.splitCount > 1 ? ` · ${t.splitCount}명 분할 (내 몫 ${won(t.amount / t.splitCount)})` : ''} · ${t.method}</div></div>
+      <div class="recur-main">${esc(t.name)}<div class="recur-meta">매달 ${t.day}일 · ${won(t.amount)}${t.splitCount > 1 ? ` · ${t.splitCount}명 분할 (내 몫 ${won(t.amount / t.splitCount)})` : ''} · ${t.cardType ? `카드(${t.cardType})` : t.method}</div></div>
       <button class="recur-del" data-id="${t.id}">✕</button>
     </div>
   `).join('');
@@ -308,12 +476,12 @@ function renderRecurList() {
   }));
 }
 document.getElementById('btnRecur').onclick = () => {
-  curRecurMethod = '카드';
+  curRecurMethod = '카드'; curRecurCardType = null;
   document.getElementById('recurName').value = '';
   document.getElementById('recurAmount').value = '';
   document.getElementById('recurSplit').value = 1;
   document.getElementById('recurDay').value = '';
-  buildMethodGrid(document.getElementById('recurMethodGrid'), curRecurMethod, (m) => curRecurMethod = m);
+  buildMethodGrid(document.getElementById('recurMethodGrid'), document.getElementById('recurCardSubGrid'), curRecurMethod, curRecurCardType, (m) => curRecurMethod = m, (c) => curRecurCardType = c);
   renderRecurList();
   document.getElementById('recurModal').classList.add('open');
 };
@@ -324,7 +492,7 @@ document.getElementById('btnRecurSave').onclick = () => {
   const split = parseInt(document.getElementById('recurSplit').value) || 1;
   const day = parseInt(document.getElementById('recurDay').value);
   if (!name || !amount || !day) { toast('이름/금액/날짜를 입력해주세요'); return; }
-  templates.push({ id: generateId(), name, amount, splitCount: split, method: curRecurMethod, day });
+  templates.push({ id: generateId(), name, amount, splitCount: split, method: curRecurMethod, cardType: curRecurCardType, day });
   saveTemplates(); renderRecurList();
   toast('정기 지출 추가됨');
   spawnRecurring(); renderList();
@@ -335,7 +503,8 @@ const NOTION_ENDPOINT = '/api/notion?app=expense';
 function setSyncSpin(on) { document.getElementById('btnSync').style.animation = on ? 'spin 1s linear infinite' : ''; }
 function payload(r) {
   return { appId: r.id, notionPageId: r.notionPageId || null, name: r.name, date: r.date,
-    amount: r.amount, splitCount: r.splitCount, myShare: r.myShare, method: r.method,
+    amount: r.amount, splitCount: r.splitCount, myShare: r.myShare,
+    method: r.cardType ? `카드(${r.cardType})` : r.method,
     category: r.category, type: r.type, updatedAt: new Date(r.updatedAt || r.addedAt).toISOString() };
 }
 async function autoPush(rec) {
@@ -361,9 +530,49 @@ document.getElementById('btnSync').onclick = async () => {
   toast('동기화 완료');
 };
 
+/* ═══════ 픽셀 바다 (도트 그래픽) ═══════ */
+function renderOcean() {
+  const el = document.getElementById('ocean');
+  const W = 80, H = 26; // 작은 도트 격자
+  let rects = '';
+  const px = (x, y, w, h, color) => { rects += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${color}"/>`; };
+
+  // 물결(작은 도트 줄무늬, 2톤 파랑)
+  const waveColors = ['#7fc7e0', '#6bb6d1'];
+  for (let y = 0; y < H; y++) {
+    const offset = (y % 2 === 0) ? 0 : 2;
+    for (let x = -offset; x < W; x += 4) {
+      px(x, y, 2, 1, waveColors[(x + y) % 4 === 0 ? 0 : 1]);
+    }
+  }
+  // 바닥(더 어두운 파랑)
+  px(0, H - 6, W, 6, '#3f7a95');
+
+  // 가라앉은 배(선체)
+  const shipX = 44, shipY = H - 11;
+  px(shipX, shipY + 4, 20, 3, '#8a5a3c');
+  px(shipX + 2, shipY + 2, 16, 2, '#a9754f');
+  px(shipX + 5, shipY, 2, 3, '#6e4429');
+  px(shipX + 12, shipY - 1, 2, 4, '#6e4429');
+  px(shipX - 1, shipY + 6, 22, 1, '#2f5a70');
+
+  // 보물상자
+  const chestX = shipX - 10, chestY = H - 8;
+  px(chestX, chestY, 6, 4, '#7a4a2a');
+  px(chestX, chestY, 6, 1, '#c99a4a');
+  px(chestX + 2, chestY + 1, 2, 1, '#f2c94c');
+
+  // 금화 흩뿌리기
+  const coinSpots = [[chestX + 7, chestY + 3], [chestX + 9, chestY + 4], [shipX - 2, H - 4], [shipX + 22, H - 3], [chestX + 3, chestY + 5]];
+  coinSpots.forEach(([cx, cy]) => px(cx, cy, 1, 1, '#f7d34a'));
+
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" shape-rendering="crispEdges">${rects}</svg>`;
+}
+
 /* ═══════ INIT ═══════ */
 spawnRecurring();
 renderList();
+renderOcean();
 </script>
 <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>
 </body>
