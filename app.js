@@ -969,6 +969,7 @@ document.addEventListener('DOMContentLoaded', () => {
     completed: todo.completed,
     category: categoryNameById(todo.categoryId),
     routine: !!todo.routineId,
+    deferred: !!todo.deferred,
     subtasks: serializeSubtasks(todo.subtasks),
     updatedAt: new Date(todo.updatedAt || Date.now()).toISOString()
   });
@@ -1049,6 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
           existing.todo.text = row.name;
           existing.todo.completed = row.completed;
           existing.todo.categoryId = categoryIdByName(row.category) || existing.todo.categoryId;
+          existing.todo.deferred = !!row.deferred;
           existing.todo.subtasks = parseSubtasks(row.subtasks);
           existing.todo.notionPageId = row.notionPageId;
           existing.todo.updatedAt = remoteTime;
@@ -1058,7 +1060,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!todos[row.date]) todos[row.date] = [];
         todos[row.date].push({
           id: row.appId, text: row.name, completed: row.completed,
-          categoryId: categoryIdByName(row.category), routineId: null,
+          categoryId: categoryIdByName(row.category), routineId: null, deferred: !!row.deferred,
           linkColor: null, subtasks: parseSubtasks(row.subtasks),
           pomoTime: 0, pomoActive: false, pomoEndAt: null,
           updatedAt: remoteTime || Date.now(), notionPageId: row.notionPageId
