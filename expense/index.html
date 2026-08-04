@@ -115,6 +115,26 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .close-btn{background:none;border:none;font-size:18px;color:var(--ink-soft);cursor:pointer}
 
 .recur-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+
+/* 보고서 */
+.report-nav{display:flex;align-items:center;gap:8px}
+.report-total-box{background:var(--sky-soft);border-radius:12px;padding:16px;text-align:center;margin-bottom:18px}
+.report-total-lbl{font-size:11px;color:var(--ink-soft)}
+.report-total-val{font-size:24px;font-weight:700;color:var(--sky-deep);margin-top:4px}
+.report-section-title{font-size:12px;color:var(--ink-soft);margin:16px 0 8px;font-weight:500}
+.week-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.week-row:last-child{border-bottom:none}
+.week-lbl{font-size:13px}
+.week-range{font-size:10px;color:var(--ink-soft);margin-top:2px}
+.week-amt{font-size:14px;font-weight:600}
+.donut-wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.donut-legend{flex:1;min-width:140px;display:flex;flex-direction:column;gap:6px}
+.donut-legend-row{display:flex;align-items:center;gap:6px;font-size:12px}
+.donut-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.donut-legend-name{flex:1;color:var(--ink-soft)}
+.donut-legend-val{font-weight:600}
+.report-subsidy-box{margin-top:18px;background:var(--sand-soft);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--ink-soft)}
+.report-subsidy-box b{color:var(--sand-deep)}
 .recur-item:last-child{border-bottom:none}
 .recur-main{flex:1;font-size:13px}
 .recur-meta{font-size:10px;color:var(--ink-soft);margin-top:2px}
@@ -130,6 +150,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
     <div class="title" title="지금 시점으로 돌아가기">EXPENSE</div>
     <div class="hdr-btns">
       <button class="icon-btn" id="btnSync">🔄</button>
+      <button class="icon-btn" id="btnReport">보고서</button>
       <button class="icon-btn" id="btnRecur">정기지출</button>
     </div>
   </header>
@@ -193,6 +214,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         <option value="의">의</option>
         <option value="야옹">야옹</option>
         <option value="개인">개인</option>
+        <option value="보험">보험</option>
+        <option value="대출">대출</option>
       </select>
     </div>
 
@@ -225,6 +248,37 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
   </div>
 </div>
 
+<div class="modal-overlay" id="reportModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="report-nav">
+        <button class="icon-btn" id="reportPrev">‹</button>
+        <span id="reportMonthLabel" class="modal-title" style="font-size:16px"></span>
+        <button class="icon-btn" id="reportNext">›</button>
+      </div>
+      <button class="close-btn" id="closeReport">✕</button>
+    </div>
+
+    <div class="report-total-box">
+      <div class="report-total-lbl">이 달 총 지출</div>
+      <div class="report-total-val" id="reportTotal">0원</div>
+    </div>
+
+    <div class="report-section-title">주차별 지출</div>
+    <div id="reportWeeks"></div>
+
+    <div class="report-section-title">카테고리별 지출</div>
+    <div class="donut-wrap">
+      <svg id="donutChart" viewBox="0 0 120 120" width="130" height="130"></svg>
+      <div id="donutLegend" class="donut-legend"></div>
+    </div>
+
+    <div class="report-subsidy-box" id="reportSubsidyBox" style="display:none">
+      지원금으로 낸 금액 (총 지출에 미포함): <b id="reportSubsidyVal">0원</b>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="recurModal">
   <div class="modal">
     <div class="modal-hdr"><span class="modal-title">정기 지출</span><button class="close-btn" id="closeRecur">✕</button></div>
@@ -247,7 +301,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
 <script>
 const METHODS = ['카드', '카카오페이', '네이버페이', '계좌이체', '현금'];
-const CARD_TYPES = ['카카오', '현대', '토스', '우리'];
+const CARD_TYPES = ['카카오', '현대', '토스', '우리', '지원금'];
 let records = JSON.parse(localStorage.getItem('expense_records_v1') || '[]');
 let templates = JSON.parse(localStorage.getItem('expense_templates_v1') || '[]');
 let curType = 'expense', curMethod = '카드', curCardType = null, curSplitMode = 'count', curRecurMethod = '카드', curRecurCardType = null;
@@ -303,7 +357,7 @@ function getPeriodRange(period, refDate) {
 }
 function computeTotal(period) {
   const { start, end } = getPeriodRange(period, getRefDate());
-  const expenses = records.filter(r => r.type === 'expense' && r.date >= start && r.date <= end);
+  const expenses = records.filter(r => r.type === 'expense' && r.cardType !== '지원금' && r.date >= start && r.date <= end);
   return expenses.reduce((s, r) => s + (r.myShare || 0), 0);
 }
 // 5x7 도트매트릭스 숫자 패턴 (LED 전광판 폰트)
@@ -634,6 +688,92 @@ function renderRecurList() {
     saveTemplates(); renderRecurList();
   }));
 }
+/* ═══════ 보고서 ═══════ */
+const CATEGORY_COLORS = { '식': '#ff9f6b', '주': '#6bc8ff', '의': '#c88bff', '야옹': '#ffcf6b', '개인': '#6bffb0', '보험': '#ff6b9f', '대출': '#9fa8b8', '기타': '#c9c9c9' };
+let reportDate = new Date();
+
+function renderReport() {
+  const y = reportDate.getFullYear(), m = reportDate.getMonth();
+  document.getElementById('reportMonthLabel').textContent = `${y}년 ${m + 1}월`;
+  const monthStr = `${y}-${String(m + 1).padStart(2, '0')}`;
+  const monthExpenses = records.filter(r => r.type === 'expense' && r.date.slice(0, 7) === monthStr);
+  const normal = monthExpenses.filter(r => r.cardType !== '지원금');
+  const subsidy = monthExpenses.filter(r => r.cardType === '지원금');
+
+  const total = normal.reduce((s, r) => s + (r.myShare || 0), 0);
+  document.getElementById('reportTotal').textContent = won(total);
+
+  // 주차별
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const firstDow = new Date(y, m, 1).getDay();
+  const weeks = {};
+  for (let day = 1; day <= daysInMonth; day++) {
+    const wn = Math.ceil((day + firstDow) / 7);
+    if (!weeks[wn]) weeks[wn] = { total: 0, minDay: day, maxDay: day };
+    weeks[wn].maxDay = day;
+  }
+  normal.forEach(r => {
+    const day = parseInt(r.date.slice(8, 10), 10);
+    const wn = Math.ceil((day + firstDow) / 7);
+    if (weeks[wn]) weeks[wn].total += (r.myShare || 0);
+  });
+  const weeksEl = document.getElementById('reportWeeks');
+  weeksEl.innerHTML = Object.keys(weeks).sort((a, b) => a - b).map(wn => {
+    const w = weeks[wn];
+    return `<div class="week-row">
+      <div><div class="week-lbl">${wn}주차</div><div class="week-range">${m + 1}월 ${w.minDay}일~${w.maxDay}일</div></div>
+      <div class="week-amt">${won(w.total)}</div>
+    </div>`;
+  }).join('');
+
+  // 카테고리별 도넛
+  const catTotals = {};
+  normal.forEach(r => { const c = r.category || '기타'; catTotals[c] = (catTotals[c] || 0) + (r.myShare || 0); });
+  const catEntries = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
+  renderDonut(catEntries, total);
+
+  // 지원금
+  const subsidyTotal = subsidy.reduce((s, r) => s + (r.myShare || 0), 0);
+  document.getElementById('reportSubsidyBox').style.display = subsidyTotal > 0 ? 'block' : 'none';
+  document.getElementById('reportSubsidyVal').textContent = won(subsidyTotal);
+}
+
+function renderDonut(catEntries, total) {
+  const svg = document.getElementById('donutChart');
+  const legend = document.getElementById('donutLegend');
+  if (!total || !catEntries.length) {
+    svg.innerHTML = `<circle cx="60" cy="60" r="45" fill="none" stroke="#eee" stroke-width="18"/>`;
+    legend.innerHTML = `<div class="empty" style="padding:0;text-align:left">이 달 지출 기록이 없어요</div>`;
+    return;
+  }
+  const r = 45, cx = 60, cy = 60, circumference = 2 * Math.PI * r;
+  let offset = 0;
+  let circles = '';
+  catEntries.forEach(([cat, amt]) => {
+    const frac = amt / total;
+    const len = frac * circumference;
+    const color = CATEGORY_COLORS[cat] || '#c9c9c9';
+    circles += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="18" stroke-dasharray="${len} ${circumference - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset += len;
+  });
+  svg.innerHTML = circles;
+  legend.innerHTML = catEntries.map(([cat, amt]) => `
+    <div class="donut-legend-row">
+      <span class="donut-dot" style="background:${CATEGORY_COLORS[cat] || '#c9c9c9'}"></span>
+      <span class="donut-legend-name">${esc(cat)} (${Math.round(amt / total * 100)}%)</span>
+      <span class="donut-legend-val">${won(amt)}</span>
+    </div>`).join('');
+}
+
+document.getElementById('btnReport').onclick = () => {
+  reportDate = new Date();
+  renderReport();
+  document.getElementById('reportModal').classList.add('open');
+};
+document.getElementById('closeReport').onclick = () => document.getElementById('reportModal').classList.remove('open');
+document.getElementById('reportPrev').onclick = () => { reportDate.setMonth(reportDate.getMonth() - 1); renderReport(); };
+document.getElementById('reportNext').onclick = () => { reportDate.setMonth(reportDate.getMonth() + 1); renderReport(); };
+
 document.getElementById('btnRecur').onclick = () => {
   curRecurMethod = '카드'; curRecurCardType = null;
   document.getElementById('recurName').value = '';
