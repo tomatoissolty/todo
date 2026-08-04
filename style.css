@@ -11,7 +11,7 @@
   
   --accent-color: hsl(210, 100%, 50%); 
   --accent-hover: hsl(210, 100%, 40%);
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-family: 'A2z', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --card-radius: 28px; /* Changed from 20px to make it highly rounded */
 }
 
@@ -36,7 +36,7 @@ body { font-family: var(--font-family); background-color: var(--bg-color); color
 @media (min-width: 481px) { .app-container { height: 90vh; border-radius: 30px; box-shadow: var(--shadow-lg); overflow: hidden; } }
 
 .app-header { padding: 24px 24px 10px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-.header-left .app-title-input { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; border: none; background: transparent; color: var(--text-main); outline: none; font-family: var(--font-family); width: 150px; transition: opacity 0.2s; cursor: pointer; }
+.header-left .app-title-input { font-size: 28px; font-weight: normal; letter-spacing: -0.5px; border: none; background: transparent; color: var(--text-main); outline: none; font-family: 'ChangwonDanggamAsak', var(--font-family); width: 150px; transition: opacity 0.2s; cursor: pointer; }
 .app-title-input:active { opacity: 0.6; }
 .header-right { display: flex; gap: 12px; position: relative; }
 .icon-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; transition: color 0.2s ease, transform 0.2s ease; }

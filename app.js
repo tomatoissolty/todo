@@ -10,15 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
     darkMode: false,
     pomoDuration: 25,
     routines: [],
-    categories: [],
-    uiSounds: true
+    categories: []
   };
 
   // Migration/Initialization for new fields
   if (!appSettings.routines) appSettings.routines = [];
   if (!appSettings.categories) appSettings.categories = [];
   if (appSettings.pomoDuration === undefined) appSettings.pomoDuration = 25;
-  if (appSettings.uiSounds === undefined) appSettings.uiSounds = true;
   appSettings.routines.forEach(r => { if (!r.skipDates) r.skipDates = []; });
 
   // Migrate individual todo items: give every item a stable id + timestamps + sync placeholder.
@@ -62,11 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const catSwatches = document.getElementById('category-swatches');
 
   // Audio Assets (only the ones actually used)
-  const sounds = {
-    click: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'), // Soft tap
-    milestone: new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3') // Success chime
-  };
-  Object.values(sounds).forEach(s => s.volume = 0.3);
 
   // --- THEME & SETTINGS ---
   const applyThemeMode = () => {
@@ -319,7 +312,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (progressBar && percent === 100 && dayTodos.length > 0 && !progressBar.dataset.celebrated) {
       progressBar.dataset.celebrated = "true";
       triggerConfetti();
-      if (appSettings.uiSounds) sounds.milestone.play().catch(() => {});
     } else if (progressBar && percent < 100) {
       delete progressBar.dataset.celebrated;
     }
@@ -606,7 +598,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         todos[d].push(newTodo);
         saveTodos(); renderTodos(d); input.value = '';
-        if (appSettings.uiSounds) sounds.click.play().catch(() => {});
         autoPushItem(newTodo, d);
       }
     }
@@ -737,7 +728,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       todo.pomoActive = false; todo.pomoEndAt = null;
       clearInterval(activeTimers[`${dateStr}-${idx}`]);
-      if (appSettings.uiSounds) sounds.milestone.play().catch(() => {});
       alert(`집중 완료: ${todo.text}`);
       saveTodos(); renderTodos(dateStr);
     }
