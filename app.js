@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let linkMode = { sourceDate: null, sourceIndex: null };
   let selectedCategoryHue = -1; // module-level so btn-add-category-action can read it
   let activeTimers = {};
-  let currentFilter = { categoryId: null, routineOnly: false };
+  let currentFilter = { categoryId: null, routineOnly: false, deferredOnly: false };
   let lastDeleted = null; // { date, index, item } for undo
   let undoTimeoutId = null;
 
@@ -193,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="filter-popup" id="filter-popup-${dateStr}">
             <div class="filter-option" data-type="all">전체보기</div>
             <div class="filter-option" data-type="routine"><i data-lucide="repeat" style="width:12px;"></i> 루틴만</div>
+            <div class="filter-option" data-type="deferred"><i data-lucide="corner-down-right" style="width:12px;"></i> 밀린 항목</div>
             <div class="menu-separator" style="margin:4px 0;"></div>
             <div id="filter-categories-${dateStr}"></div>
           </div>
@@ -226,6 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       let isMatch = true;
       if (currentFilter.routineOnly && !isRoutine) isMatch = false;
+      if (currentFilter.deferredOnly && !todo.deferred) isMatch = false;
       if (currentFilter.categoryId && todo.categoryId !== currentFilter.categoryId) isMatch = false;
 
       if (todo.completed) completedCount++;
@@ -413,9 +415,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.closest('.filter-option')) {
       const opt = e.target.closest('.filter-option');
       const date = opt.closest('.filter-popup').id.replace('filter-popup-', '');
-      if (opt.dataset.type === 'all') { currentFilter = { categoryId: null, routineOnly: false }; }
-      else if (opt.dataset.type === 'routine') { currentFilter = { categoryId: null, routineOnly: true }; }
-      else if (opt.dataset.category) { currentFilter = { categoryId: opt.dataset.category, routineOnly: false }; }
+      if (opt.dataset.type === 'all') { currentFilter = { categoryId: null, routineOnly: false, deferredOnly: false }; }
+      else if (opt.dataset.type === 'routine') { currentFilter = { categoryId: null, routineOnly: true, deferredOnly: false }; }
+      else if (opt.dataset.type === 'deferred') { currentFilter = { categoryId: null, routineOnly: false, deferredOnly: true }; }
+      else if (opt.dataset.category) { currentFilter = { categoryId: opt.dataset.category, routineOnly: false, deferredOnly: false }; }
       opt.closest('.filter-popup').classList.remove('show');
       renderTodos(date);
       return;
@@ -574,7 +577,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeModal = () => modalOverlay.classList.add('hidden');
 
   // --- APP TITLE: 이제 직접 수정 안 되고, 누르면 동기화가 실행됨. 이름 수정은 햄버거 메뉴로 옮김 ---
-  titleInput.addEventListener('click', () => { syncWithNotion(); });
+  titleInput.addEventListener('click', () => {
+    // 다크모드 토글 눌렀을 때랑 똑같은 조합이 화면을 확실히 다시 그려주니까, 그걸 먼저 하고 나서 조용히 동기화
+    applySettings();
+    renderAllTodos();
+    syncWithNotion();
+  });
 
   // Input Handlers
   document.body.addEventListener('submit', (e) => {
@@ -1051,9 +1059,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const pullChanged = await pullFromNotion(false);
       const rolloverChanged = rolloverIncompleteTodos();
       if (pullChanged || rolloverChanged || flat.length > 0) renderAllTodos();
-      alert('노션과 동기화됐어요!');
     } catch (err) {
-      alert(`동기화 실패: ${err.message}`);
+      console.warn('동기화 실패:', err.message); // 팝업 대신 콘솔에만 조용히 남김 - 타이틀 누를 때마다 뜨면 방해돼서
     } finally {
       setSyncIcon(false);
     }
