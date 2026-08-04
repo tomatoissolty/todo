@@ -123,7 +123,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .report-nav{display:flex;align-items:center;gap:8px}
 .report-total-lbl{font-size:7.7px;color:var(--ink-soft);text-align:center;letter-spacing:2px;margin-bottom:3px}
 .report-total-board{padding:23px 8px !important}
-.report-section-title{font-size:12px;color:var(--ink-soft);margin:16px 0 8px;font-weight:500}
+#weeksSection{margin-top:4px}
+#donutSection{margin-top:14px}
 .week-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
 .week-row:last-child{border-bottom:none}
 .week-lbl{font-size:13px}
@@ -137,9 +138,10 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .donut-legend-val{font-weight:600;margin-left:10px;text-align:right}
 .report-subsidy-box{margin-top:18px;font-size:12px;color:var(--ink)}
 .report-subsidy-box b{color:var(--sand-deep)}
-.report-toggle-panel{display:none;flex-direction:column;gap:8px;background:var(--sky-soft);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--ink)}
+.report-toggle-panel{display:none;flex-direction:column;gap:10px;margin-bottom:14px;font-size:12px;color:var(--ink)}
 .report-toggle-panel.open{display:flex}
 .report-toggle-panel label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.report-toggle-panel .ul-text{display:inline-block;padding:0 0.6em;margin:0 -0.6em;border-bottom:1px solid var(--sky-deep);line-height:1.3}
 .recur-item:last-child{border-bottom:none}
 .recur-main{flex:1;font-size:13px}
 .recur-meta{font-size:10px;color:var(--ink-soft);margin-top:2px}
@@ -272,17 +274,15 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
     <div class="split-board report-total-board" id="reportBoard" style="justify-content:center;max-width:none;margin-bottom:18px;cursor:pointer" title="눌러서 보고 싶은 항목 고르기"></div>
 
     <div class="report-toggle-panel" id="reportTogglePanel">
-      <label><input type="checkbox" id="chkShowWeeks" checked> 주차별 지출 보기</label>
-      <label><input type="checkbox" id="chkShowDonut" checked> 카테고리별 지출 보기</label>
+      <label><input type="checkbox" id="chkShowWeeks" checked> <span class="ul-text">주차별 지출 보기</span></label>
+      <label><input type="checkbox" id="chkShowDonut" checked> <span class="ul-text">카테고리별 지출 보기</span></label>
     </div>
 
     <div id="weeksSection">
-      <div class="report-section-title">주차별 지출</div>
       <div id="reportWeeks"></div>
     </div>
 
     <div id="donutSection">
-      <div class="report-section-title">카테고리별 지출</div>
       <div class="donut-wrap">
         <svg id="donutChart" viewBox="0 0 160 160" width="169" height="169"></svg>
         <div id="donutLegend" class="donut-legend"></div>
