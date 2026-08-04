@@ -33,6 +33,9 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .cal-day.empty{visibility:hidden;cursor:default}
 .hdr-btns{display:flex;gap:8px}
 .icon-btn{height:34px;padding:0 12px;border:1px solid var(--line);background:var(--card);border-radius:10px;cursor:pointer;font-size:12px;font-family:var(--font-body);display:flex;align-items:center;justify-content:center;gap:5px;color:var(--ink)}
+.save-report-btn{width:34px;height:34px;border:none;background:none;cursor:pointer;color:var(--ink-soft);display:flex;align-items:center;justify-content:center;padding:0}
+.save-report-btn svg{width:19px;height:19px}
+.save-report-btn:hover{color:var(--sky-deep)}
 
 /* ═══ 전광막(split-flap) 전광판 ═══ */
 .board-tabs{display:flex;gap:4px;margin-bottom:8px}
@@ -118,7 +121,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
 /* 보고서 */
 .report-nav{display:flex;align-items:center;gap:8px}
-.report-total-lbl{font-size:11px;color:var(--ink-soft);text-align:center;letter-spacing:2px;margin-bottom:6px}
+.report-total-lbl{font-size:7.7px;color:var(--ink-soft);text-align:center;letter-spacing:2px;margin-bottom:3px}
+.report-total-board{padding:23px 8px !important}
 .report-section-title{font-size:12px;color:var(--ink-soft);margin:16px 0 8px;font-weight:500}
 .week-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
 .week-row:last-child{border-bottom:none}
@@ -131,7 +135,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .donut-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 .donut-legend-name{color:var(--ink-soft);white-space:nowrap}
 .donut-legend-val{font-weight:600;margin-left:10px;text-align:right}
-.report-subsidy-box{margin-top:18px;background:var(--sand-soft);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--ink-soft)}
+.report-subsidy-box{margin-top:18px;font-size:12px;color:var(--ink)}
 .report-subsidy-box b{color:var(--sand-deep)}
 .recur-item:last-child{border-bottom:none}
 .recur-main{flex:1;font-size:13px}
@@ -256,13 +260,13 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
         <button class="icon-btn" id="reportNext">›</button>
       </div>
       <div style="display:flex;gap:6px">
-        <button class="icon-btn" id="btnSaveReport">📥</button>
+        <button class="save-report-btn" id="btnSaveReport" title="사진으로 저장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
         <button class="close-btn" id="closeReport">✕</button>
       </div>
     </div>
 
     <div class="report-total-lbl">TOTAL</div>
-    <div class="split-board" id="reportBoard" style="justify-content:center;max-width:none;margin-bottom:18px"></div>
+    <div class="split-board report-total-board" id="reportBoard" style="justify-content:center;max-width:none;margin-bottom:18px"></div>
 
     <div class="report-section-title">주차별 지출</div>
     <div id="reportWeeks"></div>
@@ -700,7 +704,7 @@ function renderRecurList() {
   }));
 }
 /* ═══════ 보고서 ═══════ */
-const CATEGORY_COLORS = { '식': '#ff9f6b', '주': '#6bc8ff', '의': '#c88bff', '야옹': '#ffcf6b', '개인': '#6bffb0', '보험': '#ff6b9f', '대출': '#9fa8b8', '기타': '#c9c9c9' };
+const CATEGORY_COLORS = { '식': '#DF928E', '주': '#D1DEDE', '의': '#C58882', '야옹': '#EFDCBE', '개인': '#ADDDFF', '보험': '#C9B8D4', '대출': '#D9B872', '기타': '#B8C4A9' };
 let reportDate = new Date();
 
 function renderReport() {
