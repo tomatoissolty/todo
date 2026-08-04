@@ -354,7 +354,14 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const triggerConfetti = () => {
-    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF'] });
+    // 컨페티 라이브러리가 어떤 이유로든 안 불러와졌을 때, 여기서 에러가 나서
+    // 그 뒤에 그려질 카드들이 통째로 멈춰버리는 게 진짜 문제였음 - 없으면 그냥 조용히 건너뜀
+    if (typeof confetti !== 'function') { console.warn('컨페티 라이브러리를 못 불러와서 축하 효과는 건너뜀'); return; }
+    try {
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF'] });
+    } catch (err) {
+      console.warn('컨페티 실행 실패:', err.message);
+    }
   };
 
   const updateFilterPopupUI = (dateStr) => {
