@@ -1299,6 +1299,14 @@ document.addEventListener('DOMContentLoaded', () => {
     .then((pullChanged) => {
       const rolloverChanged = rolloverIncompleteTodos();
       if (pullChanged || rolloverChanged) renderAllTodos();
+      // 데이터 로딩이 다 끝난 시점에, "전체보기" 필터를 실제로 누른 것과 똑같이 재현해서
+      // 확실히 다시 그려지도록 함 (사용자가 직접 눌렀을 때만 고쳐지던 것과 같은 동작)
+      requestAnimationFrame(() => {
+        const activeSlide = document.querySelector('.swiper-slide-active .todo-card');
+        const allBtn = activeSlide && activeSlide.querySelector('.filter-option[data-type="all"]');
+        if (allBtn) allBtn.click();
+        else renderAllTodos();
+      });
     })
     .catch(err => console.warn('초기 pull 실패:', err.message));
 });

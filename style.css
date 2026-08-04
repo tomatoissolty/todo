@@ -90,9 +90,12 @@ body { font-family: var(--font-family); background-color: var(--bg-color); color
 .todo-item { display: flex; flex-direction: column; padding: 12px 0; border-bottom: 1px solid var(--border-color); transition: opacity 0.3s ease, filter 0.3s ease, transform 0.3s ease; position: relative; }
 
 /* 사진으로 저장할 때만 적용되는 스타일 - 항목이 더 많이 보이도록 촘촘하게, 불필요한 UI는 숨김 */
+.todo-card.capture-mode { height: auto !important; overflow: visible !important; }
+.todo-card.capture-mode .todo-list { overflow: visible !important; height: auto !important; flex: none !important; padding-bottom: 0; }
+.todo-card.capture-mode .card-header { margin-bottom: 12px; }
 .todo-card.capture-mode .add-todo-form,
 .todo-card.capture-mode .card-filter-btn { visibility: hidden; }
-.todo-card.capture-mode .todo-item { padding: 6px 0; border-bottom: none; }
+.todo-card.capture-mode .todo-item { padding: 2px 0; border-bottom: none; }
 .todo-card.capture-mode .todo-text { font-size: 11px; }
 .todo-card.capture-mode .todo-checkbox { visibility: hidden; }
 .capture-checkbox-fake { position: absolute; width: 22px; height: 22px; border: 2px solid var(--border-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-sizing: border-box; pointer-events: none; }
