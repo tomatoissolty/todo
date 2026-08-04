@@ -581,7 +581,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 다크모드 토글 눌렀을 때랑 똑같은 조합이 화면을 확실히 다시 그려주니까, 그걸 먼저 하고 나서 조용히 동기화
     applySettings();
     renderAllTodos();
-    syncWithNotion();
+    const syncToast = document.getElementById('sync-toast');
+    syncToast.classList.remove('hidden');
+    syncWithNotion().finally(() => { syncToast.classList.add('hidden'); });
   });
 
   // Input Handlers
