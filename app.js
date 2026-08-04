@@ -3,6 +3,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- STATE ---
   let todos = JSON.parse(localStorage.getItem('swipe-todos')) || {};
+  // 컨페티를 이미 터뜨린 날짜를 기억해둠 - 이걸 DOM에만 저장해뒀더니 새로고침(또는 toisty iframe 재로딩)할 때마다
+  // "아직 안 터뜨렸다"고 착각해서 다시 터지는 버그가 있었음. localStorage에 저장해서 세션이 바뀌어도 유지되게 함.
+  let celebratedDates = JSON.parse(localStorage.getItem('celebrated-dates') || '[]');
+  const saveCelebratedDates = () => localStorage.setItem('celebrated-dates', JSON.stringify(celebratedDates));
   let appSettings = JSON.parse(localStorage.getItem('swipe-settings')) || {
     title: 'Daily',
     accentHue: 210,
@@ -309,11 +313,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const percent = dayTodos.length === 0 ? 0 : (completedCount / dayTodos.length) * 100;
     if (progressBar) progressBar.style.width = `${percent}%`;
 
-    if (progressBar && percent === 100 && dayTodos.length > 0 && !progressBar.dataset.celebrated) {
-      progressBar.dataset.celebrated = "true";
+    if (progressBar && percent === 100 && dayTodos.length > 0 && !celebratedDates.includes(dateStr)) {
+      celebratedDates.push(dateStr);
+      saveCelebratedDates();
       triggerConfetti();
-    } else if (progressBar && percent < 100) {
-      delete progressBar.dataset.celebrated;
+    } else if (percent < 100 && celebratedDates.includes(dateStr)) {
+      celebratedDates = celebratedDates.filter(d => d !== dateStr);
+      saveCelebratedDates();
     }
 
     lucide.createIcons();
