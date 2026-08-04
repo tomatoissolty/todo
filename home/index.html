@@ -208,7 +208,11 @@ function showTab(appKey) {
     pane.innerHTML = `<div class="loading">불러오는 중...</div><iframe src="${IFRAME_APPS[appKey]}" title="${appKey}"></iframe>`;
     main.appendChild(pane);
     loadedPanes[appKey] = pane;
-    pane.querySelector('iframe').addEventListener('load', () => { pane.querySelector('.loading').style.display = 'none'; });
+    const loadingEl = pane.querySelector('.loading');
+    loadingEl.style.pointerEvents = 'none'; // 로딩 문구가 떠 있는 동안에도 밑에 있는 iframe은 눌릴 수 있게
+    const hideLoading = () => { loadingEl.style.display = 'none'; };
+    pane.querySelector('iframe').addEventListener('load', hideLoading);
+    setTimeout(hideLoading, 4000); // 사파리 등에서 load 이벤트가 늦게 오거나 안 오는 경우를 대비한 안전장치
   }
 }
 
@@ -272,7 +276,7 @@ async function loadToistyData(pane) {
   try {
     const r = await fetch('/api/notion?app=bookmark');
     const d = await r.json();
-    const top4 = (d.items || []).sort((a, b) => new Date(b.createdTime || 0) - new Date(a.createdTime || 0)).slice(0, 4);
+    const top4 = (d.items || []).sort((a, b) => new Date(b.createdTime || 0) - new Date(a.createdTime || 0)).slice(0, 6);
     const el = pane.querySelector('#miniBookmark');
     if (!top4.length) { el.innerHTML = `<div class="mini-empty">북마크가 없어요</div>`; }
     else {
