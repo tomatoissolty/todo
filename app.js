@@ -997,18 +997,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 노션에서 생기거나 바뀐 내용을 앱으로 가져와요. silent=true면 알림창 없이 조용히 처리돼요
   // (백그라운드 자동 동기화용), false면 결과를 alert로 알려줘요 (수동 버튼용).
-  const pullFromNotion = async (silent) => {
-    // 노션이 어쩌다 느리게 응답해도 화면이 무한정 안 멎도록 8초 넘으면 포기하고 로컬 데이터로 진행
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-    let pullRes;
-    try {
-      pullRes = await fetch('/api/notion?app=todo', { signal: controller.signal });
-    } finally {
-      clearTimeout(timeoutId);
+  const NOTION_CACHE_KEY = 'notion-todo-cache';
+  const NOTION_CACHE_TTL = 60000; // 1분 - 이 안에 다시 열면 노션한테 안 묻고 캐시로 바로 처리(체감 지연 0)
+
+  const pullFromNotion = async (silent, forceRefresh) => {
+    const cachedRaw = localStorage.getItem(NOTION_CACHE_KEY);
+    const cached = cachedRaw ? JSON.parse(cachedRaw) : null;
+    const isFresh = !forceRefresh && cached && (Date.now() - cached.fetchedAt < NOTION_CACHE_TTL);
+
+    let pullData;
+    if (isFresh) {
+      pullData = cached.data; // 노션한테 안 묻고 캐시된 걸로 즉시 처리
+    } else {
+      // 노션이 어쩌다 느리게 응답해도 화면이 무한정 안 멎도록 8초 넘으면 포기하고 로컬 데이터로 진행
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      let pullRes;
+      try {
+        pullRes = await fetch('/api/notion?app=todo', { signal: controller.signal });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+      pullData = await pullRes.json();
+      if (!pullRes.ok) throw new Error(pullData.error || '다운로드 실패');
+      localStorage.setItem(NOTION_CACHE_KEY, JSON.stringify({ fetchedAt: Date.now(), data: pullData }));
     }
-    const pullData = await pullRes.json();
-    if (!pullRes.ok) throw new Error(pullData.error || '다운로드 실패');
 
     const localById = {};
     flattenTodos().forEach(({ dateStr, idx, todo }) => { localById[todo.id] = { dateStr, idx, todo }; });
@@ -1070,7 +1083,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         saveTodos();
       }
-      const pullChanged = await pullFromNotion(false);
+      const pullChanged = await pullFromNotion(false, true);
       const rolloverChanged = rolloverIncompleteTodos();
       if (pullChanged || rolloverChanged || flat.length > 0) renderAllTodos();
     } catch (err) {
@@ -1310,22 +1323,25 @@ document.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(() => { applySettings(); renderAllTodos(); });
   });
 
+  // "전체보기" 필터를 실제로 누른 것과 똑같이 재현해서 확실히 다시 그려지도록 함
+  // (사용자가 직접 눌렀을 때만 고쳐지던 것과 같은 동작) - 노션 pull이 느려도 절대 안 기다리고
+  // 고정된 짧은 시간 후에 독립적으로 실행됨
+  setTimeout(() => {
+    const activeSlide = document.querySelector('.swiper-slide-active .todo-card');
+    const allBtn = activeSlide && activeSlide.querySelector('.filter-option[data-type="all"]');
+    if (allBtn) allBtn.click();
+    else renderAllTodos();
+  }, 1200);
+
   // 이 기기에 아직 안 내려와 있던, 노션에만 있던 항목까지 받아온 다음
   // 미룸 처리를 한 번 더 재확인해요 (그래야 다른 기기/세션에서 만든 미완료 항목도 놓치지 않아요).
+  // 캐시 덕분에 대부분은 즉시 처리되고, 캐시가 없을 때만 실제 네트워크를 기다림 - 그래도 위 안전장치와는 무관하게 독립적으로 동작함.
   console.log('[TIMING] 노션 pullFromNotion 시작', performance.now());
   pullFromNotion(true)
     .then((pullChanged) => {
       console.log('[TIMING] 노션 pullFromNotion 완료', performance.now());
       const rolloverChanged = rolloverIncompleteTodos();
       if (pullChanged || rolloverChanged) renderAllTodos();
-      // 데이터 로딩이 다 끝난 시점에, "전체보기" 필터를 실제로 누른 것과 똑같이 재현해서
-      // 확실히 다시 그려지도록 함 (사용자가 직접 눌렀을 때만 고쳐지던 것과 같은 동작)
-      requestAnimationFrame(() => {
-        const activeSlide = document.querySelector('.swiper-slide-active .todo-card');
-        const allBtn = activeSlide && activeSlide.querySelector('.filter-option[data-type="all"]');
-        if (allBtn) allBtn.click();
-        else renderAllTodos();
-      });
     })
     .catch(err => console.warn('초기 pull 실패:', err.message));
 });
