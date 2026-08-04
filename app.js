@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('[TIMING] DOMContentLoaded 시작', performance.now());
   lucide.createIcons();
 
   // --- STATE ---
@@ -1253,13 +1254,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   applySettings();
   rolloverIncompleteTodos(); // 우선 로컬에 있는 데이터 기준으로 즉시 한 번 처리
+  console.log('[TIMING] 카드 61개 생성 시작', performance.now());
   dateCards.forEach(date => swiperWrapper.appendChild(createCardElement(date)));
+  console.log('[TIMING] 카드 61개 생성 끝', performance.now());
 
   // 혹시라도 새로고침되더라도 보고 있던 날짜로 돌아오도록, 마지막 위치를 기억해둠
   let isSwiping = false;
   const savedSlide = parseInt(sessionStorage.getItem('swipe-last-slide') || '30', 10);
   const startSlide = (savedSlide >= 0 && savedSlide <= 60) ? savedSlide : 30;
 
+  console.log('[TIMING] Swiper 생성 시작', performance.now());
   swiper = new Swiper('.todo-swiper', {
     effect: 'coverflow', centeredSlides: true, slidesPerView: 'auto', initialSlide: startSlide,
     coverflowEffect: { rotate: 0, stretch: -30, depth: 150, modifier: 1, slideShadows: false },
@@ -1287,7 +1291,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  console.log('[TIMING] 첫 renderAllTodos() 시작', performance.now());
   renderAllTodos();
+  console.log('[TIMING] 첫 renderAllTodos() 끝 - 여기까지 되면 화면엔 이미 다 보여야 함', performance.now());
   restoreActiveTimers();
 
   // 다크모드를 껐다 켜면 "고쳐지던" 것과 똑같은 조합(설정 재적용 + 재렌더)을
@@ -1298,8 +1304,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 이 기기에 아직 안 내려와 있던, 노션에만 있던 항목까지 받아온 다음
   // 미룸 처리를 한 번 더 재확인해요 (그래야 다른 기기/세션에서 만든 미완료 항목도 놓치지 않아요).
+  console.log('[TIMING] 노션 pullFromNotion 시작', performance.now());
   pullFromNotion(true)
     .then((pullChanged) => {
+      console.log('[TIMING] 노션 pullFromNotion 완료', performance.now());
       const rolloverChanged = rolloverIncompleteTodos();
       if (pullChanged || rolloverChanged) renderAllTodos();
       // 데이터 로딩이 다 끝난 시점에, "전체보기" 필터를 실제로 누른 것과 똑같이 재현해서
