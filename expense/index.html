@@ -21,7 +21,16 @@
 body{background:var(--bg);color:var(--ink);font-family:var(--font-body);min-height:100vh;display:flex;flex-direction:column}
 .wrap{max-width:520px;width:100%;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 130px;flex:1;display:flex;flex-direction:column}
 header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.title{font-family:'JejuStoneWall',sans-serif;font-size:26px;letter-spacing:1px}
+.title{font-family:'JejuStoneWall',sans-serif;font-size:26px;letter-spacing:1px;cursor:pointer}
+.period-calendar{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;z-index:30;display:none;box-shadow:0 8px 20px rgba(0,0,0,.1)}
+.period-calendar.open{display:block}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;font-size:12px}
+.cal-nav .close-btn{margin-left:auto}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-dow{font-size:9px;color:var(--ink-soft);text-align:center;padding:2px 0}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:11px;border-radius:5px;cursor:pointer;color:var(--ink)}
+.cal-day:hover{background:var(--sky-soft)}
+.cal-day.empty{visibility:hidden;cursor:default}
 .hdr-btns{display:flex;gap:8px}
 .icon-btn{height:34px;padding:0 12px;border:1px solid var(--line);background:var(--card);border-radius:10px;cursor:pointer;font-size:12px;font-family:var(--font-body);display:flex;align-items:center;justify-content:center;gap:5px;color:var(--ink)}
 
@@ -97,7 +106,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .split-row input{width:70px}
 .share-preview{font-size:12px;color:var(--ink-soft);background:var(--sky-soft);padding:8px 10px;border-radius:8px;margin-top:8px}
 .share-preview b{color:var(--sky-deep);font-size:14px}
-#inDirectShare{background:transparent;border:none;font-weight:700;color:var(--sky-deep);width:80px;padding:0;font-family:inherit;font-size:14px}
+#inDirectShare{background:transparent;border:none;font-weight:700;color:var(--sky-deep);width:80px;padding:0;font-family:inherit;font-size:14px;-moz-appearance:textfield}
+#inDirectShare::-webkit-outer-spin-button,#inDirectShare::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 #inDirectShare:focus{outline:none}
 .save-btn{width:100%;padding:13px;border:none;border-radius:12px;background:var(--sky-deep);color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:18px;font-family:var(--font-btn)}
 .save-btn.income{background:var(--sand-deep)}
@@ -117,17 +127,28 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
 <div class="wrap">
   <header>
-    <div class="title">EXPENSE</div>
+    <div class="title" title="지금 시점으로 돌아가기">EXPENSE</div>
     <div class="hdr-btns">
       <button class="icon-btn" id="btnSync">🔄</button>
       <button class="icon-btn" id="btnRecur">정기지출</button>
     </div>
   </header>
 
-  <div class="board-tabs">
-    <button class="board-tab active" data-p="today">TODAY</button>
-    <button class="board-tab" data-p="week">WEEK</button>
-    <button class="board-tab" data-p="month">MONTH</button>
+  <div style="position:relative">
+    <div class="board-tabs">
+      <button class="board-tab active" data-p="today">TODAY</button>
+      <button class="board-tab" data-p="week">WEEK</button>
+      <button class="board-tab" data-p="month">MONTH</button>
+    </div>
+    <div class="period-calendar" id="periodCalendar">
+      <div class="cal-nav">
+        <button class="icon-btn" id="calPrev">‹</button>
+        <div id="calMonthLabel"></div>
+        <button class="icon-btn" id="calNext">›</button>
+        <button class="close-btn" id="calClose">✕</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
   </div>
   <div class="split-board" id="splitBoard"></div>
 
@@ -163,15 +184,17 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
       </div>
     </div>
 
-    <label class="form-lbl">카테고리</label>
-    <select class="form-input" id="inCategorySelect">
-      <option value="">선택 안 함 (기타로 집계)</option>
-      <option value="식">식</option>
-      <option value="주">주</option>
-      <option value="의">의</option>
-      <option value="야옹">야옹</option>
-      <option value="개인">개인</option>
-    </select>
+    <div id="categoryField">
+      <label class="form-lbl">카테고리</label>
+      <select class="form-input" id="inCategorySelect">
+        <option value="">선택 안 함 (기타로 집계)</option>
+        <option value="식">식</option>
+        <option value="주">주</option>
+        <option value="의">의</option>
+        <option value="야옹">야옹</option>
+        <option value="개인">개인</option>
+      </select>
+    </div>
 
     <label class="form-lbl">메모 (선택)</label>
     <input class="form-input" id="inMemo" placeholder="예: 티빙 구독, 점심식사...">
@@ -261,18 +284,27 @@ function spawnRecurring() {
   if (changed) { save(); autoPushAll(); }
 }
 
-/* ═══════ 전광판(split-flap) ═══════ */
+/* ═══════ 전광판(split-flap) + 다른 날짜 보기 ═══════ */
+let viewMode = 'live'; // 'live' = 지금 시점 기준, 'custom' = 특정 날짜를 골라서 보는 중
+let customDate = null;
+function getRefDate() { return customDate || new Date(); }
+function toDateStr(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+function getPeriodRange(period, refDate) {
+  const d = refDate || new Date();
+  if (period === 'today') { const s = toDateStr(d); return { start: s, end: s }; }
+  if (period === 'week') {
+    const weekStart = new Date(d); weekStart.setDate(d.getDate() - d.getDay());
+    const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
+    return { start: toDateStr(weekStart), end: toDateStr(weekEnd) };
+  }
+  const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+  const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  return { start: toDateStr(monthStart), end: toDateStr(monthEnd) };
+}
 function computeTotal(period) {
-  const t = todayStr();
-  const now = new Date();
-  const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
-  const weekStartStr = `${weekStart.getFullYear()}-${String(weekStart.getMonth()+1).padStart(2,'0')}-${String(weekStart.getDate()).padStart(2,'0')}`;
-  const monthStart = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-  const expenses = records.filter(r => r.type === 'expense');
-  const sum = (list) => list.reduce((s, r) => s + (r.myShare || 0), 0);
-  if (period === 'today') return sum(expenses.filter(r => r.date === t));
-  if (period === 'week') return sum(expenses.filter(r => r.date >= weekStartStr));
-  return sum(expenses.filter(r => r.date >= monthStart));
+  const { start, end } = getPeriodRange(period, getRefDate());
+  const expenses = records.filter(r => r.type === 'expense' && r.date >= start && r.date <= end);
+  return expenses.reduce((s, r) => s + (r.myShare || 0), 0);
 }
 // 5x7 도트매트릭스 숫자 패턴 (LED 전광판 폰트)
 const DOT_DIGITS = {
@@ -322,18 +354,72 @@ function renderBoard() {
   board.innerHTML = chars.map(c => c === ',' ? dotCommaSVG(dotSize) : dotDigitSVG(c, dotSize)).join('');
 }
 document.querySelectorAll('.board-tab').forEach(b => b.addEventListener('click', () => {
+  const alreadyActive = b.classList.contains('active');
+  if (alreadyActive) {
+    openPeriodCalendar(b.dataset.p);
+    return;
+  }
   document.querySelectorAll('.board-tab').forEach(x => x.classList.remove('active'));
   b.classList.add('active');
   boardPeriod = b.dataset.p;
-  renderBoard();
+  viewMode = 'live'; customDate = null;
+  closePeriodCalendar();
+  renderBoard(); renderList();
 }));
+
+/* ═══════ 날짜 선택 달력 (탭을 한 번 더 누르면 뜸) ═══════ */
+let calViewDate = new Date();
+function openPeriodCalendar(period) {
+  boardPeriod = period;
+  calViewDate = customDate ? new Date(customDate) : new Date();
+  renderPeriodCalendar();
+  document.getElementById('periodCalendar').classList.add('open');
+}
+function closePeriodCalendar() { document.getElementById('periodCalendar').classList.remove('open'); }
+function renderPeriodCalendar() {
+  const y = calViewDate.getFullYear(), m = calViewDate.getMonth();
+  document.getElementById('calMonthLabel').textContent = `${y}.${String(m + 1).padStart(2, '0')}`;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  ['일', '월', '화', '수', '목', '금', '토'].forEach(d => {
+    const el = document.createElement('div'); el.className = 'cal-dow'; el.textContent = d; grid.appendChild(el);
+  });
+  const startOffset = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  for (let i = 0; i < startOffset; i++) { const el = document.createElement('div'); el.className = 'cal-day empty'; grid.appendChild(el); }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const el = document.createElement('div'); el.className = 'cal-day'; el.textContent = d;
+    el.onclick = () => {
+      customDate = new Date(y, m, d);
+      viewMode = 'custom';
+      closePeriodCalendar();
+      renderBoard(); renderList();
+    };
+    grid.appendChild(el);
+  }
+}
+document.getElementById('calPrev').onclick = () => { calViewDate.setMonth(calViewDate.getMonth() - 1); renderPeriodCalendar(); };
+document.getElementById('calNext').onclick = () => { calViewDate.setMonth(calViewDate.getMonth() + 1); renderPeriodCalendar(); };
+document.getElementById('calClose').onclick = closePeriodCalendar;
+
+// 앱 타이틀을 누르면 지금 시점으로 돌아옴
+document.querySelector('.title').addEventListener('click', () => {
+  viewMode = 'live'; customDate = null;
+  closePeriodCalendar();
+  renderBoard(); renderList();
+});
 
 
 /* ═══════ 목록 렌더 (클릭하면 수정화면) ═══════ */
 function renderList() {
   const el = document.getElementById('list');
-  const sorted = [...records].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.addedAt - a.addedAt);
-  if (!sorted.length) { el.innerHTML = `<div class="empty">기록이 없어요. 아래 버튼을 눌러 추가해보세요</div>`; renderBoard(); return; }
+  let filtered = records;
+  if (viewMode === 'custom') {
+    const { start, end } = getPeriodRange(boardPeriod, customDate);
+    filtered = records.filter(r => r.date >= start && r.date <= end);
+  }
+  const sorted = [...filtered].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.addedAt - a.addedAt);
+  if (!sorted.length) { el.innerHTML = `<div class="empty">${viewMode === 'custom' ? '이 기간엔 기록이 없어요' : '기록이 없어요. 아래 버튼을 눌러 추가해보세요'}</div>`; renderBoard(); return; }
   el.innerHTML = sorted.map(r => {
     const d = new Date(r.date + 'T00:00:00');
     const dayNum = d.getDate();
@@ -412,6 +498,7 @@ document.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', 
   b.classList.add('active');
   curType = b.dataset.t;
   document.getElementById('expenseOnlyFields').style.display = curType === 'expense' ? '' : 'none';
+  document.getElementById('categoryField').style.display = curType === 'expense' ? '' : 'none';
   document.getElementById('amountLbl').textContent = curType === 'expense' ? '금액 (실제 결제한 총액)' : '금액';
   document.getElementById('btnSave').classList.toggle('income', curType === 'income');
 }));
@@ -421,6 +508,7 @@ function resetAddModal() {
   curType = 'expense'; curMethod = '카드'; curCardType = null; curSplitMode = 'count';
   document.querySelectorAll('.type-btn').forEach(x => x.classList.toggle('active', x.dataset.t === 'expense'));
   document.getElementById('expenseOnlyFields').style.display = '';
+  document.getElementById('categoryField').style.display = '';
   document.getElementById('amountLbl').textContent = '금액 (실제 결제한 총액)';
   document.getElementById('btnSave').classList.remove('income');
   document.getElementById('inAmount').value = '';
@@ -447,6 +535,7 @@ function openEdit(id) {
   curSplitMode = (r.splitCount && r.splitCount > 1) ? 'count' : (r.myShare !== r.amount ? 'direct' : 'count');
   document.querySelectorAll('.type-btn').forEach(x => x.classList.toggle('active', x.dataset.t === r.type));
   document.getElementById('expenseOnlyFields').style.display = r.type === 'expense' ? '' : 'none';
+  document.getElementById('categoryField').style.display = r.type === 'expense' ? '' : 'none';
   document.getElementById('amountLbl').textContent = r.type === 'expense' ? '금액 (실제 결제한 총액)' : '금액';
   document.getElementById('btnSave').classList.toggle('income', r.type === 'income');
   document.getElementById('inAmount').value = r.amount;
@@ -472,7 +561,7 @@ function openEdit(id) {
 
 document.getElementById('btnSave').onclick = () => {
   const amount = parseFloat(document.getElementById('inAmount').value);
-  const category = document.getElementById('inCategorySelect').value || '기타';
+  const category = curType === 'income' ? '수입' : (document.getElementById('inCategorySelect').value || '기타');
   const memo = document.getElementById('inMemo').value.trim();
   const category_name = memo || category;
   const date = document.getElementById('inDate').value || todayStr();
