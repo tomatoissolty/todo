@@ -118,9 +118,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
 /* 보고서 */
 .report-nav{display:flex;align-items:center;gap:8px}
-.report-total-box{background:var(--sky-soft);border-radius:12px;padding:16px;text-align:center;margin-bottom:18px}
-.report-total-lbl{font-size:11px;color:var(--ink-soft)}
-.report-total-val{font-size:24px;font-weight:700;color:var(--sky-deep);margin-top:4px}
+.report-total-lbl{font-size:11px;color:var(--ink-soft);text-align:center;letter-spacing:2px;margin-bottom:6px}
 .report-section-title{font-size:12px;color:var(--ink-soft);margin:16px 0 8px;font-weight:500}
 .week-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
 .week-row:last-child{border-bottom:none}
@@ -128,11 +126,11 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .week-range{font-size:10px;color:var(--ink-soft);margin-top:2px}
 .week-amt{font-size:14px;font-weight:600}
 .donut-wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.donut-legend{flex:1;min-width:140px;display:flex;flex-direction:column;gap:6px}
-.donut-legend-row{display:flex;align-items:center;gap:6px;font-size:12px}
+.donut-legend{flex:1;min-width:140px;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.donut-legend-row{display:flex;align-items:center;gap:6px;font-size:12px;justify-content:flex-end}
 .donut-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.donut-legend-name{flex:1;color:var(--ink-soft)}
-.donut-legend-val{font-weight:600}
+.donut-legend-name{color:var(--ink-soft);white-space:nowrap}
+.donut-legend-val{font-weight:600;margin-left:10px;text-align:right}
 .report-subsidy-box{margin-top:18px;background:var(--sand-soft);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--ink-soft)}
 .report-subsidy-box b{color:var(--sand-deep)}
 .recur-item:last-child{border-bottom:none}
@@ -142,6 +140,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:9px 20px;border-radius:20px;font-size:12px;z-index:999;transition:transform .25s}
 .toast.show{transform:translateX(-50%) translateY(0)}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -249,27 +248,28 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </div>
 
 <div class="modal-overlay" id="reportModal">
-  <div class="modal">
+  <div class="modal" id="reportCaptureArea">
     <div class="modal-hdr">
       <div class="report-nav">
         <button class="icon-btn" id="reportPrev">‹</button>
-        <span id="reportMonthLabel" class="modal-title" style="font-size:16px"></span>
+        <span id="reportMonthLabel" class="modal-title" style="font-size:19px"></span>
         <button class="icon-btn" id="reportNext">›</button>
       </div>
-      <button class="close-btn" id="closeReport">✕</button>
+      <div style="display:flex;gap:6px">
+        <button class="icon-btn" id="btnSaveReport">📥</button>
+        <button class="close-btn" id="closeReport">✕</button>
+      </div>
     </div>
 
-    <div class="report-total-box">
-      <div class="report-total-lbl">이 달 총 지출</div>
-      <div class="report-total-val" id="reportTotal">0원</div>
-    </div>
+    <div class="report-total-lbl">TOTAL</div>
+    <div class="split-board" id="reportBoard" style="justify-content:center;max-width:none;margin-bottom:18px"></div>
 
     <div class="report-section-title">주차별 지출</div>
     <div id="reportWeeks"></div>
 
     <div class="report-section-title">카테고리별 지출</div>
     <div class="donut-wrap">
-      <svg id="donutChart" viewBox="0 0 120 120" width="130" height="130"></svg>
+      <svg id="donutChart" viewBox="0 0 160 160" width="169" height="169"></svg>
       <div id="donutLegend" class="donut-legend"></div>
     </div>
 
@@ -286,6 +286,17 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
     <div style="height:1px;background:var(--line);margin:14px 0"></div>
     <label class="form-lbl">이름</label>
     <input class="form-input" id="recurName" placeholder="예: 티빙 구독">
+    <label class="form-lbl">카테고리</label>
+    <select class="form-input" id="recurCategory">
+      <option value="기타">선택 안 함 (기타로 집계)</option>
+      <option value="식">식</option>
+      <option value="주">주</option>
+      <option value="의">의</option>
+      <option value="야옹">야옹</option>
+      <option value="개인">개인</option>
+      <option value="보험">보험</option>
+      <option value="대출">대출</option>
+    </select>
     <label class="form-lbl">금액</label>
     <input class="form-input" id="recurAmount" type="number">
     <label class="form-lbl">결제수단</label>
@@ -330,7 +341,7 @@ function spawnRecurring() {
     if (already) return;
     records.push({
       id: generateId(), type: 'expense', name: tpl.name, amount: tpl.amount, splitCount: tpl.splitCount || 1,
-      myShare: tpl.amount / (tpl.splitCount || 1), method: tpl.method, cardType: tpl.cardType || null, category: tpl.name,
+      myShare: tpl.amount / (tpl.splitCount || 1), method: tpl.method, cardType: tpl.cardType || null, category: tpl.category || '기타',
       date: dateStr, templateId: tpl.id, addedAt: Date.now(), updatedAt: Date.now(), notionPageId: null
     });
     changed = true;
@@ -701,7 +712,10 @@ function renderReport() {
   const subsidy = monthExpenses.filter(r => r.cardType === '지원금');
 
   const total = normal.reduce((s, r) => s + (r.myShare || 0), 0);
-  document.getElementById('reportTotal').textContent = won(total);
+  const reportBoardEl = document.getElementById('reportBoard');
+  const formattedTotal = Math.round(total).toLocaleString('ko-KR');
+  const reportChars = [...formattedTotal];
+  reportBoardEl.innerHTML = reportChars.map(c => c === ',' ? dotCommaSVG(3) : dotDigitSVG(c, 3)).join('');
 
   // 주차별
   const daysInMonth = new Date(y, m + 1, 0).getDate();
@@ -742,18 +756,18 @@ function renderDonut(catEntries, total) {
   const svg = document.getElementById('donutChart');
   const legend = document.getElementById('donutLegend');
   if (!total || !catEntries.length) {
-    svg.innerHTML = `<circle cx="60" cy="60" r="45" fill="none" stroke="#eee" stroke-width="18"/>`;
+    svg.innerHTML = `<circle cx="80" cy="80" r="58.5" fill="none" stroke="#eee" stroke-width="36"/>`;
     legend.innerHTML = `<div class="empty" style="padding:0;text-align:left">이 달 지출 기록이 없어요</div>`;
     return;
   }
-  const r = 45, cx = 60, cy = 60, circumference = 2 * Math.PI * r;
+  const r = 58.5, cx = 80, cy = 80, circumference = 2 * Math.PI * r;
   let offset = 0;
   let circles = '';
   catEntries.forEach(([cat, amt]) => {
     const frac = amt / total;
     const len = frac * circumference;
     const color = CATEGORY_COLORS[cat] || '#c9c9c9';
-    circles += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="18" stroke-dasharray="${len} ${circumference - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    circles += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="36" stroke-dasharray="${len} ${circumference - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
     offset += len;
   });
   svg.innerHTML = circles;
@@ -773,10 +787,29 @@ document.getElementById('btnReport').onclick = () => {
 document.getElementById('closeReport').onclick = () => document.getElementById('reportModal').classList.remove('open');
 document.getElementById('reportPrev').onclick = () => { reportDate.setMonth(reportDate.getMonth() - 1); renderReport(); };
 document.getElementById('reportNext').onclick = () => { reportDate.setMonth(reportDate.getMonth() + 1); renderReport(); };
+document.getElementById('btnSaveReport').onclick = async () => {
+  const prev = document.getElementById('reportPrev'), next = document.getElementById('reportNext');
+  const saveBtn = document.getElementById('btnSaveReport'), closeBtn = document.getElementById('closeReport');
+  prev.style.visibility = 'hidden'; next.style.visibility = 'hidden';
+  saveBtn.style.visibility = 'hidden'; closeBtn.style.visibility = 'hidden';
+  try {
+    const canvas = await html2canvas(document.getElementById('reportCaptureArea'), { backgroundColor: '#ffffff', scale: 2 });
+    const a = document.createElement('a');
+    a.download = `가계부_보고서_${reportDate.getFullYear()}-${String(reportDate.getMonth() + 1).padStart(2, '0')}.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    toast('저장했어요');
+  } catch (e) { toast('저장 실패'); }
+  finally {
+    prev.style.visibility = ''; next.style.visibility = '';
+    saveBtn.style.visibility = ''; closeBtn.style.visibility = '';
+  }
+};
 
 document.getElementById('btnRecur').onclick = () => {
   curRecurMethod = '카드'; curRecurCardType = null;
   document.getElementById('recurName').value = '';
+  document.getElementById('recurCategory').value = '기타';
   document.getElementById('recurAmount').value = '';
   document.getElementById('recurSplit').value = 1;
   document.getElementById('recurDay').value = '';
@@ -787,11 +820,12 @@ document.getElementById('btnRecur').onclick = () => {
 document.getElementById('closeRecur').onclick = () => document.getElementById('recurModal').classList.remove('open');
 document.getElementById('btnRecurSave').onclick = () => {
   const name = document.getElementById('recurName').value.trim();
+  const category = document.getElementById('recurCategory').value || '기타';
   const amount = parseFloat(document.getElementById('recurAmount').value);
   const split = parseInt(document.getElementById('recurSplit').value) || 1;
   const day = parseInt(document.getElementById('recurDay').value);
   if (!name || !amount || !day) { toast('이름/금액/날짜를 입력해주세요'); return; }
-  templates.push({ id: generateId(), name, amount, splitCount: split, method: curRecurMethod, cardType: curRecurCardType, day });
+  templates.push({ id: generateId(), name, category, amount, splitCount: split, method: curRecurMethod, cardType: curRecurCardType, day });
   saveTemplates(); renderRecurList();
   toast('정기 지출 추가됨');
   spawnRecurring(); renderList();
