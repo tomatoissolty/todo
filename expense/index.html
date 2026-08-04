@@ -137,6 +137,9 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .donut-legend-val{font-weight:600;margin-left:10px;text-align:right}
 .report-subsidy-box{margin-top:18px;font-size:12px;color:var(--ink)}
 .report-subsidy-box b{color:var(--sand-deep)}
+.report-toggle-panel{display:none;flex-direction:column;gap:8px;background:var(--sky-soft);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--ink)}
+.report-toggle-panel.open{display:flex}
+.report-toggle-panel label{display:flex;align-items:center;gap:8px;cursor:pointer}
 .recur-item:last-child{border-bottom:none}
 .recur-main{flex:1;font-size:13px}
 .recur-meta{font-size:10px;color:var(--ink-soft);margin-top:2px}
@@ -266,19 +269,29 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
     </div>
 
     <div class="report-total-lbl">TOTAL</div>
-    <div class="split-board report-total-board" id="reportBoard" style="justify-content:center;max-width:none;margin-bottom:18px"></div>
+    <div class="split-board report-total-board" id="reportBoard" style="justify-content:center;max-width:none;margin-bottom:18px;cursor:pointer" title="눌러서 보고 싶은 항목 고르기"></div>
 
-    <div class="report-section-title">주차별 지출</div>
-    <div id="reportWeeks"></div>
+    <div class="report-toggle-panel" id="reportTogglePanel">
+      <label><input type="checkbox" id="chkShowWeeks" checked> 주차별 지출 보기</label>
+      <label><input type="checkbox" id="chkShowDonut" checked> 카테고리별 지출 보기</label>
+    </div>
 
-    <div class="report-section-title">카테고리별 지출</div>
-    <div class="donut-wrap">
-      <svg id="donutChart" viewBox="0 0 160 160" width="169" height="169"></svg>
-      <div id="donutLegend" class="donut-legend"></div>
+    <div id="weeksSection">
+      <div class="report-section-title">주차별 지출</div>
+      <div id="reportWeeks"></div>
+    </div>
+
+    <div id="donutSection">
+      <div class="report-section-title">카테고리별 지출</div>
+      <div class="donut-wrap">
+        <svg id="donutChart" viewBox="0 0 160 160" width="169" height="169"></svg>
+        <div id="donutLegend" class="donut-legend"></div>
+      </div>
     </div>
 
     <div class="report-subsidy-box" id="reportSubsidyBox" style="display:none">
       지원금으로 낸 금액 (총 지출에 미포함): <b id="reportSubsidyVal">0원</b>
+      <div style="height:34px"></div>
     </div>
   </div>
 </div>
@@ -719,7 +732,7 @@ function renderReport() {
   const reportBoardEl = document.getElementById('reportBoard');
   const formattedTotal = Math.round(total).toLocaleString('ko-KR');
   const reportChars = [...formattedTotal];
-  reportBoardEl.innerHTML = reportChars.map(c => c === ',' ? dotCommaSVG(3) : dotDigitSVG(c, 3)).join('');
+  reportBoardEl.innerHTML = reportChars.map(c => c === ',' ? dotCommaSVG(3.9) : dotDigitSVG(c, 3.9)).join('');
 
   // 주차별
   const daysInMonth = new Date(y, m + 1, 0).getDate();
@@ -783,8 +796,25 @@ function renderDonut(catEntries, total) {
     </div>`).join('');
 }
 
+function applyReportSectionVisibility() {
+  const showWeeks = document.getElementById('chkShowWeeks').checked;
+  const showDonut = document.getElementById('chkShowDonut').checked;
+  document.getElementById('weeksSection').style.display = showWeeks ? '' : 'none';
+  document.getElementById('donutSection').style.display = showDonut ? '' : 'none';
+  localStorage.setItem('report_show_weeks', showWeeks ? '1' : '0');
+  localStorage.setItem('report_show_donut', showDonut ? '1' : '0');
+}
+document.getElementById('reportBoard').addEventListener('click', () => {
+  document.getElementById('reportTogglePanel').classList.toggle('open');
+});
+document.getElementById('chkShowWeeks').addEventListener('change', applyReportSectionVisibility);
+document.getElementById('chkShowDonut').addEventListener('change', applyReportSectionVisibility);
+
 document.getElementById('btnReport').onclick = () => {
   reportDate = new Date();
+  document.getElementById('chkShowWeeks').checked = localStorage.getItem('report_show_weeks') !== '0';
+  document.getElementById('chkShowDonut').checked = localStorage.getItem('report_show_donut') !== '0';
+  applyReportSectionVisibility();
   renderReport();
   document.getElementById('reportModal').classList.add('open');
 };
@@ -794,6 +824,9 @@ document.getElementById('reportNext').onclick = () => { reportDate.setMonth(repo
 document.getElementById('btnSaveReport').onclick = async () => {
   const prev = document.getElementById('reportPrev'), next = document.getElementById('reportNext');
   const saveBtn = document.getElementById('btnSaveReport'), closeBtn = document.getElementById('closeReport');
+  const togglePanel = document.getElementById('reportTogglePanel');
+  const wasOpen = togglePanel.classList.contains('open');
+  togglePanel.classList.remove('open');
   prev.style.visibility = 'hidden'; next.style.visibility = 'hidden';
   saveBtn.style.visibility = 'hidden'; closeBtn.style.visibility = 'hidden';
   try {
@@ -807,6 +840,7 @@ document.getElementById('btnSaveReport').onclick = async () => {
   finally {
     prev.style.visibility = ''; next.style.visibility = '';
     saveBtn.style.visibility = ''; closeBtn.style.visibility = '';
+    if (wasOpen) togglePanel.classList.add('open');
   }
 };
 
