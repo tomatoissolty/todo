@@ -1,7 +1,24 @@
 <!DOCTYPE html>
 <html lang="ko" data-theme="">
 <head>
-  <script>console.log('[TIMING] HTML 파싱 시작', performance.now());</script>
+  <script>
+    // 이전 타이밍 로그는 'HTML 파싱 시작' 이후만 쟀는데, 혹시 그 전에(DNS·연결·서버 응답 대기)
+    // 시간이 새고 있을 수도 있어서, 브라우저가 직접 재는 전체 구간을 다 보여주는 걸로 바꿈.
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        const nav = performance.getEntriesByType('navigation')[0];
+        if (!nav) { console.log('[NAV-TIMING] Navigation Timing API를 못 씀'); return; }
+        console.log('[NAV-TIMING] ── 페이지 요청 시작부터 전체 흐름 (ms) ──');
+        console.log('[NAV-TIMING] DNS 조회:', (nav.domainLookupEnd - nav.domainLookupStart).toFixed(1));
+        console.log('[NAV-TIMING] 서버 연결(TCP/TLS):', (nav.connectEnd - nav.connectStart).toFixed(1));
+        console.log('[NAV-TIMING] 요청 보내고 첫 응답 받기까지(TTFB):', (nav.responseStart - nav.requestStart).toFixed(1));
+        console.log('[NAV-TIMING] 응답 본문 받기:', (nav.responseEnd - nav.responseStart).toFixed(1));
+        console.log('[NAV-TIMING] HTML 파싱~DOMContentLoaded:', (nav.domContentLoadedEventStart - nav.responseEnd).toFixed(1));
+        console.log('[NAV-TIMING] load 이벤트까지 전체:', nav.loadEventStart.toFixed(1));
+        console.log('[NAV-TIMING] ★ 요청 시작부터 첫 바이트까지 총:', nav.responseStart.toFixed(1));
+      }, 500);
+    });
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Daily</title>
