@@ -165,9 +165,9 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
   <div style="position:relative">
     <div class="board-tabs">
-      <button class="board-tab active" data-p="today">TODAY</button>
+      <button class="board-tab" data-p="today">TODAY</button>
       <button class="board-tab" data-p="week">WEEK</button>
-      <button class="board-tab" data-p="month">MONTH</button>
+      <button class="board-tab active" data-p="month">MONTH</button>
     </div>
     <div class="period-calendar" id="periodCalendar">
       <div class="cal-nav">
@@ -335,6 +335,7 @@ let templates = JSON.parse(localStorage.getItem('expense_templates_v1') || '[]')
 let curType = 'expense', curMethod = '카드', curCardType = null, curSplitMode = 'count', curRecurMethod = '카드', curRecurCardType = null;
 let editingId = null;
 let boardPeriod = 'month';
+let listPeriod = 'month'; // 목록에 어떤 기간 항목을 보여줄지 - 평소엔 boardPeriod와 같이 움직이지만, 타이틀을 누르면 둘이 달라짐(전광판=오늘, 목록=이번달)
 
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 function save() { localStorage.setItem('expense_records_v1', JSON.stringify(records)); }
@@ -444,6 +445,7 @@ document.querySelectorAll('.board-tab').forEach(b => b.addEventListener('click',
   document.querySelectorAll('.board-tab').forEach(x => x.classList.remove('active'));
   b.classList.add('active');
   boardPeriod = b.dataset.p;
+  listPeriod = b.dataset.p; // 탭을 고르면 목록도 같은 기간으로 맞춰짐
   viewMode = 'live'; customDate = null;
   closePeriodCalendar();
   renderBoard(); renderList();
@@ -484,9 +486,12 @@ document.getElementById('calPrev').onclick = () => { calViewDate.setMonth(calVie
 document.getElementById('calNext').onclick = () => { calViewDate.setMonth(calViewDate.getMonth() + 1); renderPeriodCalendar(); };
 document.getElementById('calClose').onclick = closePeriodCalendar;
 
-// 앱 타이틀을 누르면 지금 시점으로 돌아옴
+// 앱 타이틀을 누르면: 전광판은 "오늘" 기준으로, 목록은 평소처럼 "이번 달" 전체로 돌아옴
 document.querySelector('.title').addEventListener('click', () => {
   viewMode = 'live'; customDate = null;
+  boardPeriod = 'today';
+  listPeriod = 'month';
+  document.querySelectorAll('.board-tab').forEach(x => x.classList.toggle('active', x.dataset.p === 'today'));
   closePeriodCalendar();
   renderBoard(); renderList();
 });
@@ -495,13 +500,10 @@ document.querySelector('.title').addEventListener('click', () => {
 /* ═══════ 목록 렌더 (클릭하면 수정화면) ═══════ */
 function renderList() {
   const el = document.getElementById('list');
-  let filtered = records;
-  if (viewMode === 'custom') {
-    const { start, end } = getPeriodRange(boardPeriod, customDate);
-    filtered = records.filter(r => r.date >= start && r.date <= end);
-  }
+  const { start, end } = viewMode === 'custom' ? getPeriodRange(boardPeriod, customDate) : getPeriodRange(listPeriod, new Date());
+  const filtered = records.filter(r => r.date >= start && r.date <= end);
   const sorted = [...filtered].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.addedAt - a.addedAt);
-  if (!sorted.length) { el.innerHTML = `<div class="empty">${viewMode === 'custom' ? '이 기간엔 기록이 없어요' : '기록이 없어요. 아래 버튼을 눌러 추가해보세요'}</div>`; renderBoard(); return; }
+  if (!sorted.length) { el.innerHTML = `<div class="empty">이 기간엔 기록이 없어요. 아래 버튼을 눌러 추가해보세요</div>`; renderBoard(); return; }
   el.innerHTML = sorted.map(r => {
     const d = new Date(r.date + 'T00:00:00');
     const dayNum = d.getDate();
