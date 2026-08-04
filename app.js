@@ -998,7 +998,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // 노션에서 생기거나 바뀐 내용을 앱으로 가져와요. silent=true면 알림창 없이 조용히 처리돼요
   // (백그라운드 자동 동기화용), false면 결과를 alert로 알려줘요 (수동 버튼용).
   const pullFromNotion = async (silent) => {
-    const pullRes = await fetch('/api/notion?app=todo');
+    // 노션이 어쩌다 느리게 응답해도 화면이 무한정 안 멎도록 8초 넘으면 포기하고 로컬 데이터로 진행
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    let pullRes;
+    try {
+      pullRes = await fetch('/api/notion?app=todo', { signal: controller.signal });
+    } finally {
+      clearTimeout(timeoutId);
+    }
     const pullData = await pullRes.json();
     if (!pullRes.ok) throw new Error(pullData.error || '다운로드 실패');
 

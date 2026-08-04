@@ -483,11 +483,28 @@ module.exports = async (req, res) => {
       }
       let items = [];
       let cursor;
+      // 투두는 화면에 어차피 오늘 기준 ±30일치만 보여주는데, 필터 없이 매번 몇 달치 전체 기록을
+      // 다 받아오고 있었음 - 이게 노션 쿼리가 느려지고 들쭉날쭉했던 진짜 원인. 최근 범위로만 좁힘.
+      let queryFilter = {};
+      if (appKey === 'todo') {
+        const today = new Date();
+        const past = new Date(today); past.setDate(past.getDate() - 40);
+        const future = new Date(today); future.setDate(future.getDate() + 40);
+        const toStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        queryFilter = {
+          filter: {
+            and: [
+              { property: 'Date', date: { on_or_after: toStr(past) } },
+              { property: 'Date', date: { on_or_before: toStr(future) } }
+            ]
+          }
+        };
+      }
       do {
         const r = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
           method: 'POST',
           headers: notionHeaders(),
-          body: JSON.stringify(cursor ? { start_cursor: cursor } : {})
+          body: JSON.stringify(cursor ? { ...queryFilter, start_cursor: cursor } : queryFilter)
         });
         const data = await r.json();
         if (!r.ok) throw new Error(data.message || '노션 조회 실패');
