@@ -403,7 +403,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.closest('#menu-categories')) { openModal('modal-categories'); renderCategoriesModal(); return; }
     if (e.target.closest('#menu-pomo-settings')) { openModal('modal-pomo-settings'); return; }
     if (e.target.closest('#menu-export')) { exportCard(); return; }
-    if (e.target.closest('#menu-backup')) { openModal('modal-backup'); return; }
 
     // Card Filter
     if (e.target.closest('.card-filter-btn')) {
@@ -898,52 +897,6 @@ document.addEventListener('DOMContentLoaded', () => {
     searchBar.classList.add('hidden'); searchResults.classList.add('hidden'); searchInput.value = '';
   });
 
-  // --- BACKUP / RESTORE ---
-  document.getElementById('btn-backup-export').addEventListener('click', () => {
-    const payload = { version: 1, exportedAt: new Date().toISOString(), todos, appSettings };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `daily-backup-${dayjs().format('YYYYMMDD-HHmm')}.json`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  });
-
-  const backupFileInput = document.getElementById('backup-file-input');
-  document.getElementById('btn-backup-import').addEventListener('click', () => backupFileInput.click());
-  backupFileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const data = JSON.parse(reader.result);
-        if (!data.todos || !data.appSettings) throw new Error('invalid file');
-        if (!confirm('현재 데이터를 불러온 백업으로 덮어씌울까요? 되돌릴 수 없어요.')) return;
-        todos = data.todos;
-        appSettings = data.appSettings;
-        if (!appSettings.routines) appSettings.routines = [];
-        if (!appSettings.categories) appSettings.categories = [];
-        appSettings.routines.forEach(r => { if (!r.skipDates) r.skipDates = []; });
-        Object.keys(todos).forEach(dateStr => {
-          (todos[dateStr] || []).forEach(t => {
-            if (!t.id) t.id = generateId();
-            if (!t.subtasks) t.subtasks = [];
-            if (t.notionPageId === undefined) t.notionPageId = null;
-          });
-        });
-        saveTodos(); saveSettings();
-        applySettings(); renderAllTodos();
-        closeModal();
-        alert('백업을 불러왔어요!');
-      } catch (err) {
-        alert('올바른 백업 파일이 아니에요.');
-      }
-      backupFileInput.value = '';
-    };
-    reader.readAsText(file);
-  });
-
   // --- NOTION SYNC ---
   const serializeSubtasks = (subtasks) => (subtasks || []).map(st => `${st.completed ? '☑' : '☐'} ${st.text}`).join('\n');
   const parseSubtasks = (text) => (text || '').split('\n').map(line => line.trim()).filter(Boolean).map(line => ({
@@ -1106,7 +1059,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  document.getElementById('menu-notion-sync').addEventListener('click', syncWithNotion);
   document.getElementById('menu-edit-title').addEventListener('click', () => {
     const val = prompt('타이틀을 입력하세요', appSettings.title);
     if (val === null) return;
@@ -1258,11 +1210,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const exportCard = () => {
     const activeSlide = document.querySelector('.swiper-slide-active .todo-card');
     if (!activeSlide || !window.html2canvas) return;
+
+    activeSlide.classList.add('capture-mode');
+    // 네이티브 체크박스는 커스텀 모양(동그라미)이 캡처에서 깨져서 네모로 나오는 문제가 있어서,
+    // 캡처용 가짜 동그라미를 진짜 체크박스 위에 정확히 겹쳐서 올려두고 진짜 것은 숨김
+    const fakeCheckboxes = [];
+    activeSlide.querySelectorAll('.todo-checkbox').forEach(cb => {
+      const rect = cb.getBoundingClientRect();
+      const parentRect = activeSlide.getBoundingClientRect();
+      const fake = document.createElement('div');
+      fake.className = 'capture-checkbox-fake' + (cb.checked ? ' checked' : '');
+      fake.style.left = (rect.left - parentRect.left) + 'px';
+      fake.style.top = (rect.top - parentRect.top) + 'px';
+      activeSlide.appendChild(fake);
+      fakeCheckboxes.push(fake);
+    });
+
     html2canvas(activeSlide, { backgroundColor: null, scale: 2 }).then(canvas => {
       const link = document.createElement('a');
       link.download = `daily-${activeSlide.dataset.date}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
+    }).finally(() => {
+      activeSlide.classList.remove('capture-mode');
+      fakeCheckboxes.forEach(f => f.remove());
     });
   };
 

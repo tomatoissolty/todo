@@ -55,12 +55,6 @@
       <div class="menu-item" id="menu-export" title="사진 공유">
         <i data-lucide="share"></i>
       </div>
-      <div class="menu-item" id="menu-backup" title="데이터 백업/복원">
-        <i data-lucide="database-backup"></i>
-      </div>
-      <div class="menu-item" id="menu-notion-sync" title="지금 바로 전체 동기화 (평소엔 자동으로 동기화돼요)">
-        <i data-lucide="refresh-cw"></i>
-      </div>
       <div class="menu-item" id="menu-edit-title" title="타이틀 이름 수정">
         <i data-lucide="pencil"></i>
       </div>
@@ -211,18 +205,6 @@
     </div>
 
     <!-- Backup / Restore Modal -->
-    <div id="modal-backup" class="modal-content hidden">
-      <div style="display:flex; flex-direction:column; gap:10px;">
-        <p style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:4px;">모든 할 일, 루틴, 카테고리, 설정을 파일 하나로 내보내거나 불러올 수 있어요.</p>
-        <button class="btn-primary" id="btn-backup-export" style="width:100%;">내보내기 (다운로드)</button>
-        <button class="btn-secondary" id="btn-backup-import" style="width:100%;">가져오기 (파일 선택)</button>
-        <input type="file" id="backup-file-input" accept="application/json" class="hidden">
-      </div>
-      <div class="modal-actions">
-        <button class="btn-secondary close-modal" style="width:100%;">닫기</button>
-      </div>
-    </div>
-
     <!-- Emoticon Picker Modal -->
     <div id="modal-emoticons" class="modal-content hidden" style="padding:0;overflow:hidden;max-width:340px;border-radius:24px;">
       <div id="emoticon-copy-toast" style="display:none;position:absolute;top:12px;left:50%;transform:translateX(-50%);background:var(--accent-color);color:#fff;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;z-index:9999;pointer-events:none;"></div>

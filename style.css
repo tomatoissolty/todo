@@ -88,6 +88,16 @@ body { font-family: var(--font-family); background-color: var(--bg-color); color
 .todo-list::-webkit-scrollbar { display: none; }
 
 .todo-item { display: flex; flex-direction: column; padding: 12px 0; border-bottom: 1px solid var(--border-color); transition: opacity 0.3s ease, filter 0.3s ease, transform 0.3s ease; position: relative; }
+
+/* 사진으로 저장할 때만 적용되는 스타일 - 항목이 더 많이 보이도록 촘촘하게, 불필요한 UI는 숨김 */
+.todo-card.capture-mode .add-todo-form,
+.todo-card.capture-mode .card-filter-btn { visibility: hidden; }
+.todo-card.capture-mode .todo-item { padding: 6px 0; border-bottom: none; }
+.todo-card.capture-mode .todo-text { font-size: 11px; }
+.todo-card.capture-mode .todo-checkbox { visibility: hidden; }
+.capture-checkbox-fake { position: absolute; width: 22px; height: 22px; border: 2px solid var(--border-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-sizing: border-box; pointer-events: none; }
+.capture-checkbox-fake.checked { background-color: var(--accent-color); border-color: var(--accent-color); }
+.capture-checkbox-fake.checked::after { content: ''; width: 4px; height: 8px; border: solid var(--card-bg); border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px,-1px); }
 .todo-item:last-child { border-bottom: none; }
 .todo-item.is-filtered-out { opacity: 0.3; filter: blur(1px); order: 99; }
 .todo-item.sortable-ghost { opacity: 0.4; }
