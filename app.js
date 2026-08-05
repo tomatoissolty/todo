@@ -4,10 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- STATE ---
   let todos = JSON.parse(localStorage.getItem('swipe-todos')) || {};
-  // 컨페티를 이미 터뜨린 날짜를 기억해둠 - 이걸 DOM에만 저장해뒀더니 새로고침(또는 toisty iframe 재로딩)할 때마다
-  // "아직 안 터뜨렸다"고 착각해서 다시 터지는 버그가 있었음. localStorage에 저장해서 세션이 바뀌어도 유지되게 함.
-  let celebratedDates = JSON.parse(localStorage.getItem('celebrated-dates') || '[]');
-  const saveCelebratedDates = () => localStorage.setItem('celebrated-dates', JSON.stringify(celebratedDates));
   let appSettings = JSON.parse(localStorage.getItem('swipe-settings')) || {
     title: 'Daily',
     accentHue: 210,
@@ -208,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // --- TODOS RENDER ---
-  const renderTodos = (dateStr) => {
+  const renderTodos = (dateStr, skipIcons) => {
     const listEl = document.getElementById(`list-${dateStr}`);
     if (!listEl) return;
     listEl.dataset.date = dateStr; // needed for Sortable cross-card drag
@@ -314,16 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const percent = dayTodos.length === 0 ? 0 : (completedCount / dayTodos.length) * 100;
     if (progressBar) progressBar.style.width = `${percent}%`;
 
-    if (progressBar && percent === 100 && dayTodos.length > 0 && !celebratedDates.includes(dateStr)) {
-      celebratedDates.push(dateStr);
-      saveCelebratedDates();
-      triggerConfetti();
-    } else if (percent < 100 && celebratedDates.includes(dateStr)) {
-      celebratedDates = celebratedDates.filter(d => d !== dateStr);
-      saveCelebratedDates();
-    }
-
-    lucide.createIcons();
+    if (!skipIcons) lucide.createIcons();
     updateFilterPopupUI(dateStr);
 
     // Drag to reorder within the card (Sortable.js)
@@ -352,17 +339,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  const triggerConfetti = () => {
-    // 컨페티 라이브러리가 어떤 이유로든 안 불러와졌을 때, 여기서 에러가 나서
-    // 그 뒤에 그려질 카드들이 통째로 멈춰버리는 게 진짜 문제였음 - 없으면 그냥 조용히 건너뜀
-    if (typeof confetti !== 'function') { console.warn('컨페티 라이브러리를 못 불러와서 축하 효과는 건너뜀'); return; }
-    try {
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF'] });
-    } catch (err) {
-      console.warn('컨페티 실행 실패:', err.message);
-    }
-  };
-
   const updateFilterPopupUI = (dateStr) => {
     const container = document.getElementById(`filter-categories-${dateStr}`);
     if (!container) return;
@@ -374,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   let swiper = null; // 아래에서 생성됨; renderAllTodos가 매번 update()를 불러줘야 코버플로우 3D 카드가 새 내용으로 다시 그려짐(사파리에서 리페인트 안 되는 버그 방지)
-  const renderAllTodos = () => { dateCards.forEach(date => renderTodos(date.format('YYYY-MM-DD'))); if (swiper) swiper.update(); };
+  const renderAllTodos = () => { dateCards.forEach(date => renderTodos(date.format('YYYY-MM-DD'), true)); lucide.createIcons(); if (swiper) swiper.update(); };
 
   // --- UNDO DELETE ---
   const showUndoToast = (text) => {
@@ -1316,12 +1292,6 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAllTodos();
   console.log('[TIMING] 첫 renderAllTodos() 끝 - 여기까지 되면 화면엔 이미 다 보여야 함', performance.now());
   restoreActiveTimers();
-
-  // 다크모드를 껐다 켜면 "고쳐지던" 것과 똑같은 조합(설정 재적용 + 재렌더)을
-  // 로드 직후에도 한 번 더 실행해서, 초기 리페인트가 안 되는 경우를 확실히 잡아줌.
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => { applySettings(); renderAllTodos(); });
-  });
 
   // "전체보기" 필터를 실제로 누른 것과 똑같이 재현해서 확실히 다시 그려지도록 함
   // (사용자가 직접 눌렀을 때만 고쳐지던 것과 같은 동작) - 노션 pull이 느려도 절대 안 기다리고
