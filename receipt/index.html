@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>영수증</title>
+<link rel="stylesheet" href="//cdn.jsdelivr.net/gh/neodgm/neodgm-webfont@1.601/neodgm/style.css">
+<style>
+@font-face { font-family: 'NeoDunggeunmo-fallback'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.3/NeoDunggeunmo.woff') format('woff'); font-weight: normal; font-display: swap; }
+:root{
+  --paper:#fefdf9; --ink:#2b2b28; --ink-soft:#8a8578; --line:#d8d5c8;
+  --check:#3fae7a; --font-receipt:'NeoDunggeunmo','NeoDunggeunmo-fallback',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--font-receipt);
+  min-height:100vh; display:flex; align-items:flex-start; justify-content:center;
+  padding:40px 16px 80px;
+  position:relative; overflow-x:hidden;
+  background:
+    radial-gradient(circle at 20% 20%, #ffe3ec 0%, transparent 45%),
+    radial-gradient(circle at 80% 15%, #dcefff 0%, transparent 45%),
+    radial-gradient(circle at 50% 90%, #fff2d6 0%, transparent 50%),
+    #eef0e8;
+}
+/* 영수증 바깥쪽을 흐릿하게 - 은은한 블러 느낌의 오버레이 */
+body::before{
+  content:''; position:fixed; inset:0; backdrop-filter:blur(40px); -webkit-backdrop-filter:blur(40px);
+  pointer-events:none; z-index:0;
+}
+
+.receipt-shadow-wrap{position:relative; z-index:1; width:100%; max-width:400px; filter:drop-shadow(0 30px 40px rgba(30,25,15,.18)) drop-shadow(0 6px 10px rgba(30,25,15,.10));}
+
+.receipt{position:relative; background:var(--paper); width:100%; padding:0 26px;}
+.receipt-edge{position:absolute; left:0; right:0; height:16px; background:
+    linear-gradient(-45deg, var(--paper) 8px, transparent 0),
+    linear-gradient(45deg, var(--paper) 8px, transparent 0);
+  background-size:16px 16px; background-repeat:repeat-x;}
+.receipt-edge.top{top:-15px;}
+.receipt-edge.bottom{bottom:-15px; transform:scaleY(-1);}
+
+.r-inner{padding:26px 0 22px}
+.r-title{font-size:22px; text-align:center; letter-spacing:2px; color:var(--ink)}
+.r-sub{font-size:12px; text-align:center; color:var(--ink-soft); margin-top:4px}
+.r-date{font-size:12px; text-align:center; color:var(--ink-soft); margin-top:2px}
+
+.r-divider{border:none; border-top:1.5px dashed var(--line); margin:16px 0}
+
+.r-list{display:flex; flex-direction:column; gap:2px}
+.r-item{display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px dashed var(--line); position:relative}
+.r-item:last-child{border-bottom:none}
+.r-check{width:18px; height:18px; border:1.5px solid var(--ink); flex-shrink:0; margin-top:2px; cursor:pointer; display:flex; align-items:center; justify-content:center; background:transparent; appearance:none; -webkit-appearance:none; border-radius:0}
+.r-check:checked{background:var(--check); border-color:var(--check)}
+.r-check:checked::after{content:'✓'; color:#fff; font-size:12px; line-height:1}
+.r-text{flex:1; font-size:14px; line-height:1.5; color:var(--ink); outline:none; word-break:break-all}
+.r-item.completed .r-text{text-decoration:line-through; color:var(--ink-soft)}
+.r-cat-dot{width:7px; height:7px; border-radius:50%; margin-top:6px; flex-shrink:0}
+.r-del{background:none; border:none; color:var(--ink-soft); font-size:13px; cursor:pointer; padding:2px 4px; opacity:.5}
+.r-del:hover{opacity:1}
+.r-deferred{color:#b8517d}
+
+.r-add-row{display:flex; align-items:center; gap:8px; padding:10px 0 2px}
+.r-add-row input{flex:1; border:none; border-bottom:1.5px dashed var(--line); background:transparent; font-family:var(--font-receipt); font-size:14px; padding:6px 2px; outline:none; color:var(--ink)}
+.r-add-row input::placeholder{color:var(--ink-soft)}
+.r-add-row input:focus{border-bottom-color:var(--ink)}
+
+.r-summary{display:flex; justify-content:space-between; font-size:13px; color:var(--ink); margin-top:4px}
+.r-summary b{font-size:15px}
+
+.r-barcode{margin-top:18px; height:36px; background-image:repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 5px, var(--ink) 5px 6px, transparent 6px 10px); opacity:.85}
+.r-barcode-label{text-align:center; font-size:10px; letter-spacing:4px; color:var(--ink-soft); margin-top:4px}
+
+.r-empty{text-align:center; padding:20px 0; color:var(--ink-soft); font-size:12px}
+.r-sync{position:fixed; top:14px; right:14px; z-index:2; font-family:var(--font-receipt); font-size:11px; color:var(--ink-soft); background:rgba(255,255,255,.7); backdrop-filter:blur(6px); padding:6px 10px; border-radius:20px; cursor:pointer; border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<div class="r-sync" id="syncBtn">🔄 동기화</div>
+
+<div class="receipt-shadow-wrap">
+  <div class="receipt">
+    <div class="receipt-edge top"></div>
+    <div class="r-inner">
+      <div class="r-title">TODAY'S TO-DO</div>
+      <div class="r-sub">✂- - - - - - - - - - - - - - - - - -✂</div>
+      <div class="r-date" id="rDate">2026.08.04 (화)</div>
+
+      <hr class="r-divider">
+
+      <div class="r-list" id="rList"></div>
+
+      <div class="r-add-row">
+        <span style="color:var(--ink-soft)">+</span>
+        <input type="text" id="newItemInput" placeholder="새 항목 추가하고 Enter">
+      </div>
+
+      <hr class="r-divider">
+
+      <div class="r-summary">
+        <span>ITEMS</span>
+        <span><b id="doneCount">0</b> / <span id="totalCount">0</span> DONE</span>
+      </div>
+
+      <div class="r-barcode"></div>
+      <div class="r-barcode-label">TOISTY · DAILY</div>
+    </div>
+    <div class="receipt-edge bottom"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script>
+/* ═══════════ Daily 앱과 완전히 같은 로컬 저장소·노션 DB를 공유해요 - 데이터는 하나, 화면만 다른 거예요 ═══════════ */
+let todos = JSON.parse(localStorage.getItem('swipe-todos')) || {};
+let appSettings = JSON.parse(localStorage.getItem('swipe-settings')) || { categories: [] };
+const generateId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const saveTodos = () => localStorage.setItem('swipe-todos', JSON.stringify(todos));
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
+function categoryColor(id) {
+  const cat = (appSettings.categories || []).find(c => c.id === id);
+  return cat ? cat.color : null;
+}
+
+/* ═══════════ 밀린 항목(전날 이전 미완료) 오늘로 이월 - Daily와 같은 규칙 ═══════════ */
+function rollover() {
+  const t = todayStr();
+  let changed = false;
+  Object.keys(todos).forEach(dateStr => {
+    if (dateStr >= t) return;
+    const dayList = todos[dateStr] || [];
+    for (let i = dayList.length - 1; i >= 0; i--) {
+      const item = dayList[i];
+      if (item.completed || item.routineId) continue;
+      dayList.splice(i, 1);
+      item.deferred = true;
+      item.updatedAt = Date.now();
+      if (!todos[t]) todos[t] = [];
+      todos[t].push(item);
+      changed = true;
+      autoPush(item, t);
+    }
+  });
+  if (changed) saveTodos();
+  return changed;
+}
+
+/* ═══════════ 렌더 ═══════════ */
+function render() {
+  const t = todayStr();
+  const list = todos[t] || [];
+  const el = document.getElementById('rList');
+  const now = new Date();
+  document.getElementById('rDate').textContent = now.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' });
+
+  if (!list.length) {
+    el.innerHTML = `<div class="r-empty">오늘 등록된 항목이 없어요</div>`;
+  } else {
+    el.innerHTML = list.map((item, idx) => {
+      const dot = categoryColor(item.categoryId);
+      return `
+      <div class="r-item ${item.completed ? 'completed' : ''}" data-idx="${idx}">
+        <input type="checkbox" class="r-check" ${item.completed ? 'checked' : ''}>
+        ${dot ? `<span class="r-cat-dot" style="background:${dot}"></span>` : ''}
+        <span class="r-text ${item.deferred ? 'r-deferred' : ''}" contenteditable="true">${esc(item.text)}</span>
+        <button class="r-del">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  const doneCount = list.filter(i => i.completed).length;
+  document.getElementById('doneCount').textContent = doneCount;
+  document.getElementById('totalCount').textContent = list.length;
+
+  wireListEvents();
+  initSortable();
+}
+function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function wireListEvents() {
+  const t = todayStr();
+  document.querySelectorAll('.r-item').forEach(row => {
+    const idx = parseInt(row.dataset.idx, 10);
+    const item = todos[t][idx];
+
+    row.querySelector('.r-check').addEventListener('change', (e) => {
+      item.completed = e.target.checked;
+      item.updatedAt = Date.now();
+      saveTodos(); render();
+      autoPush(item, t);
+    });
+    row.querySelector('.r-text').addEventListener('focusout', (e) => {
+      const newText = e.target.innerText.trim();
+      if (newText && newText !== item.text) {
+        item.text = newText;
+        item.updatedAt = Date.now();
+        saveTodos();
+        autoPush(item, t);
+      }
+    });
+    row.querySelector('.r-del').addEventListener('click', () => {
+      const removed = todos[t].splice(idx, 1)[0];
+      saveTodos(); render();
+      if (removed.notionPageId) autoDelete(removed.notionPageId);
+    });
+  });
+}
+
+function initSortable() {
+  const el = document.getElementById('rList');
+  if (!window.Sortable || !el.children.length || el.querySelector('.r-empty')) return;
+  Sortable.create(el, {
+    animation: 150,
+    onEnd: (evt) => {
+      const t = todayStr();
+      const [moved] = todos[t].splice(evt.oldIndex, 1);
+      todos[t].splice(evt.newIndex, 0, moved);
+      saveTodos(); render();
+    }
+  });
+}
+
+/* ═══════════ 새 항목 추가 ═══════════ */
+document.getElementById('newItemInput').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const val = e.target.value.trim();
+  if (!val) return;
+  const t = todayStr();
+  if (!todos[t]) todos[t] = [];
+  const newItem = {
+    id: generateId(), text: val, completed: false, categoryId: null, routineId: null,
+    linkColor: null, subtasks: [], pomoTime: 0, pomoActive: false, pomoEndAt: null,
+    updatedAt: Date.now(), notionPageId: null, deferred: false
+  };
+  todos[t].push(newItem);
+  saveTodos(); render();
+  e.target.value = '';
+  autoPush(newItem, t);
+});
+
+/* ═══════════ 노션 동기화 - Daily랑 완전히 같은 통로(app=todo) ═══════════ */
+function categoryNameById(id) { const c = (appSettings.categories || []).find(x => x.id === id); return c ? c.name : ''; }
+function serializeSubtasks(subs) { return (subs || []).map(s => `${s.completed ? '[x]' : '[ ]'} ${s.text}`).join('\n'); }
+
+async function autoPush(item, dateStr) {
+  try {
+    const payload = {
+      appId: item.id, notionPageId: item.notionPageId || null, name: item.text, date: dateStr,
+      completed: item.completed, category: categoryNameById(item.categoryId), routine: !!item.routineId,
+      deferred: !!item.deferred, subtasks: serializeSubtasks(item.subtasks),
+      updatedAt: new Date(item.updatedAt || Date.now()).toISOString()
+    };
+    const r = await fetch('/api/notion?app=todo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: [payload] }) });
+    const data = await r.json();
+    const result = (data.results || [])[0];
+    if (result && result.notionPageId) { item.notionPageId = result.notionPageId; saveTodos(); }
+  } catch (err) { console.warn('동기화 실패:', err.message); }
+}
+async function autoDelete(pageId) {
+  try { await fetch('/api/notion?app=todo', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pageId }) }); }
+  catch (err) { console.warn('삭제 동기화 실패:', err.message); }
+}
+
+const NOTION_CACHE_KEY = 'notion-todo-cache';
+const NOTION_CACHE_TTL = 60000;
+async function pullFromNotion(forceRefresh) {
+  const cachedRaw = localStorage.getItem(NOTION_CACHE_KEY);
+  const cached = cachedRaw ? JSON.parse(cachedRaw) : null;
+  const isFresh = !forceRefresh && cached && (Date.now() - cached.fetchedAt < NOTION_CACHE_TTL);
+  let pullData;
+  if (isFresh) {
+    pullData = cached.data;
+  } else {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    let res;
+    try { res = await fetch('/api/notion?app=todo', { signal: controller.signal }); }
+    finally { clearTimeout(timeoutId); }
+    pullData = await res.json();
+    if (!res.ok) throw new Error(pullData.error || '다운로드 실패');
+    localStorage.setItem(NOTION_CACHE_KEY, JSON.stringify({ fetchedAt: Date.now(), data: pullData }));
+  }
+
+  const flat = [];
+  Object.entries(todos).forEach(([d, list]) => (list || []).forEach((item, idx) => flat.push({ dateStr: d, idx, todo: item })));
+  const localById = {};
+  flat.forEach(({ dateStr, idx, todo }) => { localById[todo.id] = { dateStr, idx, todo }; });
+
+  let changed = false;
+  (pullData.items || []).forEach(row => {
+    if (!row.appId) return;
+    const existing = localById[row.appId];
+    const remoteTime = row.updatedAt ? new Date(row.updatedAt).getTime() : 0;
+    if (existing) {
+      const localTime = existing.todo.updatedAt || 0;
+      if (remoteTime > localTime) {
+        existing.todo.text = row.name;
+        existing.todo.completed = row.completed;
+        existing.todo.deferred = !!row.deferred;
+        existing.todo.notionPageId = row.notionPageId;
+        existing.todo.updatedAt = remoteTime;
+        changed = true;
+      }
+    } else if (row.date) {
+      if (!todos[row.date]) todos[row.date] = [];
+      todos[row.date].push({
+        id: row.appId, text: row.name, completed: row.completed, categoryId: null, routineId: row.routine ? 'unknown' : null,
+        linkColor: null, subtasks: [], pomoTime: 0, pomoActive: false, pomoEndAt: null,
+        updatedAt: remoteTime || Date.now(), notionPageId: row.notionPageId, deferred: !!row.deferred
+      });
+      changed = true;
+    }
+  });
+  if (changed) saveTodos();
+  return changed;
+}
+
+document.getElementById('syncBtn').addEventListener('click', async () => {
+  document.getElementById('syncBtn').textContent = '🔄 동기화 중...';
+  try {
+    const changed = await pullFromNotion(true);
+    if (rollover() || changed) render();
+  } catch (e) { console.warn(e.message); }
+  document.getElementById('syncBtn').textContent = '🔄 동기화';
+});
+
+/* ═══════════ INIT ═══════════ */
+render();
+pullFromNotion(false).then((changed) => {
+  const rolloverChanged = rollover();
+  if (changed || rolloverChanged) render();
+}).catch(err => console.warn('초기 pull 실패:', err.message));
+</script>
+</body>
+</html>
