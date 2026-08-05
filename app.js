@@ -1250,7 +1250,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function escapeHtml(unsafe) { return unsafe?.replace(/&/g, "&amp;")?.replace(/</g, "&lt;")?.replace(/>/g, "&gt;")?.replace(/"/g, "&quot;")?.replace(/'/g, "&#039;") || ""; }
 
   applySettings();
-  rolloverIncompleteTodos(); // 우선 로컬에 있는 데이터 기준으로 즉시 한 번 처리
   console.log('[TIMING] 카드 61개 생성 시작', performance.now());
   dateCards.forEach(date => swiperWrapper.appendChild(createCardElement(date)));
   console.log('[TIMING] 카드 61개 생성 끝', performance.now());
