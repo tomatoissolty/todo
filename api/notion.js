@@ -127,13 +127,27 @@ async function fetchDiaryContent(pageId) {
     cursor = data.has_more ? data.next_cursor : undefined;
   } while (cursor);
 
+  let numberedCount = 0;
   return blocks.map(b => {
     if (b.type === 'image') {
       const img = b.image || {};
       const url = (img.file && img.file.url) || (img.external && img.external.url) || null;
       return { type: 'photo', url };
     }
-    const text = ((b.paragraph && b.paragraph.rich_text) || []).map(t => t.plain_text).join('');
+    if (b.type === 'divider') { numberedCount = 0; return { type: 'text', text: '' }; }
+
+    // 노션은 문단(paragraph) 말고도 제목/목록/인용/할일 등 블록 종류가 다양한데, 실제 글자는
+    // 전부 [블록타입].rich_text 안에 똑같은 모양으로 들어있어요. 예전엔 paragraph만 읽어서
+    // 다른 블록 타입(특히 목록·제목)의 글이 통째로 빈 줄로 사라졌던 게 진짜 원인이었어요.
+    const richText = (b[b.type] && b[b.type].rich_text) || [];
+    let text = richText.map(t => t.plain_text).join('');
+
+    if (b.type === 'bulleted_list_item') { text = '• ' + text; numberedCount = 0; }
+    else if (b.type === 'numbered_list_item') { numberedCount++; text = numberedCount + '. ' + text; }
+    else if (b.type === 'to_do') { text = (b.to_do && b.to_do.checked ? '[x] ' : '[ ] ') + text; numberedCount = 0; }
+    else if (b.type === 'quote') { text = '> ' + text; numberedCount = 0; }
+    else { numberedCount = 0; }
+
     return { type: 'text', text };
   }).filter(seg => seg.type === 'photo' ? !!seg.url : true);
 }
