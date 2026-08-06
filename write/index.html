@@ -3,115 +3,93 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>글쓰기</title>
+<title>Notes</title>
 <style>
-@font-face {
-  font-family: 'TAEBAEKfont';
-  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2310@1.0/TAEBAEKfont.woff2') format('woff2');
-  font-weight: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'LeeSunSinDotum';
-  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/YiSunShinDotumM.woff') format('woff');
-  font-weight: normal; font-display: swap;
-}
+@font-face { font-family:'TAEBAEKfont'; src:url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2310@1.0/TAEBAEKfont.woff2') format('woff2'); font-weight:normal; font-display:swap; }
+@font-face { font-family:'Reperipoint'; src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2201-2@1.0/LeferiPoint-WhiteA.woff') format('woff'); font-weight:200; font-display:swap; }
+@font-face { font-family:'Reperipoint'; src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2201-2@1.0/LeferiPoint-BlackA.woff') format('woff'); font-weight:700; font-display:swap; }
+@font-face { font-family:'LeeSunSinDotum'; src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/YiSunShinDotumM.woff') format('woff'); font-weight:normal; font-display:swap; }
 
 :root{
-  --paper:#f5efe0; --card:#fffcf3; --ink:#2a2620; --ink-soft:#8a8071;
-  --stamp:#b23a2f; --stamp-soft:#e9d9c9; --line:#ddd0b4; --line-soft:#eae1cc;
+  --bg:#f4f3ef; --card:#ffffff; --ink:#232220; --ink-soft:#9c988e; --line:#e6e3da; --accent:#5b6b4f;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{
-  background:var(--paper); color:var(--ink); min-height:100vh;
-  font-family:-apple-system,'Noto Sans KR',sans-serif;
-  background-image:
-    radial-gradient(circle at 100% 0%, rgba(178,58,47,0.05), transparent 40%);
-}
-.wrap{max-width:560px;margin:0 auto;padding:28px 20px 100px}
+body{background:var(--bg);color:var(--ink);min-height:100vh;font-family:'Reperipoint',sans-serif;font-weight:200}
+.wrap{max-width:640px;margin:0 auto;padding:36px 22px 100px}
 
-/* ── Header ── */
-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:22px;padding-bottom:16px;border-bottom:2px solid var(--ink)}
-.logo{font-family:'TAEBAEKfont',sans-serif;font-size:28px;letter-spacing:1px}
-.logo span{color:var(--stamp)}
-.btn-new{border:2px solid var(--ink);background:var(--ink);color:var(--paper);padding:9px 16px;font-size:12px;font-weight:700;border-radius:3px;cursor:pointer;letter-spacing:.5px}
-.btn-new:active{transform:translateY(1px)}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.logo{font-family:'TAEBAEKfont',sans-serif;font-size:30px;letter-spacing:1px;color:var(--ink)}
+.btn-new{border:none;background:var(--ink);color:#fff;padding:11px 20px;font-size:12px;font-weight:700;font-family:'Reperipoint',sans-serif;border-radius:24px;cursor:pointer;letter-spacing:.5px}
+.btn-new:active{transform:scale(.97)}
 
 /* ── List ── */
 .entry{
-  display:flex;align-items:center;gap:14px;background:var(--card);
-  border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-bottom:10px;
-  cursor:pointer;transition:border-color .15s, transform .1s;
+  display:flex;align-items:center;gap:16px;background:var(--card);
+  border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:10px;
+  cursor:pointer;transition:border-color .15s, box-shadow .15s;
 }
-.entry:hover{border-color:var(--stamp)}
-.entry:active{transform:scale(.995)}
-.stamp{
-  flex-shrink:0;width:46px;height:46px;border:2px solid var(--stamp);border-radius:4px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  color:var(--stamp);transform:rotate(-3deg);
-}
-.stamp .d{font-size:17px;font-weight:800;line-height:1}
-.stamp .m{font-size:9px;letter-spacing:.5px;margin-top:1px}
+.entry:hover{border-color:var(--accent);box-shadow:0 4px 14px rgba(0,0,0,.05)}
+.entry-date{flex-shrink:0;text-align:center;width:42px}
+.entry-date .d{font-family:'Reperipoint',sans-serif;font-weight:700;font-size:19px;line-height:1}
+.entry-date .m{font-size:9px;color:var(--ink-soft);margin-top:2px;letter-spacing:.5px}
 .entry-body{flex:1;min-width:0}
-.entry-title{font-family:'TAEBAEKfont',sans-serif;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.entry-meta{display:flex;align-items:center;gap:6px;margin-top:4px}
-.tag{font-size:10px;color:var(--stamp);background:var(--stamp-soft);padding:2px 8px;border-radius:10px;font-weight:700}
-.entry-arrow{color:var(--ink-soft);flex-shrink:0}
-.empty{text-align:center;padding:70px 20px;color:var(--ink-soft);font-size:13px;line-height:1.7}
-.empty b{display:block;font-family:'TAEBAEKfont',sans-serif;font-size:16px;color:var(--ink);margin-bottom:6px}
+.entry-title{font-family:'Reperipoint',sans-serif;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entry-meta{margin-top:5px}
+.tag{font-size:10px;color:var(--accent);background:#eef1ea;padding:3px 9px;border-radius:10px;font-weight:700;font-family:'Reperipoint',sans-serif}
+.entry-arrow{color:var(--ink-soft);flex-shrink:0;font-size:14px}
+.empty{text-align:center;padding:80px 20px;color:var(--ink-soft);font-size:13px;line-height:1.7}
+.empty b{display:block;font-family:'TAEBAEKfont',sans-serif;font-size:17px;color:var(--ink);margin-bottom:8px;font-weight:normal}
 
-/* ── Read view ── */
+/* ── Screens ── */
 .screen{display:none}
 .screen.active{display:block}
-.back-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.btn-back{background:none;border:none;font-size:13px;color:var(--ink-soft);cursor:pointer;padding:6px 0}
+.back-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.btn-back{background:none;border:none;font-size:13px;color:var(--ink-soft);cursor:pointer;padding:6px 0;font-family:'Reperipoint',sans-serif}
 .btn-back:hover{color:var(--ink)}
 .action-row{display:flex;gap:8px}
-.btn-icon{border:1.5px solid var(--line);background:var(--card);border-radius:4px;padding:7px 12px;font-size:12px;cursor:pointer;color:var(--ink)}
-.btn-icon:hover{border-color:var(--stamp);color:var(--stamp)}
-.btn-icon.danger:hover{border-color:#a33;color:#a33}
+.btn-icon{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:8px 14px;font-size:12px;cursor:pointer;color:var(--ink);font-family:'Reperipoint',sans-serif;font-weight:700}
+.btn-icon:hover{border-color:var(--accent);color:var(--accent)}
+.btn-icon.danger:hover{border-color:#b23a2f;color:#b23a2f}
 
-.read-card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:32px 26px}
-.read-title{font-family:'TAEBAEKfont',sans-serif;font-size:24px;line-height:1.4;word-break:keep-all}
-.read-meta{display:flex;align-items:center;gap:10px;margin:10px 0 22px;font-size:12px;color:var(--ink-soft)}
+.read-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:36px 30px}
+.read-title{font-family:'Reperipoint',sans-serif;font-weight:700;font-size:23px;line-height:1.4;word-break:keep-all}
+.read-meta{display:flex;align-items:center;gap:10px;margin:12px 0 26px;font-size:12px;color:var(--ink-soft)}
 .read-body{
-  font-family:'LeeSunSinDotum',sans-serif;font-size:16px;line-height:34px;
+  font-family:'LeeSunSinDotum',sans-serif;font-size:16px;line-height:32px;
   white-space:pre-wrap;word-break:keep-all;color:var(--ink);
-  background-image:repeating-linear-gradient(var(--card), var(--card) 33px, var(--line-soft) 33px, var(--line-soft) 34px);
 }
 
 /* ── Editor ── */
-.editor-card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:26px}
-.field-lbl{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;display:block}
+.editor-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:30px}
 .in-title{
   width:100%;border:none;border-bottom:2px solid var(--ink);background:transparent;
-  font-family:'TAEBAEKfont',sans-serif;font-size:22px;padding:6px 2px 12px;outline:none;margin-bottom:18px;
+  font-family:'Reperipoint',sans-serif;font-weight:700;font-size:20px;padding:6px 2px 14px;outline:none;margin-bottom:18px;
 }
-.in-title::placeholder{color:var(--ink-soft);opacity:.5}
+.in-title::placeholder{color:var(--ink-soft);font-weight:200}
 .in-category{
-  border:1.5px solid var(--line);border-radius:20px;padding:7px 14px;font-size:12px;
-  font-weight:700;color:var(--stamp);outline:none;width:100%;max-width:200px;margin-bottom:20px;background:var(--stamp-soft);
+  border:1px solid var(--line);border-radius:20px;padding:8px 16px;font-size:12px;font-family:'Reperipoint',sans-serif;
+  font-weight:700;color:var(--accent);outline:none;width:100%;max-width:200px;margin-bottom:22px;background:#eef1ea;
 }
-.in-category::placeholder{color:var(--stamp);opacity:.55}
+.in-category::placeholder{color:var(--accent);opacity:.6}
 .in-body{
-  width:100%;min-height:320px;border:none;resize:vertical;outline:none;background:transparent;
-  font-family:'LeeSunSinDotum',sans-serif;font-size:16px;line-height:34px;color:var(--ink);
-  background-image:repeating-linear-gradient(transparent, transparent 33px, var(--line-soft) 33px, var(--line-soft) 34px);
+  width:100%;min-height:340px;border:none;resize:vertical;outline:none;background:transparent;
+  font-family:'LeeSunSinDotum',sans-serif;font-size:16px;line-height:32px;color:var(--ink);
 }
 .in-body::placeholder{color:var(--ink-soft)}
-.editor-actions{display:flex;gap:8px;margin-top:20px}
-.btn-save{flex:1;padding:13px;border:none;border-radius:6px;background:var(--stamp);color:#fff;font-size:14px;font-weight:700;cursor:pointer}
-.btn-save:active{transform:translateY(1px)}
-.btn-cancel{padding:13px 18px;border:1.5px solid var(--line);border-radius:6px;background:transparent;color:var(--ink-soft);font-size:14px;cursor:pointer}
+.editor-actions{display:flex;gap:8px;margin-top:22px}
+.btn-save{flex:1;padding:14px;border:none;border-radius:24px;background:var(--ink);color:#fff;font-size:14px;font-weight:700;font-family:'Reperipoint',sans-serif;cursor:pointer}
+.btn-save:active{transform:scale(.98)}
+.btn-cancel{padding:14px 20px;border:1px solid var(--line);border-radius:24px;background:transparent;color:var(--ink-soft);font-size:13px;cursor:pointer;font-family:'Reperipoint',sans-serif}
 
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--ink);color:var(--paper);border-radius:20px;padding:9px 20px;font-size:12px;z-index:999;transition:transform .3s}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--ink);color:#fff;border-radius:20px;padding:10px 20px;font-size:12px;z-index:999;transition:transform .3s;font-family:'Reperipoint',sans-serif;max-width:80vw;text-align:center;line-height:1.5}
 .toast.show{transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="logo">글<span>쓰기</span></div>
-    <button class="btn-new" id="btnNew">+ 새 글</button>
+    <div class="logo">NOTES</div>
+    <button class="btn-new" id="btnNew">+ NEW</button>
   </header>
 
   <!-- LIST -->
@@ -160,13 +138,13 @@ header{display:flex;align-items:baseline;justify-content:space-between;margin-bo
 
 <script>
 const NOTION_ENDPOINT = '/api/notion?app=writing';
-let entries = [];        // list (properties only, no body)
-let editingPageId = null; // null = new entry
-let editingCreatedDate = null; // preserved on edit, set fresh on create
-let currentEntry = null; // full entry currently open in read view
+let entries = [];
+let editingPageId = null;
+let editingCreatedDate = null;
+let currentEntry = null;
 
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove('show'),3200); }
 function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 function fmtDate(iso){
   if(!iso) return '';
@@ -177,6 +155,15 @@ function localDateStr(){
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
+// 서버가 에러 대신 HTML(로그인 화면 등)을 돌려준 경우를 구분해서 알려줌 - 저장 실패 디버깅용
+async function safeJson(res){
+  const ct = res.headers.get('content-type') || '';
+  if(!ct.includes('application/json')){
+    const text = await res.text();
+    throw new Error('서버가 JSON이 아닌 응답을 보냈어요: ' + text.slice(0,120));
+  }
+  return res.json();
+}
 
 /* ════ LOAD LIST ════ */
 async function loadList(){
@@ -184,13 +171,13 @@ async function loadList(){
   el.innerHTML = `<div class="empty">불러오는 중...</div>`;
   try{
     const r = await fetch(NOTION_ENDPOINT);
-    const d = await r.json();
+    const d = await safeJson(r);
     if(!r.ok){ el.innerHTML = `<div class="empty">${esc(d.error||'불러오기 실패')}</div>`; return; }
     entries = (d.items||[]).sort((a,b)=> new Date(b.date||0) - new Date(a.date||0));
     renderList();
     renderCategoryOptions();
   }catch(err){
-    el.innerHTML = `<div class="empty">불러오기 실패</div>`;
+    el.innerHTML = `<div class="empty">불러오기 실패: ${esc(err.message)}</div>`;
   }
 }
 
@@ -203,7 +190,7 @@ function renderCategoryOptions(){
 function renderList(){
   const el = document.getElementById('list');
   if(!entries.length){
-    el.innerHTML = `<div class="empty"><b>아직 쓴 글이 없어요</b>+ 새 글 버튼으로 첫 글을 남겨보세요</div>`;
+    el.innerHTML = `<div class="empty"><b>아직 쓴 글이 없어요</b>+ NEW 버튼으로 첫 글을 남겨보세요</div>`;
     return;
   }
   el.innerHTML = '';
@@ -212,7 +199,7 @@ function renderList(){
     const row = document.createElement('div');
     row.className = 'entry';
     row.innerHTML = `
-      <div class="stamp">
+      <div class="entry-date">
         <div class="d">${d ? d.getDate() : '-'}</div>
         <div class="m">${d ? (d.getMonth()+1)+'월' : ''}</div>
       </div>
@@ -220,7 +207,7 @@ function renderList(){
         <div class="entry-title">${esc(e.name || '(제목 없음)')}</div>
         <div class="entry-meta">
           <span style="font-size:11px;color:var(--ink-soft)">${fmtDate(e.date)}</span>
-          ${e.category ? `<span class="tag">${esc(e.category)}</span>` : ''}
+          ${e.category ? `<span class="tag" style="margin-left:6px">${esc(e.category)}</span>` : ''}
         </div>
       </div>
       <div class="entry-arrow">→</div>
@@ -243,13 +230,13 @@ async function openRead(entry){
 
   try{
     const r = await fetch(`${NOTION_ENDPOINT}&action=content&pageId=${encodeURIComponent(entry.notionPageId)}`);
-    const d = await r.json();
+    const d = await safeJson(r);
     if(!r.ok) throw new Error(d.error);
     const text = (d.content||[]).filter(seg=>seg.type==='text').map(seg=>seg.text||'').join('\n');
     document.getElementById('readBody').textContent = text || '(내용 없음)';
     currentEntry._bodyText = text;
   }catch(err){
-    document.getElementById('readBody').textContent = '본문을 불러오지 못했어요.';
+    document.getElementById('readBody').textContent = '본문을 불러오지 못했어요: ' + err.message;
   }
 }
 
@@ -312,8 +299,8 @@ document.getElementById('btnSave').onclick = async ()=>{
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ item })
     });
-    const d = await r.json();
-    if(!r.ok) throw new Error(d.error || '저장 실패');
+    const d = await safeJson(r);
+    if(!r.ok) throw new Error(d.error || `저장 실패 (status ${r.status})`);
     toast('저장했어요');
     await loadList();
     const saved = entries.find(e=>e.notionPageId===d.notionPageId) ||
@@ -327,7 +314,9 @@ document.getElementById('btnSave').onclick = async ()=>{
     document.getElementById('readBody').textContent = bodyText;
     showScreen('screen-read');
   }catch(err){
+    // 저장이 또 실패하면 이번엔 정확한 이유가 토스트에 그대로 보여요
     toast('저장 실패: ' + err.message);
+    console.error('저장 실패 상세:', err);
   }
 };
 
