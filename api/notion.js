@@ -173,7 +173,7 @@ async function replaceDiaryContent(pageId, blocks) {
 }
 
 // 사진을 노션 "자체" 비공개 저장소에 직접 업로드 (외부 공개 호스팅 절대 사용 안 함)
-async function uploadFileToNotion(dataUrl) {
+async function uploadFileToNotion(dataUrl, fileName) {
   const match = dataUrl.match(/^data:(.+);base64,(.+)$/);
   if (!match) throw new Error('올바르지 않은 이미지 데이터예요');
   const mime = match[1];
@@ -188,7 +188,7 @@ async function uploadFileToNotion(dataUrl) {
   if (!createRes.ok) throw new Error(createData.message || '파일 업로드 생성 실패');
 
   const form = new FormData();
-  form.append('file', new Blob([buffer], { type: mime }), 'photo.jpg');
+  form.append('file', new Blob([buffer], { type: mime }), fileName || 'photo.jpg');
   const sendRes = await fetch(createData.upload_url, {
     method: 'POST',
     headers: {
@@ -466,8 +466,9 @@ module.exports = async (req, res) => {
     // --- 사진/파일을 노션 자체 저장소로 업로드 (여러 앱이 공용으로 씀) ---
     if (req.method === 'POST' && req.query.action === 'upload') {
       const dataUrl = req.body && req.body.dataUrl;
+      const fileName = req.body && req.body.fileName;
       if (!dataUrl) { res.status(400).json({ error: 'dataUrl이 필요해요.' }); return; }
-      const fileUploadId = await uploadFileToNotion(dataUrl);
+      const fileUploadId = await uploadFileToNotion(dataUrl, fileName);
       res.status(200).json({ fileUploadId });
       return;
     }

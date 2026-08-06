@@ -294,8 +294,10 @@ async function handleStorageUpload(e) {
     try {
       const uploadRes = await fetch('/api/notion?app=storage&action=upload', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dataUrl: reader.result })
+        body: JSON.stringify({ dataUrl: reader.result, fileName: file.name })
       });
+      const uploadCT = uploadRes.headers.get('content-type') || '';
+      if (!uploadCT.includes('application/json')) throw new Error('로그인이 풀린 것 같아요. 페이지를 새로고침해서 비밀번호를 다시 입력해주세요.');
       const uploadData = await uploadRes.json();
       if (!uploadRes.ok) throw new Error(uploadData.error || '업로드 실패');
 
