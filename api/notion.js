@@ -161,11 +161,15 @@ async function replaceDiaryContent(pageId, blocks) {
     cursor = data.has_more ? data.next_cursor : undefined;
   } while (cursor);
 
-  if (blocks.length) {
+  // 노션 API는 한 번 요청에 블록을 최대 100개까지만 허용해요. 긴 글/사진 많은 일기처럼
+  // 100개가 넘으면 통째로 실패했던 게 진짜 원인 - 100개씩 나눠서 순서대로 보내도록 수정함.
+  for (let i = 0; i < blocks.length; i += 100) {
+    const chunk = blocks.slice(i, i + 100);
+    if (!chunk.length) continue;
     const r2 = await fetch(`https://api.notion.com/v1/blocks/${pageId}/children`, {
       method: 'PATCH',
       headers: notionHeaders(),
-      body: JSON.stringify({ children: blocks })
+      body: JSON.stringify({ children: chunk })
     });
     const data2 = await r2.json();
     if (!r2.ok) throw new Error(data2.message || '본문 저장 실패');
