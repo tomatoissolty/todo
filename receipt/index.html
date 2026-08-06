@@ -37,7 +37,7 @@ body::before{
 
 .page-row{position:relative; z-index:1; display:flex; align-items:flex-start; gap:10px}
 
-.receipt-shadow-wrap{width:100%; max-width:400px; filter:drop-shadow(0 30px 40px rgba(30,25,15,.18)) drop-shadow(0 6px 10px rgba(30,25,15,.10));}
+.receipt-shadow-wrap{width:400px; max-width:calc(100vw - 32px); filter:drop-shadow(0 30px 40px rgba(30,25,15,.18)) drop-shadow(0 6px 10px rgba(30,25,15,.10));}
 
 .receipt{position:relative; background:var(--paper); width:100%; padding:0 26px; transition:background .3s}
 .receipt-edge{position:absolute; left:0; right:0; height:16px; background:
@@ -61,7 +61,7 @@ body::before{
 .r-check{width:18px; height:18px; border:1.5px solid var(--ink); flex-shrink:0; margin-top:2px; cursor:pointer; display:flex; align-items:center; justify-content:center; background:transparent; appearance:none; -webkit-appearance:none; border-radius:0}
 .r-check:checked{background:var(--accent); border-color:var(--accent)}
 .r-check:checked::after{content:'✓'; color:#fff; font-size:12px; line-height:1}
-.r-text{flex:1; font-size:14px; line-height:1.5; color:var(--ink); outline:none; word-break:break-all}
+.r-text{flex:1; min-width:0; font-size:14px; line-height:1.5; color:var(--ink); outline:none; word-break:break-word; overflow-wrap:break-word}
 .r-item.completed .r-text{text-decoration:line-through; color:var(--ink-soft)}
 .r-cat-dot{width:7px; height:7px; border-radius:50%; margin-top:6px; flex-shrink:0}
 .r-deferred{color:var(--deferred-color)}
@@ -69,6 +69,7 @@ body::before{
 .r-icon-btn:hover{opacity:1}
 .r-icon-btn svg{width:15px; height:15px}
 .r-icon-btn.active-highlight{opacity:1; color:#c9a227}
+.r-actions{display:flex; gap:3px; flex-shrink:0}
 
 .r-add-row{display:flex; align-items:center; gap:8px; padding:10px 0 2px}
 .r-add-row input{flex:1; border:none; border-bottom:1.5px dashed var(--line); background:transparent; font-family:var(--font-receipt); font-size:14px; padding:6px 2px; outline:none; color:var(--ink)}
@@ -85,18 +86,14 @@ body::before{
 .r-empty{text-align:center; padding:20px 0; color:var(--ink-soft); font-size:12px}
 
 /* ═══ 투두1(Daily)에서 가져온 메뉴 - 영수증 바깥 오른쪽에 세로 배치 ═══ */
-.side-menu{display:flex; flex-direction:column; gap:8px; padding-top:6px; position:relative}
+.side-menu{display:flex; flex-direction:column; gap:10px; padding-top:6px}
 .side-menu button{
-  width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background:rgba(255,255,255,.75);
-  backdrop-filter:blur(6px); cursor:pointer; display:flex; align-items:center; justify-content:center;
-  color:var(--ink);
+  width:34px; height:34px; border-radius:8px; border:none; background:none;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  color:var(--ink-soft); opacity:.75; transition:opacity .15s;
 }
-.side-menu button svg{width:16px; height:16px}
-body.dark .side-menu button{background:rgba(40,38,32,.75)}
-.hamburger-panel{position:absolute; top:44px; right:0; background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:8px; display:none; flex-direction:column; gap:4px; z-index:20; box-shadow:0 10px 26px rgba(0,0,0,.15); width:150px}
-.hamburger-panel.open{display:flex}
-.hamburger-panel button{width:100%; height:auto; border-radius:8px; justify-content:flex-start; gap:8px; padding:8px 10px; font-family:var(--font-receipt); font-size:12px; border:none; background:none}
-.hamburger-panel button:hover{background:rgba(0,0,0,.06)}
+.side-menu button:hover{opacity:1; color:var(--ink)}
+.side-menu button svg{width:18px; height:18px}
 
 /* ═══ 공용 모달 ═══ */
 .modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; z-index:50; opacity:0; pointer-events:none; transition:opacity .2s; padding:20px}
@@ -156,17 +153,13 @@ body.dark .side-menu button{background:rgba(40,38,32,.75)}
   </div>
 
   <div class="side-menu">
-    <button id="btnHamburger" title="메뉴"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></button>
     <button id="btnSync" title="동기화"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg></button>
-
-    <div class="hamburger-panel" id="hamburgerPanel">
-      <button id="btnSearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> 검색</button>
-      <button id="btnFilter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 12.5 14 19 10 21 10 12.5 4 4"/></svg> 필터</button>
-      <button id="btnTheme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.5-.7 1.5-1.5 0-.4-.2-.8-.4-1.1-.2-.3-.4-.6-.4-1 0-.8.7-1.5 1.5-1.5H16c3.3 0 6-2.7 6-6 0-4.4-4-8-10-8z"/></svg> 테마색</button>
-      <button id="btnRoutines"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg> 루틴</button>
-      <button id="btnExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 사진저장</button>
-      <button id="btnDark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg> 다크모드</button>
-    </div>
+    <button id="btnSearch" title="검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+    <button id="btnFilter" title="필터"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 12.5 14 19 10 21 10 12.5 4 4"/></svg></button>
+    <button id="btnTheme" title="테마색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.5-.7 1.5-1.5 0-.4-.2-.8-.4-1.1-.2-.3-.4-.6-.4-1 0-.8.7-1.5 1.5-1.5H16c3.3 0 6-2.7 6-6 0-4.4-4-8-10-8z"/></svg></button>
+    <button id="btnRoutines" title="루틴"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></button>
+    <button id="btnExport" title="사진저장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+    <button id="btnDark" title="다크모드"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg></button>
   </div>
 </div>
 
@@ -327,8 +320,10 @@ function render() {
         <input type="checkbox" class="r-check" ${item.completed ? 'checked' : ''}>
         ${dot ? `<span class="r-cat-dot" style="background:${dot}"></span>` : ''}
         <span class="r-text ${item.deferred ? 'r-deferred' : ''}" contenteditable="true">${esc(item.text)}</span>
-        <button class="r-icon-btn r-highlight-btn ${isHl ? 'active-highlight' : ''}" title="하이라이트"><svg viewBox="0 0 24 24" fill="${isHl ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3L21 9.3l-4.5 4.4 1 6.3L12 17l-5.5 3 1-6.3L3 9.3l6.1-1L12 2z"/></svg></button>
-        <button class="r-icon-btn r-del-btn" title="삭제"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
+        <div class="r-actions">
+          <button class="r-icon-btn r-highlight-btn ${isHl ? 'active-highlight' : ''}" title="하이라이트"><svg viewBox="0 0 24 24" fill="${isHl ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3L21 9.3l-4.5 4.4 1 6.3L12 17l-5.5 3 1-6.3L3 9.3l6.1-1L12 2z"/></svg></button>
+          <button class="r-icon-btn r-del-btn" title="삭제"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
+        </div>
       </div>`;
     }).join('');
   }
@@ -581,29 +576,36 @@ document.getElementById('btnDark').addEventListener('click', () => {
   appSettings.darkMode = !appSettings.darkMode; saveSettings(); applyDarkMode(); renderBarcode();
 });
 
-/* 동기화 버튼 */
+/* 토스트 */
+function showToast(text, autoHide) {
+  let toast = document.getElementById('r-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'r-toast';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 18px;border-radius:20px;font-family:var(--font-receipt);font-size:12px;z-index:100;opacity:0;transition:opacity .2s;pointer-events:none';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = text;
+  toast.style.opacity = '1';
+  clearTimeout(toast._hideTimer);
+  if (autoHide) toast._hideTimer = setTimeout(() => { toast.style.opacity = '0'; }, 1500);
+}
+function hideToast() { const toast = document.getElementById('r-toast'); if (toast) toast.style.opacity = '0'; }
+
+/* 동기화 버튼 - 아이콘 모양은 그대로 두고, 상태는 토스트로만 표시 */
 document.getElementById('btnSync').addEventListener('click', async () => {
-  document.getElementById('btnSync').textContent = '⏳';
+  showToast('동기화 중...', false);
   try {
     const changed = await pullFromNotion(true);
     const rolloverChanged = rollover();
     const routineChanged = spawnRoutines();
     if (changed || rolloverChanged || routineChanged) render();
-  } catch (e) { console.warn(e.message); }
-  document.getElementById('btnSync').textContent = '🔄';
+    showToast('동기화 완료', true);
+  } catch (e) {
+    console.warn(e.message);
+    showToast('동기화 실패', true);
+  }
 });
-
-/* 햄버거 메뉴 토글 */
-const hamburgerPanel = document.getElementById('hamburgerPanel');
-document.getElementById('btnHamburger').addEventListener('click', (e) => {
-  e.stopPropagation();
-  hamburgerPanel.classList.toggle('open');
-});
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.hamburger-panel') && !e.target.closest('#btnHamburger')) hamburgerPanel.classList.remove('open');
-});
-// 메뉴 안의 항목을 누르면 자동으로 패널이 닫히도록
-hamburgerPanel.querySelectorAll('button').forEach(b => b.addEventListener('click', () => hamburgerPanel.classList.remove('open')));
 
 /* ═══════════ INIT ═══════════ */
 applyAccent();
