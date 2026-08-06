@@ -94,6 +94,19 @@ main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
 .gallery-wrap{padding:28px}
 .gallery-title{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:20px}
 .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+
+/* STORAGE */
+.storage-wrap{padding:28px;max-width:600px}
+.storage-title{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:20px}
+.storage-upload-row{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.storage-upload-row input[type="text"]{flex:1;min-width:120px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px}
+.storage-upload-row button{padding:9px 16px;border:none;border-radius:8px;background:var(--menu-active-bg);color:var(--menu-active-text);cursor:pointer;font-size:13px}
+.storage-item{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
+.storage-item-main{flex:1;min-width:0}
+.storage-item-name{font-size:13px;font-weight:500}
+.storage-item-meta{font-size:11px;color:var(--ink-soft);margin-top:2px}
+.storage-item a{font-size:12px;color:var(--menu-active-text);text-decoration:none;flex-shrink:0}
+.storage-item .storage-del{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:13px;flex-shrink:0}
 .gallery-item{aspect-ratio:1/1;overflow:hidden;border-radius:4px;cursor:pointer;background:var(--menu-active-bg)}
 .gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform .3s,opacity .3s}
 .gallery-item:hover img{transform:scale(1.08);opacity:.9}
@@ -153,6 +166,7 @@ main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
       <div class="nav-item" data-app="bookmark"><span class="no">#6</span> BOOKMARK</div>
       <div class="nav-item" data-app="expense"><span class="no">#7</span> EXPENSE</div>
       <div class="nav-item" data-app="gallery"><span class="no">#8</span> GALLERY</div>
+      <div class="nav-item" data-app="storage"><span class="no">#9</span> STORAGE</div>
     </nav>
     <div class="sidebar-bottom-space">
       <div class="sidebar-random-photo" id="sidebarRandomPhoto"></div>
@@ -204,6 +218,11 @@ function showTab(appKey) {
     main.appendChild(pane);
     loadedPanes[appKey] = pane;
     loadGallery();
+  } else if (appKey === 'storage') {
+    pane.innerHTML = storageHTML();
+    main.appendChild(pane);
+    loadedPanes[appKey] = pane;
+    initStorage();
   } else if (IFRAME_APPS[appKey]) {
     pane.innerHTML = `<div class="loading">불러오는 중...</div><iframe src="${IFRAME_APPS[appKey]}" title="${appKey}"></iframe>`;
     main.appendChild(pane);
@@ -219,6 +238,89 @@ function showTab(appKey) {
 navItems.forEach(item => item.addEventListener('click', () => showTab(item.dataset.app)));
 
 /* ════ TOISTY (메인) 화면 ════ */
+function storageHTML() {
+  return `
+    <div class="storage-wrap">
+      <div class="storage-title">STORAGE</div>
+      <div class="storage-upload-row">
+        <input type="text" id="storageName" placeholder="파일 이름/설명">
+        <input type="text" id="storageMemo" placeholder="메모 (선택)">
+        <input type="file" id="storageFileInput" style="display:none">
+        <button id="storageUploadBtn">+ 파일 올리기</button>
+      </div>
+      <div id="storageList"><div class="mini-empty">불러오는 중...</div></div>
+    </div>
+  `;
+}
+
+function initStorage() {
+  document.getElementById('storageUploadBtn').addEventListener('click', () => document.getElementById('storageFileInput').click());
+  document.getElementById('storageFileInput').addEventListener('change', handleStorageUpload);
+  loadStorageList();
+}
+
+async function loadStorageList() {
+  const el = document.getElementById('storageList');
+  try {
+    const r = await fetch('/api/notion?app=storage');
+    const d = await r.json();
+    const items = (d.items || []).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    if (!items.length) { el.innerHTML = `<div class="mini-empty">아직 저장된 파일이 없어요</div>`; return; }
+    el.innerHTML = items.map(it => `
+      <div class="storage-item" data-page="${it.notionPageId}">
+        <div class="storage-item-main">
+          <div class="storage-item-name">${esc(it.name)}</div>
+          <div class="storage-item-meta">${it.date || ''}${it.memo ? ' · ' + esc(it.memo) : ''}</div>
+        </div>
+        ${it.fileUrl ? `<a href="${it.fileUrl}" target="_blank" download>다운로드</a>` : ''}
+        <button class="storage-del" data-page="${it.notionPageId}">✕</button>
+      </div>
+    `).join('');
+    el.querySelectorAll('.storage-del').forEach(btn => btn.addEventListener('click', () => deleteStorageItem(btn.dataset.page)));
+  } catch (err) { el.innerHTML = `<div class="mini-empty">불러오기 실패</div>`; }
+}
+
+async function handleStorageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const nameInput = document.getElementById('storageName');
+  const memoInput = document.getElementById('storageMemo');
+  const name = nameInput.value.trim() || file.name;
+  const memo = memoInput.value.trim();
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      const uploadRes = await fetch('/api/notion?app=storage&action=upload', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dataUrl: reader.result })
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error(uploadData.error || '업로드 실패');
+
+      const saveRes = await fetch('/api/notion?app=storage', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: [{ name, memo, date: new Date().toISOString().slice(0, 10), fileUploadId: uploadData.fileUploadId, fileName: file.name }]
+        })
+      });
+      if (!saveRes.ok) throw new Error('저장 실패');
+
+      nameInput.value = ''; memoInput.value = ''; e.target.value = '';
+      loadStorageList();
+    } catch (err) { alert('업로드 실패: ' + err.message); }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function deleteStorageItem(pageId) {
+  if (!confirm('이 파일을 삭제할까요?')) return;
+  try {
+    await fetch('/api/notion?app=storage', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pageId }) });
+    loadStorageList();
+  } catch (err) { alert('삭제 실패'); }
+}
+
 function toistyHTML() {
   return `
     <div class="toisty-wrap">

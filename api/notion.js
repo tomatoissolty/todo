@@ -356,6 +356,34 @@ function expenseFromPage(page) {
 }
 
 
+// --- Storage(작은 파일 보관함) 매핑 ---
+function storageToProperties(item) {
+  return {
+    'Name': { title: [{ text: { content: item.name || '(제목 없음)' } }] },
+    'Memo': { rich_text: item.memo ? [{ text: { content: item.memo } }] : [] },
+    'Date': { date: { start: item.date || new Date().toISOString().slice(0, 10) } },
+    'File': item.fileUploadId
+      ? { files: [{ name: item.fileName || 'file', type: 'file_upload', file_upload: { id: item.fileUploadId } }] }
+      : undefined
+  };
+}
+function storageFromPage(page) {
+  const p = page.properties || {};
+  const richText = (prop) => (prop?.rich_text || []).map(t => t.plain_text).join('');
+  const titleText = (prop) => (prop?.title || []).map(t => t.plain_text).join('');
+  const file = (p['File']?.files || [])[0];
+  const fileUrl = file ? ((file.file && file.file.url) || (file.external && file.external.url) || null) : null;
+  return {
+    notionPageId: page.id,
+    name: titleText(p['Name']),
+    memo: richText(p['Memo']),
+    date: p['Date']?.date?.start || null,
+    fileUrl,
+    fileName: file ? file.name : null
+  };
+}
+
+
 const APPS = {
   todo: {
     databaseId: () => process.env.NOTION_DATABASE_ID_TODO || process.env.NOTION_DATABASE_ID,
@@ -409,6 +437,12 @@ const APPS = {
     databaseId: () => process.env.NOTION_DATABASE_ID_EXPENSE,
     toProperties: expenseToProperties,
     fromPage: expenseFromPage,
+    useCover: false
+  },
+  storage: {
+    databaseId: () => process.env.NOTION_DATABASE_ID_STORAGE,
+    toProperties: storageToProperties,
+    fromPage: storageFromPage,
     useCover: false
   }
 };

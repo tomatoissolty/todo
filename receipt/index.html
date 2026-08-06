@@ -65,12 +65,10 @@ body::before{
 .r-item.completed .r-text{text-decoration:line-through; color:var(--ink-soft)}
 .r-cat-dot{width:7px; height:7px; border-radius:50%; margin-top:6px; flex-shrink:0}
 .r-deferred{color:var(--deferred-color)}
-.r-more-btn{background:none; border:none; color:var(--ink-soft); font-size:14px; cursor:pointer; padding:2px 4px; opacity:.5; flex-shrink:0}
-.r-more-btn:hover{opacity:1}
-.r-item-menu{position:absolute; right:0; top:30px; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:5px; display:none; flex-direction:column; z-index:5; box-shadow:0 6px 16px rgba(0,0,0,.12); min-width:90px}
-.r-item-menu.open{display:flex}
-.r-item-menu button{background:none; border:none; text-align:left; padding:6px 8px; font-family:var(--font-receipt); font-size:12px; color:var(--ink); cursor:pointer; border-radius:4px}
-.r-item-menu button:hover{background:rgba(0,0,0,.06)}
+.r-icon-btn{background:none; border:none; color:var(--ink-soft); cursor:pointer; padding:2px; opacity:.55; flex-shrink:0; display:flex; align-items:center}
+.r-icon-btn:hover{opacity:1}
+.r-icon-btn svg{width:15px; height:15px}
+.r-icon-btn.active-highlight{opacity:1; color:#c9a227}
 
 .r-add-row{display:flex; align-items:center; gap:8px; padding:10px 0 2px}
 .r-add-row input{flex:1; border:none; border-bottom:1.5px dashed var(--line); background:transparent; font-family:var(--font-receipt); font-size:14px; padding:6px 2px; outline:none; color:var(--ink)}
@@ -87,13 +85,18 @@ body::before{
 .r-empty{text-align:center; padding:20px 0; color:var(--ink-soft); font-size:12px}
 
 /* ═══ 투두1(Daily)에서 가져온 메뉴 - 영수증 바깥 오른쪽에 세로 배치 ═══ */
-.side-menu{display:flex; flex-direction:column; gap:8px; padding-top:6px}
+.side-menu{display:flex; flex-direction:column; gap:8px; padding-top:6px; position:relative}
 .side-menu button{
   width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background:rgba(255,255,255,.75);
-  backdrop-filter:blur(6px); cursor:pointer; font-size:15px; display:flex; align-items:center; justify-content:center;
-  color:var(--ink); font-family:var(--font-receipt);
+  backdrop-filter:blur(6px); cursor:pointer; display:flex; align-items:center; justify-content:center;
+  color:var(--ink);
 }
+.side-menu button svg{width:16px; height:16px}
 body.dark .side-menu button{background:rgba(40,38,32,.75)}
+.hamburger-panel{position:absolute; top:44px; right:0; background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:8px; display:none; flex-direction:column; gap:4px; z-index:20; box-shadow:0 10px 26px rgba(0,0,0,.15); width:150px}
+.hamburger-panel.open{display:flex}
+.hamburger-panel button{width:100%; height:auto; border-radius:8px; justify-content:flex-start; gap:8px; padding:8px 10px; font-family:var(--font-receipt); font-size:12px; border:none; background:none}
+.hamburger-panel button:hover{background:rgba(0,0,0,.06)}
 
 /* ═══ 공용 모달 ═══ */
 .modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; z-index:50; opacity:0; pointer-events:none; transition:opacity .2s; padding:20px}
@@ -153,16 +156,17 @@ body.dark .side-menu button{background:rgba(40,38,32,.75)}
   </div>
 
   <div class="side-menu">
-    <button id="btnSearch" title="검색">🔍</button>
-    <button id="btnFilter" title="필터">▤</button>
-    <button id="btnTheme" title="테마색">🎨</button>
-    <button id="btnCategories" title="카테고리 관리">📁</button>
-    <button id="btnRoutines" title="루틴 관리">🔁</button>
-    <button id="btnPomo" title="뽀모도로 시간">⏱</button>
-    <button id="btnInsights" title="인사이트">📊</button>
-    <button id="btnExport" title="사진으로 저장">📥</button>
-    <button id="btnDark" title="다크 모드">🌙</button>
-    <button id="btnSync" title="동기화">🔄</button>
+    <button id="btnHamburger" title="메뉴"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></button>
+    <button id="btnSync" title="동기화"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg></button>
+
+    <div class="hamburger-panel" id="hamburgerPanel">
+      <button id="btnSearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> 검색</button>
+      <button id="btnFilter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 12.5 14 19 10 21 10 12.5 4 4"/></svg> 필터</button>
+      <button id="btnTheme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.5-.7 1.5-1.5 0-.4-.2-.8-.4-1.1-.2-.3-.4-.6-.4-1 0-.8.7-1.5 1.5-1.5H16c3.3 0 6-2.7 6-6 0-4.4-4-8-10-8z"/></svg> 테마색</button>
+      <button id="btnRoutines"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg> 루틴</button>
+      <button id="btnExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 사진저장</button>
+      <button id="btnDark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg> 다크모드</button>
+    </div>
   </div>
 </div>
 
@@ -193,24 +197,10 @@ body.dark .side-menu button{background:rgba(40,38,32,.75)}
   </div>
 </div>
 
-<!-- 카테고리 -->
-<div class="modal-overlay" id="modalCategories">
-  <div class="modal">
-    <h3>카테고리 관리 <span class="close-x" data-close>✕</span></h3>
-    <div id="categoryList"></div>
-    <div class="modal-add-row">
-      <input type="text" id="newCategoryName" placeholder="카테고리 이름">
-      <input type="color" id="newCategoryColor" value="#8fae6f">
-      <button id="btnAddCategory">추가</button>
-    </div>
-  </div>
-</div>
-
 <!-- 루틴 -->
 <div class="modal-overlay" id="modalRoutines">
   <div class="modal">
     <h3>루틴 관리 <span class="close-x" data-close>✕</span></h3>
-    <p style="font-size:11px;color:var(--ink-soft);margin-bottom:8px">여기서 추가하는 루틴은 매일 반복이에요. 요일별 지정은 투두1(Daily)에서 해주세요.</p>
     <div id="routineList"></div>
     <div class="modal-add-row">
       <input type="text" id="newRoutineName" placeholder="매일 반복할 항목">
@@ -218,29 +208,6 @@ body.dark .side-menu button{background:rgba(40,38,32,.75)}
     </div>
   </div>
 </div>
-
-<!-- 뽀모도로 -->
-<div class="modal-overlay" id="modalPomo">
-  <div class="modal">
-    <h3>뽀모도로 시간 <span class="close-x" data-close>✕</span></h3>
-    <div class="modal-row">
-      <span>집중 시간(분)</span>
-      <input type="number" id="pomoDurationInput" min="5" max="90" style="width:60px">
-    </div>
-  </div>
-</div>
-
-<!-- 인사이트 -->
-<div class="modal-overlay" id="modalInsights">
-  <div class="modal">
-    <h3>인사이트 <span class="close-x" data-close>✕</span></h3>
-    <div class="modal-row"><span>오늘 완료</span><b id="insightToday">0 / 0</b></div>
-    <div class="modal-row"><span>최근 7일 완료율</span><b id="insightWeek">0%</b></div>
-    <div class="modal-row"><span>연속 완료(스트릭)</span><b id="insightStreak">0일</b></div>
-  </div>
-</div>
-
-<div id="itemMenuCatcher" style="display:none;position:fixed;inset:0;z-index:4"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
@@ -354,17 +321,14 @@ function render() {
     el.innerHTML = list.map((item) => {
       const realIdx = (todos[t] || []).indexOf(item);
       const dot = categoryColor(item.categoryId);
+      const isHl = highlightedIds.has(item.id);
       return `
-      <div class="r-item ${item.completed ? 'completed' : ''} ${highlightedIds.has(item.id) ? 'highlighted' : ''}" data-idx="${realIdx}" data-id="${item.id}">
+      <div class="r-item ${item.completed ? 'completed' : ''} ${isHl ? 'highlighted' : ''}" data-idx="${realIdx}" data-id="${item.id}">
         <input type="checkbox" class="r-check" ${item.completed ? 'checked' : ''}>
         ${dot ? `<span class="r-cat-dot" style="background:${dot}"></span>` : ''}
         <span class="r-text ${item.deferred ? 'r-deferred' : ''}" contenteditable="true">${esc(item.text)}</span>
-        <button class="r-more-btn" data-id="${item.id}">⋯</button>
-        <div class="r-item-menu" data-menu-for="${item.id}">
-          <button data-act="edit">✎ 수정</button>
-          <button data-act="highlight">🖍 하이라이트</button>
-          <button data-act="delete">🗑 삭제</button>
-        </div>
+        <button class="r-icon-btn r-highlight-btn ${isHl ? 'active-highlight' : ''}" title="하이라이트"><svg viewBox="0 0 24 24" fill="${isHl ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3L21 9.3l-4.5 4.4 1 6.3L12 17l-5.5 3 1-6.3L3 9.3l6.1-1L12 2z"/></svg></button>
+        <button class="r-icon-btn r-del-btn" title="삭제"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
       </div>`;
     }).join('');
   }
@@ -388,6 +352,12 @@ function wireListEvents() {
     row.querySelector('.r-check').addEventListener('change', (e) => {
       item.completed = e.target.checked;
       item.updatedAt = Date.now();
+      if (item.completed) {
+        // 체크한 항목은 목록 맨 아래로 내려감
+        const realIdx = todos[t].indexOf(item);
+        todos[t].splice(realIdx, 1);
+        todos[t].push(item);
+      }
       saveTodos(); render();
       autoPush(item, t);
     });
@@ -398,24 +368,11 @@ function wireListEvents() {
         autoPush(item, t);
       }
     });
-    const moreBtn = row.querySelector('.r-more-btn');
-    const menu = row.querySelector('.r-item-menu');
-    moreBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      document.querySelectorAll('.r-item-menu.open').forEach(m => { if (m !== menu) m.classList.remove('open'); });
-      menu.classList.toggle('open');
-      document.getElementById('itemMenuCatcher').style.display = menu.classList.contains('open') ? 'block' : 'none';
-    });
-    menu.querySelector('[data-act="edit"]').addEventListener('click', () => {
-      menu.classList.remove('open');
-      row.querySelector('.r-text').focus();
-    });
-    menu.querySelector('[data-act="highlight"]').addEventListener('click', () => {
-      menu.classList.remove('open');
+    row.querySelector('.r-highlight-btn').addEventListener('click', () => {
       if (highlightedIds.has(item.id)) highlightedIds.delete(item.id); else highlightedIds.add(item.id);
       saveHighlighted(); render();
     });
-    menu.querySelector('[data-act="delete"]').addEventListener('click', () => {
+    row.querySelector('.r-del-btn').addEventListener('click', () => {
       const realIdx = todos[t].indexOf(item);
       const removed = todos[t].splice(realIdx, 1)[0];
       saveTodos(); render();
@@ -423,10 +380,6 @@ function wireListEvents() {
     });
   });
 }
-document.getElementById('itemMenuCatcher').addEventListener('click', () => {
-  document.querySelectorAll('.r-item-menu.open').forEach(m => m.classList.remove('open'));
-  document.getElementById('itemMenuCatcher').style.display = 'none';
-});
 
 function initSortable() {
   const el = document.getElementById('rList');
@@ -582,26 +535,6 @@ function renderThemeSwatches() {
 }
 document.getElementById('btnTheme').addEventListener('click', () => { renderThemeSwatches(); openModal('modalTheme'); });
 
-/* 카테고리 관리 */
-function renderCategoryList() {
-  const el = document.getElementById('categoryList');
-  el.innerHTML = appSettings.categories.length ? appSettings.categories.map(c => `
-    <div class="modal-row"><span><span class="r-cat-dot" style="display:inline-block;background:${c.color}"></span> ${esc(c.name)}</span><button class="modal-del" data-id="${c.id}">삭제</button></div>
-  `).join('') : `<div class="r-empty">카테고리가 없어요</div>`;
-  el.querySelectorAll('.modal-del').forEach(b => b.addEventListener('click', () => {
-    appSettings.categories = appSettings.categories.filter(c => c.id !== b.dataset.id);
-    saveSettings(); renderCategoryList(); render();
-  }));
-}
-document.getElementById('btnCategories').addEventListener('click', () => { renderCategoryList(); openModal('modalCategories'); });
-document.getElementById('btnAddCategory').addEventListener('click', () => {
-  const name = document.getElementById('newCategoryName').value.trim();
-  const color = document.getElementById('newCategoryColor').value;
-  if (!name) return;
-  appSettings.categories.push({ id: generateId(), name, color });
-  saveSettings(); document.getElementById('newCategoryName').value = ''; renderCategoryList();
-});
-
 /* 루틴 관리 */
 function renderRoutineList() {
   const el = document.getElementById('routineList');
@@ -620,39 +553,6 @@ document.getElementById('btnAddRoutine').addEventListener('click', () => {
   appSettings.routines.push({ id: generateId(), text, days: [0, 1, 2, 3, 4, 5, 6], skipDates: [] });
   saveSettings(); document.getElementById('newRoutineName').value = '';
   renderRoutineList(); spawnRoutines(); render();
-});
-
-/* 뽀모도로 설정 */
-document.getElementById('btnPomo').addEventListener('click', () => { document.getElementById('pomoDurationInput').value = appSettings.pomoDuration; openModal('modalPomo'); });
-document.getElementById('pomoDurationInput').addEventListener('change', (e) => {
-  appSettings.pomoDuration = parseInt(e.target.value, 10) || 25; saveSettings();
-});
-
-/* 인사이트 */
-document.getElementById('btnInsights').addEventListener('click', () => {
-  const t = todayStr();
-  const todayList = todos[t] || [];
-  document.getElementById('insightToday').textContent = `${todayList.filter(i => i.completed).length} / ${todayList.length}`;
-
-  let weekTotal = 0, weekDone = 0;
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const list = todos[ds] || [];
-    weekTotal += list.length; weekDone += list.filter(x => x.completed).length;
-  }
-  document.getElementById('insightWeek').textContent = weekTotal ? Math.round(weekDone / weekTotal * 100) + '%' : '0%';
-
-  let streak = 0;
-  for (let i = 0; i < 365; i++) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const list = todos[ds] || [];
-    if (!list.length) { if (i === 0) continue; break; }
-    if (list.every(x => x.completed)) streak++; else break;
-  }
-  document.getElementById('insightStreak').textContent = streak + '일';
-  openModal('modalInsights');
 });
 
 /* 사진으로 저장 */
@@ -693,14 +593,32 @@ document.getElementById('btnSync').addEventListener('click', async () => {
   document.getElementById('btnSync').textContent = '🔄';
 });
 
+/* 햄버거 메뉴 토글 */
+const hamburgerPanel = document.getElementById('hamburgerPanel');
+document.getElementById('btnHamburger').addEventListener('click', (e) => {
+  e.stopPropagation();
+  hamburgerPanel.classList.toggle('open');
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.hamburger-panel') && !e.target.closest('#btnHamburger')) hamburgerPanel.classList.remove('open');
+});
+// 메뉴 안의 항목을 누르면 자동으로 패널이 닫히도록
+hamburgerPanel.querySelectorAll('button').forEach(b => b.addEventListener('click', () => hamburgerPanel.classList.remove('open')));
+
 /* ═══════════ INIT ═══════════ */
 applyAccent();
 applyDarkMode();
 spawnRoutines();
 render();
+// 캐시된 값으로 일단 빠르게 뜨고(체감 속도), 캐시를 썼든 안 썼든 곧바로 뒤에서 한 번 더 강제로 최신화해서
+// "다른 기기에서 완료한 게 여기선 체크 안 된 채로 보인다"는 문제(캐시가 오래돼서 그랬을 가능성)를 없앰
 pullFromNotion(false).then((changed) => {
   const rolloverChanged = rollover();
   if (changed || rolloverChanged) render();
+  return pullFromNotion(true);
+}).then((changed2) => {
+  const rolloverChanged2 = rollover();
+  if (changed2 || rolloverChanged2) render();
 }).catch(err => console.warn('초기 pull 실패:', err.message));
 </script>
 </body>
