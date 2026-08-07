@@ -896,6 +896,38 @@ async function autoDelete(pageId) {
   try { await fetch(NOTION_ENDPOINT, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pageId }) }); }
   catch (e) { console.warn('삭제 실패:', e.message); }
 }
+
+// 지금까진 로컬(localStorage) → 노션으로 올리기만 하고, 노션 → 로컬로 받아오는 게 없었어요.
+// 그래서 캐시를 지웠거나 다른 브라우저/기기(홈 화면 iframe 포함)에서 열면 노션엔 있는데도 안 보였던 거예요.
+// 이 함수가 노션에 있는 기록을 받아와서, 이 기기에 아직 없는 것만 채워 넣어요.
+async function pullFromNotion() {
+  try {
+    const r = await fetch(NOTION_ENDPOINT);
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || '불러오기 실패');
+    const known = new Set(records.filter(r => r.notionPageId).map(r => r.notionPageId));
+    const byAppId = new Map(records.map(r => [r.id, r]));
+    let added = false;
+    for (const it of (data.items || [])) {
+      if (it.notionPageId && known.has(it.notionPageId)) continue; // 이미 로컬에 있음
+      const local = byAppId.get(it.appId);
+      if (local && !local.notionPageId) { local.notionPageId = it.notionPageId; added = true; continue; } // 짝만 맞춰줌
+      if (local) continue;
+      let method = it.method, cardType = null;
+      const m = /^카드\((.+)\)$/.exec(it.method || '');
+      if (m) { method = '카드'; cardType = m[1]; }
+      records.push({
+        id: it.appId || generateId(), notionPageId: it.notionPageId,
+        name: it.name, date: it.date, amount: it.amount,
+        splitCount: it.splitCount, myShare: it.myShare,
+        method, cardType, category: it.category, type: it.type,
+        addedAt: it.lastUpdated || it.date, updatedAt: it.lastUpdated || it.date
+      });
+      added = true;
+    }
+    if (added) { save(); renderList(); renderBoard(); renderRecurList(); }
+  } catch (e) { console.warn('노션에서 불러오기 실패:', e.message); }
+}
 document.getElementById('btnSync').onclick = async () => {
   if (!records.length) { toast('동기화할 기록이 없어요'); return; }
   toast('동기화 중...');
@@ -906,6 +938,7 @@ document.getElementById('btnSync').onclick = async () => {
 /* ═══════ INIT ═══════ */
 spawnRecurring();
 renderList();
+pullFromNotion();
 // 커스텀 폰트(제주돌담체)가 로드되기 전에 타이틀 너비를 재면 좁게 측정돼서
 // 전광판이 작게 나오는 버그가 있었음 - 폰트 로딩 완료 후 다시 그림
 document.fonts.ready.then(() => { renderBoard(); });
