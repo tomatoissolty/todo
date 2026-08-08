@@ -482,7 +482,10 @@ async function pullFromNotion(forceRefresh) {
     } else if (row.date) {
       if (!todos[row.date]) todos[row.date] = [];
       todos[row.date].push({
-        id: row.appId, text: row.name, completed: row.completed, categoryId: categoryIdByName(row.category), routineId: row.routine ? 'unknown' : null,
+        id: row.appId, text: row.name, completed: row.completed, categoryId: categoryIdByName(row.category),
+        // 노션엔 "루틴이다/아니다" 체크박스만 있고 어떤 루틴인지 ID는 없어서, 텍스트로 매칭해 실제 루틴 ID를 복구해요.
+        // (예전엔 무조건 'unknown'을 넣어서 spawnRoutines()가 중복 판별을 못 하고 루틴을 하나 더 만들었어요)
+        routineId: row.routine ? ((appSettings.routines.find(rt => rt.text === row.name) || {}).id || null) : null,
         linkColor: null, subtasks: [], pomoTime: 0, pomoActive: false, pomoEndAt: null,
         updatedAt: remoteTime || Date.now(), notionPageId: row.notionPageId, deferred: !!row.deferred
       });
