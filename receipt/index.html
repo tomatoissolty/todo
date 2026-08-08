@@ -217,7 +217,13 @@ if (!appSettings.pomoDuration) appSettings.pomoDuration = 25;
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const saveTodos = () => localStorage.setItem('swipe-todos', JSON.stringify(todos));
 const saveSettings = () => localStorage.setItem('swipe-settings', JSON.stringify(appSettings));
-const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+// 하루 기준을 자정이 아니라 오전 5시로 잡아요 — 새벽까지 이어지는 하루도 여전히 "오늘"로 처리되게.
+// (일기 앱과 같은 방식) 이월/루틴/캡처 파일명 등 todayStr()을 쓰는 곳 전부에 자동으로 적용돼요.
+const todayStr = () => {
+  const d = new Date();
+  if (d.getHours() < 5) d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
 let currentFilter = { routineOnly: false, deferredOnly: false };
@@ -304,8 +310,8 @@ function render() {
   if (currentFilter.deferredOnly) list = list.filter(i => i.deferred);
 
   const el = document.getElementById('rList');
-  const now = new Date();
-  document.getElementById('rDate').textContent = now.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' });
+  const headerDate = new Date(t + 'T00:00:00');
+  document.getElementById('rDate').textContent = headerDate.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' });
   document.getElementById('rTitle').textContent = (appSettings.title || "TODAY'S TO-DO").toUpperCase();
 
   if (!list.length) {
