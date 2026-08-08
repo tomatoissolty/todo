@@ -590,7 +590,7 @@ module.exports = async (req, res) => {
         });
         const data = await r.json();
         if (!r.ok) throw new Error(data.message || '노션 조회 실패');
-        items = items.concat((data.results || []).map(appConfig.fromPage));
+        items = items.concat((data.results || []).map(p => ({ ...appConfig.fromPage(p), notionEditedTime: p.last_edited_time })));
         cursor = data.has_more ? data.next_cursor : undefined;
       } while (cursor);
 

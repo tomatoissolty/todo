@@ -494,11 +494,19 @@ async function showViewScreen(entry) {
 }
 
 /* ═══════════ EDIT SCREEN ═══════════ */
-function showEditScreen(entry) {
+async function showEditScreen(entry) {
   document.getElementById('edit-title').value = entry ? (entry.title || '') : '';
   const lockToggle = document.getElementById('edit-lock');
   lockToggle.classList.toggle('on', !!(entry && entry.locked));
   editBlocks = entry ? JSON.parse(JSON.stringify(entry.content || [])) : [{ type: 'text', text: '' }];
+  // 저장된 사진 블록엔 photoId만 있고 실제 이미지 데이터(_dataUrl)가 없어서, 예전엔 수정 화면에
+  // 빈 이미지로 보이고 지우기도 제대로 안 됐어요 — 보기 화면처럼 IndexedDB에서 미리 채워줘요.
+  for (const block of editBlocks) {
+    if (block.type === 'photo' && block.photoId && !block._dataUrl) {
+      const photo = await idbGet('photos', block.photoId);
+      if (photo) block._dataUrl = photo.dataUrl;
+    }
+  }
   renderEditBlocks();
   showScreen('screen-edit');
 }
@@ -944,7 +952,11 @@ async function pullFromNotion() {
 
   for (const row of (data.items || [])) {
     if (!row.appId) continue;
-    const remoteTime = row.lastUpdated ? new Date(row.lastUpdated).getTime() : 0;
+    const remoteTime = Math.max(
+      row.lastUpdated ? new Date(row.lastUpdated).getTime() : 0,
+      row.notionEditedTime ? new Date(row.notionEditedTime).getTime() : 0
+    ); // 노션 UI에서 직접 사진/글을 고치면 우리 앱이 쓰는 'Last Updated' 속성은 안 바뀌어서,
+       // 노션이 자체적으로 관리하는 last_edited_time도 같이 봐야 그 변경을 놓치지 않아요.
     const existing = localById[row.appId];
 
     if (existing) {
