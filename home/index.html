@@ -368,12 +368,22 @@ async function loadToistyData(pane) {
   try {
     const r = await fetch('/api/notion?app=todo');
     const d = await r.json();
-    const todayStr = new Date().toISOString().slice(0, 10);
+    // toISOString()은 UTC 기준이라 한국 시간대랑 어긋나고, 투두 앱은 오전 5시를 하루 기준으로 삼는데
+    // 여긴 자정 기준이었어요 — 그래서 시간대에 따라 오늘 항목이 하나도 안 잡히던 게 진짜 원인이에요.
+    // 투두 앱의 todayStr()과 완전히 같은 방식으로 맞춰요.
+    const now = new Date();
+    if (now.getHours() < 5) now.setDate(now.getDate() - 1);
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const todays = (d.items || []).filter(t => t.date === todayStr);
+    // 우선순위: 새로 작성된 항목 > 밀린 항목 > 루틴 항목
+    const fresh = todays.filter(t => !t.routine && !t.deferred);
+    const deferred = todays.filter(t => !t.routine && t.deferred);
+    const routine = todays.filter(t => t.routine);
+    const shown = fresh.length ? fresh : (deferred.length ? deferred : routine);
     const el = pane.querySelector('#miniTodo');
-    if (!todays.length) { el.innerHTML = `<div class="mini-empty">오늘 등록된 항목이 없어요</div>`; }
+    if (!shown.length) { el.innerHTML = `<div class="mini-empty">오늘 등록된 항목이 없어요</div>`; }
     else {
-      el.innerHTML = todays.slice(0, 6).map(t => `
+      el.innerHTML = shown.slice(0, 6).map(t => `
         <div class="mini-todo-item ${t.completed ? 'done' : ''}">
           <span class="mini-todo-dot ${t.completed ? 'done' : 'undone'}"></span>
           <span>${esc(t.name)}</span>
