@@ -375,15 +375,16 @@ async function loadToistyData(pane) {
     if (now.getHours() < 5) now.setDate(now.getDate() - 1);
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const todays = (d.items || []).filter(t => t.date === todayStr);
-    // 우선순위: 새로 작성된 항목 > 밀린 항목 > 루틴 항목
+    // 우선순위: 새로 작성된 항목 > 밀린 항목 > 루틴 항목 — 한 종류만 보여주는 게 아니라
+    // 이 순서로 이어붙여서, 표시 가능한 최대 개수(6개)까지 최대한 채워요.
     const fresh = todays.filter(t => !t.routine && !t.deferred);
     const deferred = todays.filter(t => !t.routine && t.deferred);
     const routine = todays.filter(t => t.routine);
-    const shown = fresh.length ? fresh : (deferred.length ? deferred : routine);
+    const shown = [...fresh, ...deferred, ...routine].slice(0, 6);
     const el = pane.querySelector('#miniTodo');
     if (!shown.length) { el.innerHTML = `<div class="mini-empty">오늘 등록된 항목이 없어요</div>`; }
     else {
-      el.innerHTML = shown.slice(0, 6).map(t => `
+      el.innerHTML = shown.map(t => `
         <div class="mini-todo-item ${t.completed ? 'done' : ''}">
           <span class="mini-todo-dot ${t.completed ? 'done' : 'undone'}"></span>
           <span>${esc(t.name)}</span>
