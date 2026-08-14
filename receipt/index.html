@@ -291,11 +291,13 @@ function spawnRoutines() {
   appSettings.routines.forEach(r => {
     const already = todos[t].some(item => item.routineId === r.id);
     if (already) return;
-    todos[t].push({
+    const item = {
       id: generateId(), text: r.text, completed: false, categoryId: null, routineId: r.id,
       linkColor: null, subtasks: [], pomoTime: 0, pomoActive: false, pomoEndAt: null,
       updatedAt: Date.now(), notionPageId: null, deferred: false
-    });
+    };
+    todos[t].push(item);
+    autoPush(item, t); // 건드리기 전엔 노션에 안 올라가던 게 진짜 원인이었어요 — 만들자마자 바로 올림
     changed = true;
   });
   if (changed) saveTodos();
