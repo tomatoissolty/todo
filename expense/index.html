@@ -355,7 +355,10 @@ function spawnRecurring() {
     const day = Math.min(tpl.day, new Date(y, m + 1, 0).getDate());
     const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     if (dateStr > todayStr()) return;
-    const already = records.some(r => r.templateId === tpl.id && r.date.slice(0, 7) === dateStr.slice(0, 7));
+    // templateId는 로컬에만 있고 노션엔 저장 안 돼서, 다른 기기/새 브라우저에서 노션 걸 받아오면
+    // 이 값이 비어있어 "이미 있다"를 못 알아채고 중복 생성될 수 있었어요.
+    // 실제로 노션까지 저장되는 값(이름·날짜·금액)으로 판별해야 기기가 달라도 안전해요.
+    const already = records.some(r => r.date === dateStr && r.name === tpl.name && r.amount === tpl.amount);
     if (already) return;
     records.push({
       id: generateId(), type: 'expense', name: tpl.name, amount: tpl.amount, splitCount: tpl.splitCount || 1,
@@ -936,9 +939,13 @@ document.getElementById('btnSync').onclick = async () => {
 };
 
 /* ═══════ INIT ═══════ */
-spawnRecurring();
-renderList();
-pullFromNotion();
+renderList(); // 로컬 캐시부터 바로 보여줌
+pullFromNotion().then(() => {
+  // 정기지출은 노션 데이터를 받아온 "다음"에 만들어야 해요 — 먼저 만들고 나중에 받아오면
+  // 다른 기기에서 이미 만든 이번 달 정기지출과 겹쳐서 중복이 생길 수 있었어요.
+  spawnRecurring();
+  renderList(); renderBoard(); renderRecurList();
+});
 // 커스텀 폰트(제주돌담체)가 로드되기 전에 타이틀 너비를 재면 좁게 측정돼서
 // 전광판이 작게 나오는 버그가 있었음 - 폰트 로딩 완료 후 다시 그림
 document.fonts.ready.then(() => { renderBoard(); });
