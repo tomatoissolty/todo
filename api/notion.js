@@ -221,6 +221,22 @@ async function uploadFileToNotion(dataUrl, fileName) {
 }
 
 
+// 알라딘 표지 주소는 크기가 경로에 들어있어요 (.../coversum/... , .../cover200/...).
+// 그 부분만 cover500으로 바꾸면 더 큰 이미지가 있는 경우가 많아서, 실제로 있는지 서버가
+// 직접 확인해보고 있으면 그걸 씁니다. 없으면 원래 주소 그대로 써요 (추측으로 넣지 않음).
+async function bestQualityCoverUrl(url) {
+  if (!url || !/image\.aladin\.co\.kr/.test(url)) return url;
+  for (const size of ['cover500', 'cover200']) {
+    const candidate = url.replace(/\/(coversum|cover\d+|cover)\//, `/${size}/`);
+    if (candidate === url) continue;
+    try {
+      const r = await fetch(candidate, { method: 'HEAD' });
+      if (r.ok && (r.headers.get('content-type') || '').startsWith('image/')) return candidate;
+    } catch (e) { /* 다음 후보로 */ }
+  }
+  return url;
+}
+
 // 외부 이미지 주소를 서버에서 직접 내려받아 노션 저장소로 올려요.
 // SHELF 표지가 노션 갤러리에서 흰색으로만 보이던 이유가 여기 있었어요 — 표지를 카카오 CDN 주소
 // "링크"로만 넣어두면, 노션이 그 이미지를 가져오려 할 때 외부 CDN 쪽에서 막아버려 빈 칸이 돼요.
@@ -230,7 +246,8 @@ async function uploadRemoteImageToNotion(url) {
   if (!url) return null;
   if (remoteUploadCache.has(url)) return remoteUploadCache.get(url);
   try {
-    const r = await fetch(url);
+    const bestUrl = await bestQualityCoverUrl(url);
+    const r = await fetch(bestUrl);
     if (!r.ok) return null;
     const mime = r.headers.get('content-type') || 'image/jpeg';
     if (!mime.startsWith('image/')) return null;
