@@ -221,13 +221,40 @@ async function uploadFileToNotion(dataUrl, fileName) {
 }
 
 
+// 외부 이미지 주소를 서버에서 직접 내려받아 노션 저장소로 올려요.
+// SHELF 표지가 노션 갤러리에서 흰색으로만 보이던 이유가 여기 있었어요 — 표지를 카카오 CDN 주소
+// "링크"로만 넣어두면, 노션이 그 이미지를 가져오려 할 때 외부 CDN 쪽에서 막아버려 빈 칸이 돼요.
+// (앱 안에서는 브라우저가 직접 불러오니까 잘 보이고요.) 노션이 파일을 직접 갖고 있게 하면 확실해요.
+const remoteUploadCache = new Map(); // 같은 표지를 저장할 때마다 다시 올리지 않도록
+async function uploadRemoteImageToNotion(url) {
+  if (!url) return null;
+  if (remoteUploadCache.has(url)) return remoteUploadCache.get(url);
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const mime = r.headers.get('content-type') || 'image/jpeg';
+    if (!mime.startsWith('image/')) return null;
+    const buffer = Buffer.from(await r.arrayBuffer());
+    const dataUrl = `data:${mime};base64,${buffer.toString('base64')}`;
+    const id = await uploadFileToNotion(dataUrl, 'cover.jpg');
+    remoteUploadCache.set(url, id);
+    return id;
+  } catch (e) {
+    return null; // 표지를 못 가져와도 책 저장 자체는 실패하지 않게
+  }
+}
+
 // --- Book(SHELF 독서 기록 앱) 매핑 ---
 function bookToProperties(item) {
   return {
     'Name': { title: [{ text: { content: item.name || '(제목 없음)' } }] },
     'Author': { rich_text: item.author ? [{ text: { content: item.author } }] : [] },
     'Publisher': { rich_text: item.publisher ? [{ text: { content: item.publisher } }] : [] },
-    'Cover': item.cover ? { files: [{ name: 'cover.jpg', type: 'external', external: { url: item.cover } }] } : { files: [] },
+    // coverFileUploadId가 있으면 노션이 직접 보관하는 파일로 넣어요(갤러리에서 확실히 보임).
+    // 못 올렸을 때만 예전처럼 외부 링크로 넣어서, 최소한 주소는 남아있게 해요.
+    'Cover': item.coverFileUploadId
+      ? { files: [{ name: 'cover.jpg', type: 'file_upload', file_upload: { id: item.coverFileUploadId } }] }
+      : (item.cover ? { files: [{ name: 'cover.jpg', type: 'external', external: { url: item.cover } }] } : { files: [] }),
     'ISBN': { rich_text: item.isbn ? [{ text: { content: item.isbn } }] : [] },
     'Rating': { number: typeof item.rating === 'number' ? item.rating : null },
     'Status': item.status ? { select: { name: item.status } } : { select: null },
@@ -617,6 +644,12 @@ module.exports = async (req, res) => {
       }
       const results = [];
       for (const item of items) {
+        // SHELF 표지는 외부 링크로 두면 노션 갤러리에서 안 보여서, 저장할 때 노션 저장소로 옮겨요.
+        // 이미 노션이 갖고 있는 주소(재저장 시 되돌아온 것)면 다시 올릴 필요 없어요.
+        if (appKey === 'book' && item.cover && !item.coverFileUploadId
+            && !/(^https?:\/\/[^/]*notion)|amazonaws\.com/.test(item.cover)) {
+          item.coverFileUploadId = await uploadRemoteImageToNotion(item.cover);
+        }
         const properties = appConfig.toProperties(item);
         const coverBody = appConfig.useCover && item.poster
           ? { cover: { type: 'external', external: { url: item.poster } } }
