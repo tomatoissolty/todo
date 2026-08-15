@@ -428,7 +428,19 @@ document.getElementById('newItemInput').addEventListener('keydown', (e) => {
 
 /* ═══════════ 노션 동기화 ═══════════ */
 function serializeSubtasks(subs) { return (subs || []).map(s => `${s.completed ? '[x]' : '[ ]'} ${s.text}`).join('\n'); }
-async function autoPush(item, dateStr) {
+// 체크박스를 빠르게 연달아 누르는 등, 같은 항목에 대해 저장 요청이 겹쳐서 나갈 때가 있었어요.
+// 첫 번째 저장이 끝나기 전에 두 번째가 나가면 둘 다 notionPageId가 없는 채로 나가서,
+// 노션에 같은 항목이 페이지 2개로 중복 생성되는 게 진짜 원인이었어요.
+// 항목별로 저장을 한 줄로 세워서, 앞 요청이 끝난 뒤에야 다음 게 나가도록 고쳤어요.
+const pushQueues = new Map();
+function autoPush(item, dateStr) {
+  const key = item.id;
+  const prev = pushQueues.get(key) || Promise.resolve();
+  const next = prev.then(() => doPush(item, dateStr)).catch(() => {});
+  pushQueues.set(key, next);
+  return next;
+}
+async function doPush(item, dateStr) {
   try {
     const payload = {
       appId: item.id, notionPageId: item.notionPageId || null, name: item.text, date: dateStr,
