@@ -23,11 +23,19 @@ module.exports = async (req, res) => {
 
     const items = (data.documents || []).map(d => {
       const isbns = (d.isbn || '').split(' ').filter(Boolean);
+      const thumbnail = (d.thumbnail || '').replace('http://', 'https://');
+      // 카카오는 120x174짜리 축소 썸네일 하나만 줘요 - 다른 화질 선택지가 없어요.
+      // 대신 그 썸네일 주소 안에 리사이즈 되기 전 원본 주소(fname)가 숨어있어서, 있으면 그걸 대신 써요.
+      // (원본도 애초에 작은 이미지면 이것도 큰 차이는 없을 수 있어요)
+      let cover = thumbnail;
+      const m = thumbnail.match(/[?&]fname=([^&]+)/);
+      if (m) { try { cover = decodeURIComponent(m[1]).replace('http://', 'https://'); } catch (e) {} }
       return {
         title: d.title || '',
         authors: d.authors || [],
         publisher: d.publisher || '',
-        thumbnail: (d.thumbnail || '').replace('http://', 'https://'),
+        thumbnail,
+        cover,
         isbn: isbns[isbns.length - 1] || ''
       };
     });

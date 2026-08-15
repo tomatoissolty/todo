@@ -583,7 +583,7 @@ function pickBook(info) {
     title: info.title || '제목 없음',
     author: (info.authors || []).join(', '),
     publisher: info.publisher || '',
-    cover: info.thumbnail || '',
+    cover: info.cover || info.thumbnail || '',
     isbn: info.isbn || ''
   };
   document.getElementById('searchSection').style.display = 'none';
