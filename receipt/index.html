@@ -284,15 +284,22 @@ function categoryNameById(id) { const c = appSettings.categories.find(c => c.id 
 function categoryIdByName(name) { const c = appSettings.categories.find(c => c.name === name); return c ? c.id : null; }
 
 /* ═══════════ 밀린 항목 이월 ═══════════ */
+const ROLLOVER_MAX_DAYS = 10; // 이월은 최근 며칠 것까지만 (오래된 게 한꺼번에 쏟아지는 걸 막음)
 function rollover() {
   const t = todayStr();
+  // 아주 오래된 날짜까지 훑으면, 어떤 이유로든 과거 데이터가 한 번에 딸려올 때
+  // 수십 개가 통째로 오늘로 밀려오는 사고가 나요. 최근 것만 이월합니다.
+  const oldest = new Date(t + 'T00:00:00');
+  oldest.setDate(oldest.getDate() - ROLLOVER_MAX_DAYS);
+  const oldestStr = `${oldest.getFullYear()}-${String(oldest.getMonth() + 1).padStart(2, '0')}-${String(oldest.getDate()).padStart(2, '0')}`;
   let changed = false;
   Object.keys(todos).forEach(dateStr => {
-    if (dateStr >= t) return;
+    if (dateStr >= t || dateStr < oldestStr) return;
     const dayList = todos[dateStr] || [];
     for (let i = dayList.length - 1; i >= 0; i--) {
       const item = dayList[i];
-      if (item.completed || item.routineId) continue;
+      // isRoutine은 노션에서 내려온 값이라 로컬 설정이 지워져도 살아있어요 — 루틴은 절대 이월 안 함
+      if (item.completed || item.routineId || item.isRoutine) continue;
       dayList.splice(i, 1);
       item.deferred = true;
       item.updatedAt = Date.now();
@@ -467,7 +474,9 @@ async function doPush(item, dateStr) {
   try {
     const payload = {
       appId: item.id, notionPageId: item.notionPageId || null, name: item.text, date: dateStr,
-      completed: item.completed, category: categoryNameById(item.categoryId), routine: !!item.routineId,
+      completed: item.completed, category: categoryNameById(item.categoryId),
+      // 로컬 루틴 목록이 지워진 기기에서 저장해도 노션의 Routine 체크가 풀리지 않도록 isRoutine도 함께 봅니다
+      routine: !!(item.routineId || item.isRoutine),
       deferred: !!item.deferred, subtasks: serializeSubtasks(item.subtasks),
       updatedAt: new Date(item.updatedAt || Date.now()).toISOString()
     };
@@ -518,6 +527,7 @@ async function pullFromNotion(forceRefresh) {
         existing.todo.completed = row.completed;
         existing.todo.categoryId = categoryIdByName(row.category) || existing.todo.categoryId;
         existing.todo.deferred = !!row.deferred;
+        if (row.routine) existing.todo.isRoutine = true;
         existing.todo.notionPageId = row.notionPageId;
         existing.todo.updatedAt = remoteTime;
         changed = true;
@@ -527,8 +537,12 @@ async function pullFromNotion(forceRefresh) {
       todos[row.date].push({
         id: row.appId, text: row.name, completed: row.completed, categoryId: categoryIdByName(row.category),
         // 노션엔 "루틴이다/아니다" 체크박스만 있고 어떤 루틴인지 ID는 없어서, 텍스트로 매칭해 실제 루틴 ID를 복구해요.
-        // (예전엔 무조건 'unknown'을 넣어서 spawnRoutines()가 중복 판별을 못 하고 루틴을 하나 더 만들었어요)
         routineId: row.routine ? ((appSettings.routines.find(rt => rt.text === row.name) || {}).id || null) : null,
+        // routineId는 로컬 설정(루틴 목록)이 있어야 복구돼요. 그런데 사파리는 한동안 안 들어간 사이트의
+        // 저장소를 통째로 지워버려서, 폰에서 열면 루틴 목록이 비어있는 경우가 생겨요.
+        // 그러면 과거 루틴들이 "루틴이 아닌 밀린 항목"으로 오인돼 전부 오늘로 끌려왔어요(이번 사고의 원인).
+        // 노션의 Routine 체크박스는 그것과 무관하게 항상 맞으니, 그 값을 따로 보관해서 판단에 씁니다.
+        isRoutine: !!row.routine,
         linkColor: null, subtasks: [], pomoTime: 0, pomoActive: false, pomoEndAt: null,
         updatedAt: remoteTime || Date.now(), notionPageId: row.notionPageId, deferred: !!row.deferred
       });
@@ -537,6 +551,33 @@ async function pullFromNotion(forceRefresh) {
   });
   if (changed) saveTodos();
   return changed;
+}
+
+/* ═══════════ 1회성 정리 ═══════════
+   사파리가 저장소를 지워버린 탓에 과거 루틴들이 "밀린 항목"으로 오인돼 오늘로 잔뜩 끌려온 적이 있어요.
+   그 잔재(= 오늘 날짜, 밀린 항목 표시, 루틴 아님, 그런데 이름이 실제 루틴과 똑같은 것)를 한 번만 청소합니다.
+   루틴 목록이 비어있는 기기에서는 아무것도 지우지 않아요(잘못 지우는 걸 막기 위해). */
+const CLEANUP_KEY = 'receipt-cleanup-routine-dupes-v1';
+function cleanupRoutineDupes() {
+  if (localStorage.getItem(CLEANUP_KEY)) return false;
+  const routineNames = new Set((appSettings.routines || []).map(r => r.text));
+  if (!routineNames.size) return false; // 설정이 없는 기기에선 판단 불가 — 건너뜀
+  const t = todayStr();
+  const list = todos[t] || [];
+  let removed = 0;
+  for (let i = list.length - 1; i >= 0; i--) {
+    const item = list[i];
+    const isRealRoutine = item.routineId || item.isRoutine;
+    if (isRealRoutine) continue;
+    if (!item.deferred) continue;
+    if (!routineNames.has(item.text)) continue; // 진짜 밀린 일반 할 일은 그대로 둠
+    list.splice(i, 1);
+    if (item.notionPageId) autoDelete(item.notionPageId);
+    removed++;
+  }
+  localStorage.setItem(CLEANUP_KEY, String(Date.now()));
+  if (removed) { saveTodos(); console.log(`[정리] 잘못 밀려온 루틴 항목 ${removed}개 삭제`); }
+  return removed > 0;
 }
 
 /* ═══════════ 사이드 메뉴 - 모달 열기/닫기 공용 ═══════════ */
@@ -656,18 +697,24 @@ document.getElementById('btnSync').addEventListener('click', async () => {
 /* ═══════════ INIT ═══════════ */
 applyAccent();
 applyDarkMode();
-spawnRoutines();
 render();
-// 캐시된 값으로 일단 빠르게 뜨고(체감 속도), 캐시를 썼든 안 썼든 곧바로 뒤에서 한 번 더 강제로 최신화해서
-// "다른 기기에서 완료한 게 여기선 체크 안 된 채로 보인다"는 문제(캐시가 오래돼서 그랬을 가능성)를 없앰
-pullFromNotion(false).then((changed) => {
-  const rolloverChanged = rollover();
-  if (changed || rolloverChanged) render();
+// 예전엔 여기서 먼저 spawnRoutines()/rollover()를 돌렸는데, 그러면 노션 데이터를 받아보기도 전에
+// 불완전한 로컬 정보만으로 판단하게 돼요. 이번 "항목 폭증" 사고의 원인 중 하나였습니다.
+// 이제는 항상 노션에서 받아온 뒤에 정리 → 이월 → 루틴 생성 순서로 처리합니다.
+pullFromNotion(false).then(() => {
+  render();
   return pullFromNotion(true);
-}).then((changed2) => {
-  const rolloverChanged2 = rollover();
-  if (changed2 || rolloverChanged2) render();
-}).catch(err => console.warn('초기 pull 실패:', err.message));
+}).then(() => {
+  cleanupRoutineDupes();
+  rollover();
+  spawnRoutines();
+  render();
+}).catch(err => {
+  console.warn('초기 pull 실패:', err.message);
+  // 노션을 못 불러온 상태에서 이월을 돌리면 과거 데이터를 오판할 수 있어서, 루틴 생성만 해요
+  spawnRoutines();
+  render();
+});
 </script>
 </body>
 </html>
