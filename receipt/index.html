@@ -119,10 +119,13 @@ body::before{
 
 /* ── 모바일 ── 글자를 키우고, 체크박스처럼 손가락으로 누르는 건 더 크게 잡아요 */
 @media(max-width:640px){
-  body{padding:20px 10px 70px}
-  /* 오른쪽 아이콘 열(34px) + 간격(10px) + 좌우 여백(20px)만큼만 비워두고 나머지는 영수증이 씀 */
-  .receipt-shadow-wrap{max-width:calc(100vw - 70px)}
+  body{padding:20px 8px 70px}
+  /* 아이콘 양옆 여백을 반으로 줄이고(간격 10→5, 버튼 좌우 안쪽 여백 8→4),
+     그만큼 영수증 폭을 넓혔어요. 아이콘 자체 크기와 세로 터치 영역은 그대로예요. */
+  .page-row{gap:5px}
   .side-menu{gap:8px}
+  .side-menu button{width:26px}
+  .receipt-shadow-wrap{max-width:calc(100vw - 48px)}
   .receipt{padding:0 18px}          /* 좌우 여백을 줄여서 글 쓸 폭을 넓힘 */
   .r-inner{padding:22px 0 20px}
   .r-title{font-size:32px}
