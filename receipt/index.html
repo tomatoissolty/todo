@@ -549,7 +549,15 @@ async function pullFromNotion(forceRefresh) {
       return;
     }
     const existing = localById[row.appId];
-    const remoteTime = row.updatedAt ? new Date(row.updatedAt).getTime() : 0;
+    // 서버는 'lastUpdated'라는 이름으로 내려주는데 예전엔 'updatedAt'을 읽고 있었어요.
+    // 없는 필드라 항상 undefined → remoteTime이 늘 0 → 아래 "원격이 더 최신이면 반영" 조건이
+    // 절대 참이 안 돼서, 이미 이 기기에 있는 항목은 노션 변경사항을 영영 못 받았어요.
+    // (맥북에서 체크한 게 폰에서 안 눌린 채로 보이던 진짜 원인, 이월 색깔도 같은 이유)
+    // 노션 화면에서 직접 고친 것도 반영되도록 노션 자체 수정시각도 같이 봅니다.
+    const remoteTime = Math.max(
+      row.lastUpdated ? new Date(row.lastUpdated).getTime() : 0,
+      row.notionEditedTime ? new Date(row.notionEditedTime).getTime() : 0
+    );
     if (existing) {
       const localTime = existing.todo.updatedAt || 0;
       if (remoteTime > localTime) {
@@ -560,6 +568,16 @@ async function pullFromNotion(forceRefresh) {
         if (row.routine) existing.todo.isRoutine = true;
         existing.todo.notionPageId = row.notionPageId;
         existing.todo.updatedAt = remoteTime;
+        // 다른 기기에서 이월돼 날짜가 바뀐 경우, 이 기기에서도 그 날짜로 옮겨줘야
+        // 예전 날짜에 남아 엉뚱한 곳에 보이지 않아요. (인덱스는 어긋날 수 있어 실제 위치를 다시 찾음)
+        if (row.date && row.date !== existing.dateStr) {
+          const fromList = todos[existing.dateStr] || [];
+          const at = fromList.indexOf(existing.todo);
+          if (at > -1) fromList.splice(at, 1);
+          if (!todos[row.date]) todos[row.date] = [];
+          todos[row.date].push(existing.todo);
+          existing.dateStr = row.date;
+        }
         changed = true;
       }
     } else if (row.date) {
