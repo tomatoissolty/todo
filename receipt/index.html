@@ -491,6 +491,20 @@ async function doPush(item, dateStr) {
     }
   } catch (err) { console.warn('동기화 실패:', err.message); }
 }
+/* ═══════════ 1회성 수리 ═══════════
+   예전 버그(노션 수정시각을 못 읽고 Date.now()를 대신 넣던 것) 때문에, 이미 저장된 항목들의
+   수정시각이 실제보다 훨씬 최신으로 박혀 있어요. 그대로 두면 "로컬이 더 최신"으로 계속 판정돼서
+   노션 값(체크 여부, 이월 표시 등)이 영영 반영되지 않아요.
+   그래서 한 번만 로컬 수정시각을 0으로 되돌려, 노션이 한 번 확실히 이기게 합니다. */
+const TIMEFIX_KEY = 'receipt-timestamp-repair-v1';
+function repairStaleTimestamps() {
+  if (localStorage.getItem(TIMEFIX_KEY)) return;
+  Object.values(todos).forEach(list => (list || []).forEach(item => { item.updatedAt = 0; }));
+  localStorage.removeItem(NOTION_CACHE_KEY); // 캐시도 버려서 진짜 최신을 받아오게
+  saveTodos();
+  localStorage.setItem(TIMEFIX_KEY, String(Date.now()));
+}
+
 /* ═══════════ 삭제 기록(묘비) ═══════════
    지운 항목이 되살아나는 걸 막아요. 노션 삭제가 실패했거나, 아직 노션에 올라가는 중이라
    페이지 ID를 모르는 상태에서 지웠거나, 캐시에 옛날 데이터가 남아있으면
@@ -592,7 +606,9 @@ async function pullFromNotion(forceRefresh) {
         // 노션의 Routine 체크박스는 그것과 무관하게 항상 맞으니, 그 값을 따로 보관해서 판단에 씁니다.
         isRoutine: !!row.routine,
         linkColor: null, subtasks: [], pomoTime: 0, pomoActive: false, pomoEndAt: null,
-        updatedAt: remoteTime || Date.now(), notionPageId: row.notionPageId, deferred: !!row.deferred
+        // 예전엔 여기서 remoteTime을 못 구하면 Date.now()를 넣었는데, 그러면 "이 기기가 방금 고친 것"처럼
+        // 보여서 이후 노션의 진짜 변경사항이 영영 무시돼요. 모르면 0으로 두는 게 맞아요.
+        updatedAt: remoteTime || 0, notionPageId: row.notionPageId, deferred: !!row.deferred
       });
       changed = true;
     }
@@ -747,6 +763,7 @@ document.getElementById('btnSync').addEventListener('click', async () => {
 /* ═══════════ INIT ═══════════ */
 applyAccent();
 applyDarkMode();
+repairStaleTimestamps(); // 노션에서 받아오기 전에, 잘못 박힌 로컬 수정시각부터 되돌림
 render();
 // 예전엔 여기서 먼저 spawnRoutines()/rollover()를 돌렸는데, 그러면 노션 데이터를 받아보기도 전에
 // 불완전한 로컬 정보만으로 판단하게 돼요. 이번 "항목 폭증" 사고의 원인 중 하나였습니다.
