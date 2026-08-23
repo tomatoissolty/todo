@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<link rel="icon" type="image/png" href="favicon.png?v=4">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=4">
-<link rel="manifest" href="manifest.json?v=4">
+<link rel="icon" type="image/png" href="favicon.png?v=5">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=5">
+<link rel="manifest" href="manifest.json?v=5">
 <meta name="apple-mobile-web-app-title" content="toisty">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -125,11 +125,26 @@ main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
 @media(max-width:700px){
   body{padding:0}
   .shell{max-height:none;height:100vh;border-radius:0;flex-direction:column}
-  .sidebar{width:100%;flex-direction:row;overflow-x:auto}
+  .sidebar{width:100%;flex-direction:row;overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch}
+  .sidebar::-webkit-scrollbar{display:none}
   .header-photo-wrap{display:none}
+  /* 세로 사이드바용 장식 사진이라, 가로 메뉴바로 바뀌면 옆으로 누워서 공간만 잡아먹어요 */
+  .sidebar-bottom-space{display:none}
   nav{flex-direction:row}
-  .nav-item{border-bottom:none;border-right:var(--border-w) solid var(--line);white-space:nowrap}
+  .nav-item{
+    border-bottom:none;border-right:var(--border-w) solid var(--line);white-space:nowrap;
+    font-size:15px;padding:16px 18px;gap:8px; /* 손가락으로 누르기 편한 크기로 */
+  }
+  .nav-item .no{font-size:12px}
   .mini-cards{grid-template-columns:1fr}
+
+  /* 모바일에서 너무 작아 읽기 힘들던 글자들 키움 */
+  .mini-card-title{font-size:15px;margin-bottom:12px}
+  .mini-todo-item,.mini-bm-item{font-size:15px;padding:9px 0}
+  .mini-empty{font-size:14px;padding:8px 0}
+  .pane .loading,.main-photo-box .no-photo{font-size:14px}
+  .storage-item a{font-size:14px;padding:4px 0}
+  .storage-item-meta{font-size:13px}
 }
 
 /* 테마 색상 - 평소엔 안 보이는 작은 트리거 */

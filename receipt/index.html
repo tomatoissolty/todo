@@ -116,6 +116,27 @@ body::before{
 .search-results{margin-top:10px; display:flex; flex-direction:column; gap:6px; max-height:300px; overflow-y:auto}
 .search-result-row{padding:8px; border:1px solid var(--line); border-radius:8px; font-size:12px}
 .search-result-date{color:var(--ink-soft); font-size:10px; margin-bottom:2px}
+
+/* ── 모바일 ── 글자를 키우고, 체크박스처럼 손가락으로 누르는 건 더 크게 잡아요 */
+@media(max-width:640px){
+  body{padding:20px 10px 70px}
+  .receipt-shadow-wrap{max-width:calc(100vw - 20px)}
+  .receipt{padding:0 18px}          /* 좌우 여백을 줄여서 글 쓸 폭을 넓힘 */
+  .r-inner{padding:22px 0 20px}
+  .r-title{font-size:32px}
+  .r-sub,.r-date{font-size:14px}
+  .r-item{padding:12px 0; gap:11px}
+  .r-check{width:24px; height:24px; margin-top:0}
+  .r-check:checked::after{font-size:15px}
+  .r-text{font-size:16px; line-height:1.6}
+  .r-empty{font-size:14px; padding:26px 0}
+  .r-barcode-label{font-size:11px}
+  .modal-add-row button{font-size:15px; padding:10px 16px}
+  .search-result-row{font-size:15px; padding:11px}
+  .search-result-date{font-size:12px}
+  /* iOS는 입력창 글씨가 16px보다 작으면 탭할 때 화면을 확대해버려요 */
+  input,textarea,select{font-size:16px}
+}
 </style>
 </head>
 <body>
