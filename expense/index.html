@@ -148,6 +148,33 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .recur-del{background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:9px 20px;border-radius:20px;font-size:12px;z-index:999;transition:transform .25s}
 .toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── 모바일 ── 목록·입력폼 글자를 키우고 누르는 요소를 크게 */
+@media(max-width:640px){
+  .wrap{padding-left:12px;padding-right:12px}
+  .list-entry{padding:14px; gap:12px}
+  .le-cat{font-size:15px}
+  .le-meta{font-size:12px; margin-top:3px}
+  .le-share{font-size:16px}
+  .le-total{font-size:12px}
+  .le-date-badge .d{font-size:16px}
+  .le-date-badge .m{font-size:10px}
+  .empty{font-size:14px}
+  .cal-nav{font-size:14px}
+  .cal-dow{font-size:11px}
+  .cal-day{font-size:13px; padding:10px 0}
+  .icon-btn{height:40px; font-size:14px; padding:0 14px}
+  .board-tab{font-size:11px; padding:6px 4px}
+  .form-lbl{font-size:13px}
+  .method-opt{font-size:14px; padding:11px 14px}
+  .amt-btn{font-size:13px; padding:8px 0}
+  .save-btn{font-size:16px; padding:15px}
+  .recur-main{font-size:15px}
+  .recur-meta{font-size:12px}
+  .toast{font-size:14px}
+  /* iOS는 입력창 글씨가 16px보다 작으면 탭할 때 화면을 확대해버려요 */
+  .form-input,input,textarea,select{font-size:16px}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>

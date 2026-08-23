@@ -132,6 +132,28 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:54px;display:flex;
 .toast.show{transform:translateX(-50%) translateY(0)}
 #sync-icon{transition:transform .3s}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+/* ── 모바일 가독성 ── */
+@media(max-width:640px){
+  .stat-lbl{font-size:11px}
+  .filter-btn{font-size:13px;padding:9px 15px}
+  .status-tag{font-size:11px;padding:4px 8px}
+  .cb-title{font-size:14px}
+  .cb-author{font-size:12px}
+  .cb-review{font-size:12px;line-height:1.65}
+  .cb-more{font-size:12px}
+  .no-cover{font-size:12px}
+  .view-modal-meta{font-size:13px}
+  .view-modal-review{font-size:15px;line-height:1.8}
+  .sel-meta{font-size:12px}
+  .form-lbl{font-size:11px}
+  .searching{font-size:14px;padding:20px}
+  .cap-choice-title{font-size:13px}
+  .cap-choice button{font-size:15px;padding:13px}
+  .toast{font-size:14px}
+  /* 입력창은 16px 미만이면 iOS가 탭할 때 화면을 확대해버려요 */
+  .srch-input,input,textarea,select{font-size:16px}
+}
 </style>
 </head>
 <body>

@@ -253,6 +253,23 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:54px;display:flex;
   .stats-bar{padding:16px 28px}
   .controls{padding:11px 28px}
 }
+
+/* ── 모바일 가독성 ── 카드 크기는 위 설정 그대로 두고 글자만 키움 */
+@media(max-width:640px){
+  .stat-lbl{font-size:11px}
+  .filter-btn{font-size:13px;padding:9px 16px}
+  .sort-pill{font-size:12px;padding:9px 14px}
+  .cb-meta{font-size:12px}
+  .genre-badge{font-size:11px;padding:2px 7px}
+  .cb-review,.cb-review-empty{font-size:13px}
+  .cb-more{font-size:12px}
+  .year-badge{font-size:11px}
+  .view-modal-meta{font-size:13px}
+  .cap-choice-title{font-size:13px}
+  .cap-choice button{font-size:15px;padding:13px}
+  /* 입력창은 16px 미만이면 iOS가 탭할 때 화면을 확대해버려요 */
+  input,textarea,select{font-size:16px}
+}
 </style>
 </head>
 <body>

@@ -83,6 +83,26 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--ink);color:#fff;border-radius:20px;padding:10px 20px;font-size:12px;z-index:999;transition:transform .3s;font-family:'Reperipoint',sans-serif;max-width:80vw;text-align:center;line-height:1.5}
 .toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── 모바일 ── 좌우 여백을 줄여 글 폭을 넓히고, 작던 글자들을 키움 */
+@media(max-width:640px){
+  .wrap{padding:22px 14px 90px}
+  .read-card,.editor-card{padding:22px 18px}
+  .entry{padding:15px 16px}
+  .entry-title{font-size:16px}
+  .entry-date .m{font-size:11px}
+  .tag{font-size:12px;padding:4px 10px}
+  .read-title{font-size:25px}
+  .read-meta{font-size:14px}
+  .btn-icon{font-size:14px;padding:10px 16px}
+  .btn-new{font-size:14px;padding:12px 20px}
+  .btn-save,.btn-cancel{font-size:15px}
+  .toast{font-size:14px}
+  /* 입력창은 16px 미만이면 iOS가 탭할 때 화면을 확대해버려요 */
+  .in-category{font-size:16px}
+  .in-title{font-size:22px}
+  .in-body,.read-body{font-size:17px;line-height:33px}
+}
 </style>
 </head>
 <body>
