@@ -27,16 +27,16 @@
     --paper: #FBF9F1;
     --card: #FFFFFF;
     --ink: #2A3B33;
-    --ghost: #C3CCC5;
-    --rule: #E4EAE4;
+    --typed: #D97757;
+    --ghost: #D8D2C4;
+    --rule: #E9E4D8;
     --edge: #E8E3D5;
     --accent: #6FBF9A;
     --accent-soft: #E6F4EC;
-    --point: #6FBF9A;
-    --point-soft: #E6F4EC;
-    --alert: #E36B58;
-    --alert-soft: #FBE7E2;
-    --muted: #8A968F;
+    --point: #D97757;
+    --alert: #C0392B;
+    --alert-soft: #F8E2DE;
+    --muted: #93897C;
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -106,15 +106,13 @@
   .card-top {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     margin-bottom: 20px;
   }
-  .chip {
-    font-size: 11px;
-    letter-spacing: 1px;
-    padding: 4px 10px;
-    background: var(--point-soft);
+  .cat {
+    font-size: 13px;
     color: var(--point);
+    letter-spacing: 0.5px;
   }
   .stage-dots { display: flex; gap: 5px; align-items: center; }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--rule); }
@@ -130,18 +128,19 @@
     white-space: pre-wrap;
     word-break: break-word;
     min-height: 44px;
+    text-align: center;
   }
   .line.model { color: var(--ghost); }
   .line.model .blanked { color: var(--point); letter-spacing: 2px; }
   .rule-line { height: 1px; background: var(--rule); margin: 6px 0 14px; }
-  .line.typed { color: var(--ink); }
+  .line.typed { color: var(--typed); }
   .line.typed .bad { color: var(--alert); background: var(--alert-soft); }
   .line.typed .bad.space { display: inline-block; min-width: 0.5em; }
   .caret {
     display: inline-block;
     width: 2px;
     height: 1.1em;
-    background: var(--ink);
+    background: var(--typed);
     vertical-align: -0.16em;
     animation: blink 1s step-end infinite;
   }
@@ -383,54 +382,41 @@ const LS_THEME    = 'trace_theme';
 // 망각곡선 간격 (단계 1~5 진입 시 다음 복습까지 며칠)
 const INTERVALS = [1, 3, 7, 14, 30];
 const MAX_STAGE = 5;
-// 오타는 한 번도 허용하지 않아요 (아래 normChar로 걸러지는 건 오타로 안 침)
-const MISTAKE_ALLOWANCE = 0;
+// 치는 도중에 틀렸다 고쳐도 통과예요. 오타 수는 노션에 기록만 해둡니다.
 
 /* ---------- 테마 ---------- */
 const THEMES = {
-  cream: {
-    name: '크림 초록',
-    vars: { paper:'#FBF9F1', card:'#FFFFFF', ink:'#2A3B33', ghost:'#C3CCC5', rule:'#E4EAE4',
-            edge:'#E8E3D5', accent:'#6FBF9A', 'accent-soft':'#E6F4EC', point:'#6FBF9A',
-            'point-soft':'#E6F4EC', alert:'#E36B58', 'alert-soft':'#FBE7E2', muted:'#8A968F' }
-  },
   ember: {
     name: '크림 주황',
-    vars: { paper:'#FBF9F1', card:'#FFFFFF', ink:'#2A3B33', ghost:'#C6C2B6', rule:'#E9E4D8',
-            edge:'#E8E3D5', accent:'#6FBF9A', 'accent-soft':'#E6F4EC', point:'#D97757',
-            'point-soft':'#F8E9E1', alert:'#D9544A', 'alert-soft':'#FBE4E1', muted:'#93897C' }
+    vars: { paper:'#FBF9F1', card:'#FFFFFF', ink:'#2A3B33', typed:'#D97757', ghost:'#D8D2C4',
+            rule:'#E9E4D8', edge:'#E8E3D5', accent:'#6FBF9A', 'accent-soft':'#E6F4EC',
+            point:'#D97757', alert:'#C0392B', 'alert-soft':'#F8E2DE', muted:'#93897C' }
   },
   sky: {
     name: '하늘 분홍',
-    vars: { paper:'#E7F0FA', card:'#FFFFFF', ink:'#3B4A5C', ghost:'#BFCEDD', rule:'#DCE7F2',
-            edge:'#D4E2F0', accent:'#7FA9D9', 'accent-soft':'#E3EDF8', point:'#E093AC',
-            'point-soft':'#F8E4EA', alert:'#D9738C', 'alert-soft':'#F9E3E8', muted:'#8494A6' }
+    vars: { paper:'#E7F0FA', card:'#FFFFFF', ink:'#3B4A5C', typed:'#D9738C', ghost:'#C6D5E4',
+            rule:'#DCE7F2', edge:'#D4E2F0', accent:'#7FA9D9', 'accent-soft':'#E3EDF8',
+            point:'#D9738C', alert:'#C0392B', 'alert-soft':'#F9E3E8', muted:'#8494A6' }
   },
   lavender: {
     name: '라벤더',
-    vars: { paper:'#EDEDF6', card:'#FFFFFF', ink:'#414765', ghost:'#C3C6DC', rule:'#DEE0EF',
-            edge:'#D6D9EC', accent:'#8E96C9', 'accent-soft':'#E7E9F6', point:'#7C84BE',
-            'point-soft':'#E4E6F5', alert:'#C97095', 'alert-soft':'#F6E3EC', muted:'#8A8FAD' }
-  },
-  apricot: {
-    name: '살구',
-    vars: { paper:'#FDF1E7', card:'#FFFFFF', ink:'#4A3A33', ghost:'#D6C2B4', rule:'#F0E2D6',
-            edge:'#EBDACB', accent:'#E0A375', 'accent-soft':'#FAEADD', point:'#C4756A',
-            'point-soft':'#F8E5E1', alert:'#BF5B4C', 'alert-soft':'#F9E1DC', muted:'#9C8477' }
+    vars: { paper:'#EDEDF6', card:'#FFFFFF', ink:'#414765', typed:'#6A72AE', ghost:'#C8CBE0',
+            rule:'#DEE0EF', edge:'#D6D9EC', accent:'#8E96C9', 'accent-soft':'#E7E9F6',
+            point:'#6A72AE', alert:'#C0392B', 'alert-soft':'#F6E3EC', muted:'#8A8FAD' }
   },
   night: {
     name: '밤',
-    vars: { paper:'#565C7E', card:'#4A5070', ink:'#F5F2E4', ghost:'#8B90AC', rule:'#646A8B',
-            edge:'#646A8B', accent:'#B9BEE8', 'accent-soft':'#5E648A', point:'#F0E4A8',
-            'point-soft':'#5E648A', alert:'#F0A08F', 'alert-soft':'#6B5F73', muted:'#AFB3C8' }
+    vars: { paper:'#565C7E', card:'#4A5070', ink:'#F5F2E4', typed:'#F5F2E4', ghost:'#8B90AC',
+            rule:'#646A8B', edge:'#646A8B', accent:'#B9BEE8', 'accent-soft':'#5E648A',
+            point:'#F0E4A8', alert:'#F0A08F', 'alert-soft':'#6B5F73', muted:'#AFB3C8' }
   }
 };
 
-let themeKey = 'cream';
+let themeKey = 'ember';
 
 function applyTheme(key) {
-  const t = THEMES[key] || THEMES.cream;
-  themeKey = THEMES[key] ? key : 'cream';
+  const t = THEMES[key] || THEMES.ember;
+  themeKey = THEMES[key] ? key : 'ember';
   for (const [k, v] of Object.entries(t.vars)) {
     document.documentElement.style.setProperty(`--${k}`, v);
   }
@@ -580,20 +566,14 @@ function buildQueue() {
 }
 
 /* ---------- 채점 후 다음 일정 계산 ---------- */
-function applyResult(card, passed) {
-  if (passed) {
-    const nextStage = Math.min(MAX_STAGE, (card.stage || 0) + 1);
-    card.stage = nextStage;
-    if (nextStage >= MAX_STAGE) {
-      card.done = true;
-      card.nextDate = null;
-    } else {
-      card.nextDate = todayStr(INTERVALS[nextStage - 1]);
-    }
+function applyResult(card) {
+  const nextStage = Math.min(MAX_STAGE, (card.stage || 0) + 1);
+  card.stage = nextStage;
+  if (nextStage >= MAX_STAGE) {
+    card.done = true;
+    card.nextDate = null;
   } else {
-    card.stage = Math.max(0, (card.stage || 0) - 1);
-    card.nextDate = todayStr(1);
-    card.wrongCount = (card.wrongCount || 0) + 1;
+    card.nextDate = todayStr(INTERVALS[nextStage - 1]);
   }
   return card;
 }
@@ -698,7 +678,6 @@ function renderCard() {
   stageEl.innerHTML = `
     <div class="card" id="card">
       <div class="card-top">
-        <span class="chip">${escapeHtml(card.category || '표현')}</span>
         <span class="stage-dots" title="복습 단계 ${stage} / ${MAX_STAGE}">${dots}</span>
       </div>
 
@@ -710,6 +689,8 @@ function renderCard() {
       </div>
 
       <div class="hint-row">
+        <span class="cat">${escapeHtml(card.category || '표현')}</span>
+        <span class="dot-sep">·</span>
         <button class="ghost-btn" id="hintBtn">${hintOpen ? '뜻 숨기기' : '뜻 힌트'}</button>
         <span class="dot-sep">·</span>
         <button class="ghost-btn" id="resetBtn">처음부터</button>
@@ -816,8 +797,9 @@ async function finishCard() {
   const entry = document.getElementById('entry');
   entry.disabled = true;
 
-  const passed = mistakes <= MISTAKE_ALLOWANCE;
-  applyResult(card, passed);
+  // 문장을 끝까지 맞게 썼으면 통과 — 도중에 고친 건 따지지 않아요
+  if (mistakes > 0) card.wrongCount = (card.wrongCount || 0) + 1;
+  applyResult(card);
 
   document.getElementById('card').classList.add('flash');
 
