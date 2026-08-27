@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>TRACE</title>
+<link rel="icon" href="data:,">
+<style>
+  @font-face {
+    font-family: 'DreamHeumul';
+    src: url('fonts/DreamHeumulKR.woff2') format('woff2');
+    font-weight: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'NeoDunggeunmo';
+    src: url('fonts/NeoDunggeunmo.woff2') format('woff2');
+    font-weight: normal;
+    font-display: swap;
+  }
+
+  :root {
+    --paper: #FBF9F1;
+    --card: #FFFFFF;
+    --ink: #2A3B33;
+    --ghost: #C3CCC5;
+    --rule: #E4EAE4;
+    --edge: #E8E3D5;
+    --mint: #6FBF9A;
+    --mint-soft: #E6F4EC;
+    --coral: #E36B58;
+    --coral-soft: #FBE7E2;
+    --muted: #8A968F;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DreamHeumul', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 18px 40px;
+  }
+
+  .shell { width: 100%; max-width: 720px; }
+
+  /* ---------- 헤더 ---------- */
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 22px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  h1 {
+    font-family: 'DreamHeumul', sans-serif;
+    font-size: 34px;
+    letter-spacing: 4px;
+    margin: 0;
+    line-height: 1;
+  }
+  .tagline { font-size: 12px; color: var(--muted); letter-spacing: 0.5px; }
+  .head-right { display: flex; align-items: center; gap: 14px; }
+  .counter { font-size: 13px; color: var(--muted); letter-spacing: 1px; }
+  .counter b { color: var(--ink); font-size: 15px; }
+
+  .icon-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+  }
+  .icon-btn:hover { color: var(--ink); }
+  .icon-btn:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
+
+  /* ---------- 진행바 ---------- */
+  .bar { height: 3px; background: var(--rule); border-radius: 2px; overflow: hidden; margin-bottom: 24px; }
+  .bar-fill { height: 100%; width: 0; background: var(--mint); transition: width .35s ease; }
+
+  /* ---------- 카드 ---------- */
+  .card {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-radius: 14px;
+    padding: 26px 26px 22px 34px;
+    min-height: 260px;
+    overflow: hidden;
+  }
+  /* 공책 여백선 */
+  .card::before {
+    content: '';
+    position: absolute;
+    left: 20px; top: 0; bottom: 0;
+    width: 1px;
+    background: rgba(227, 107, 88, 0.28);
+  }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .chip {
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--mint-soft);
+    color: #46836A;
+  }
+  .chip.gray { background: #F1F0EA; color: var(--muted); }
+  .stage-dots { display: flex; gap: 5px; align-items: center; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--rule); }
+  .dot.on { background: var(--mint); }
+
+  /* ---------- 따라쓰기 영역 ---------- */
+  .type-area { position: relative; cursor: text; }
+  .line {
+    font-family: 'NeoDunggeunmo', monospace;
+    font-size: 26px;
+    line-height: 1.7;
+    letter-spacing: 0.5px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 44px;
+  }
+  .line.model { color: var(--ghost); }
+  .line.model .blanked { color: var(--coral); opacity: .55; }
+  .rule-line { height: 1px; background: var(--rule); margin: 6px 0 14px; }
+  .line.typed { color: var(--ink); }
+  .line.typed .bad { color: var(--coral); background: var(--coral-soft); border-radius: 2px; }
+  .line.typed .bad.space { display: inline-block; min-width: 0.5em; }
+  .caret {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    background: var(--ink);
+    vertical-align: -0.16em;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  #entry {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    padding: 0;
+    resize: none;
+  }
+  #entry:focus { outline: none; }
+
+  .card.flash { animation: pass .45s ease; }
+  @keyframes pass {
+    0% { background: var(--card); }
+    30% { background: var(--mint-soft); }
+    100% { background: var(--card); }
+  }
+
+  /* ---------- 힌트 ---------- */
+  .hint-row { margin-top: 22px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ghost-btn {
+    font-family: 'DreamHeumul', sans-serif;
+    font-size: 13px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 6px 0;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+  }
+  .ghost-btn:hover { color: var(--ink); }
+  .ghost-btn:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; border-radius: 4px; }
+  .dot-sep { color: var(--rule); font-size: 12px; }
+
+  .hint-body {
+    margin-top: 12px;
+    padding: 14px 16px;
+    background: #F8F7F1;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.7;
+    display: none;
+  }
+  .hint-body.show { display: block; }
+  .hint-body .note { color: var(--muted); font-size: 13px; margin-top: 6px; }
+
+  .foot-note {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+    min-height: 18px;
+  }
+  .foot-note.warn { color: var(--coral); }
+
+  /* ---------- 상태 화면 ---------- */
+  .state {
+    text-align: center;
+    padding: 70px 20px;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.9;
+  }
+  .state .big { font-size: 30px; letter-spacing: 3px; color: var(--ink); margin-bottom: 14px; }
+  .state .sub { font-size: 13px; }
+  .state button {
+    margin-top: 22px;
+    font-family: 'DreamHeumul', sans-serif;
+    font-size: 14px;
+    background: none;
+    border: 1px solid var(--edge);
+    border-radius: 20px;
+    padding: 9px 20px;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .state button:hover { border-color: var(--mint); color: #46836A; }
+
+  /* ---------- 설정 ---------- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(42, 59, 51, 0.28);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 20;
+  }
+  .overlay.show { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 24px;
+    width: 100%;
+    max-width: 340px;
+  }
+  .modal h2 { font-size: 18px; margin: 0 0 18px; letter-spacing: 2px; }
+  .field { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #F2F0E9; }
+  .field:last-of-type { border-bottom: none; }
+  .field label { font-size: 14px; }
+  .field .sub { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+  .field input[type="number"] {
+    width: 62px;
+    font-family: 'NeoDunggeunmo', monospace;
+    font-size: 16px;
+    text-align: center;
+    border: 1px solid var(--edge);
+    border-radius: 8px;
+    padding: 6px;
+    color: var(--ink);
+    background: var(--paper);
+  }
+  .toggle {
+    width: 44px; height: 24px; border-radius: 12px; background: var(--rule);
+    border: none; cursor: pointer; position: relative; transition: background .2s;
+  }
+  .toggle span { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .toggle.on { background: var(--mint); }
+  .toggle.on span { transform: translateX(20px); }
+  .modal .close {
+    width: 100%; margin-top: 20px; padding: 11px;
+    font-family: 'DreamHeumul', sans-serif; font-size: 14px;
+    border: none; border-radius: 10px; background: var(--ink); color: #fff; cursor: pointer;
+  }
+
+  @media (max-width: 560px) {
+    body { padding: 20px 14px 32px; }
+    h1 { font-size: 28px; }
+    .tagline { display: none; }
+    .line { font-size: 20px; }
+    .card { padding: 22px 18px 18px 28px; min-height: 230px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header>
+    <div class="brand">
+      <h1>TRACE</h1>
+      <span class="tagline">따라 쓰며 익히는 영어</span>
+    </div>
+    <div class="head-right">
+      <span class="counter" id="counter"></span>
+      <button class="icon-btn" id="settingsBtn" aria-label="설정">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+
+  <div id="stage"></div>
+
+</div>
+
+<!-- 설정 -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>설정</h2>
+    <div class="field">
+      <label>새 표현<span class="sub">하루에 새로 배울 개수</span></label>
+      <input type="number" id="setNew" min="1" max="50">
+    </div>
+    <div class="field">
+      <label>복습<span class="sub">하루에 다시 볼 개수</span></label>
+      <input type="number" id="setReview" min="1" max="50">
+    </div>
+    <div class="field">
+      <label>빈칸 모드<span class="sub">핵심 부분을 가리고 맞추기</span></label>
+      <button class="toggle" id="setBlank"><span></span></button>
+    </div>
+    <button class="close" id="closeSettings">저장하고 닫기</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   TRACE — 영어 따라쓰기 학습
+   데이터: 노션 "✏️ TRACE 영어 학습" DB  (/api/notion?app=trace)
+   ========================================================= */
+
+const API = '/api/notion?app=trace';
+const LS_SETTINGS = 'trace_settings';
+const LS_SESSION  = 'trace_session';
+const LS_PENDING  = 'trace_pending';
+
+// 망각곡선 간격 (단계 1~5 진입 시 다음 복습까지 며칠)
+const INTERVALS = [1, 3, 7, 14, 30];
+const MAX_STAGE = 5;
+// 한 문장에서 오타가 이 횟수 이하면 통과로 봐요
+const MISTAKE_ALLOWANCE = 2;
+
+let settings = { newLimit: 10, reviewLimit: 10, blankMode: false };
+let cards = [];       // 노션에서 받은 전체 카드
+let queue = [];       // 오늘 학습할 카드
+let idx = 0;
+let typed = '';
+let mistakes = 0;
+let hintOpen = false;
+
+/* ---------- 날짜 유틸 (한국 로컬 기준 — UTC 쓰면 새벽에 날짜가 밀려요) ---------- */
+function todayStr(offsetDays = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/* ---------- 설정 ---------- */
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(LS_SETTINGS);
+    if (raw) settings = { ...settings, ...JSON.parse(raw) };
+  } catch (e) { /* 저장된 설정이 깨졌으면 기본값 사용 */ }
+}
+function saveSettings() {
+  try { localStorage.setItem(LS_SETTINGS, JSON.stringify(settings)); } catch (e) {}
+}
+
+/* ---------- 오늘 진행상황 (새로고침해도 이어서) ---------- */
+function loadSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS_SESSION) || '{}');
+    if (s.date === todayStr()) return s.doneIds || [];
+  } catch (e) {}
+  return [];
+}
+function saveSession(doneIds) {
+  try { localStorage.setItem(LS_SESSION, JSON.stringify({ date: todayStr(), doneIds })); } catch (e) {}
+}
+
+/* ---------- 노션 통신 ---------- */
+async function pullCards() {
+  const r = await fetch(API);
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(t.startsWith('<') ? '로그인이 풀렸어요. 새로고침 후 비밀번호를 다시 입력해주세요.' : t);
+  }
+  const data = await r.json();
+  return (data.items || []).filter(c => c.sentence && c.sentence.trim());
+}
+
+async function pushCard(card) {
+  const r = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items: [card] })
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+// 저장이 실패한 카드는 모아뒀다가 다음 기회에 다시 보내요
+function stashPending(card) {
+  try {
+    const list = JSON.parse(localStorage.getItem(LS_PENDING) || '[]');
+    const filtered = list.filter(c => c.notionPageId !== card.notionPageId);
+    filtered.push(card);
+    localStorage.setItem(LS_PENDING, JSON.stringify(filtered));
+  } catch (e) {}
+}
+async function flushPending() {
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem(LS_PENDING) || '[]'); } catch (e) { return; }
+  if (!list.length) return;
+  const left = [];
+  for (const c of list) {
+    try { await pushCard(c); } catch (e) { left.push(c); }
+  }
+  try { localStorage.setItem(LS_PENDING, JSON.stringify(left)); } catch (e) {}
+}
+
+/* ---------- 오늘의 학습 목록 만들기 ---------- */
+function buildQueue() {
+  const today = todayStr();
+  const doneIds = loadSession();
+  const alive = cards.filter(c => !c.done && !doneIds.includes(c.notionPageId));
+
+  const review = alive
+    .filter(c => (c.stage || 0) > 0 && c.nextDate && c.nextDate <= today)
+    .sort((a, b) => (a.nextDate || '').localeCompare(b.nextDate || ''))
+    .slice(0, settings.reviewLimit);
+
+  const fresh = alive
+    .filter(c => !(c.stage > 0))
+    .sort((a, b) => (a.sourceDate || '').localeCompare(b.sourceDate || ''))
+    .slice(0, settings.newLimit);
+
+  return review.concat(fresh);
+}
+
+/* ---------- 채점 후 다음 일정 계산 ---------- */
+function applyResult(card, passed) {
+  if (passed) {
+    const nextStage = Math.min(MAX_STAGE, (card.stage || 0) + 1);
+    card.stage = nextStage;
+    if (nextStage >= MAX_STAGE) {
+      card.done = true;
+      card.nextDate = null;
+    } else {
+      card.nextDate = todayStr(INTERVALS[nextStage - 1]);
+    }
+  } else {
+    card.stage = Math.max(0, (card.stage || 0) - 1);
+    card.nextDate = todayStr(1);
+    card.wrongCount = (card.wrongCount || 0) + 1;
+  }
+  return card;
+}
+
+/* ---------- 화면 그리기 ---------- */
+const stageEl = document.getElementById('stage');
+const counterEl = document.getElementById('counter');
+const barFill = document.getElementById('barFill');
+
+function renderLoading() {
+  counterEl.textContent = '';
+  stageEl.innerHTML = `<div class="state"><div class="big">···</div>노션에서 오늘 학습할 문장을 가져오는 중이에요</div>`;
+}
+
+function renderError(msg) {
+  stageEl.innerHTML = `<div class="state">
+    <div class="big">잠깐</div>
+    ${msg}
+    <br><button id="retry">다시 시도</button>
+  </div>`;
+  document.getElementById('retry').onclick = start;
+}
+
+function renderEmpty() {
+  counterEl.textContent = '';
+  barFill.style.width = '100%';
+  stageEl.innerHTML = `<div class="state">
+    <div class="big">오늘 치 끝</div>
+    지금 학습할 문장이 없어요.
+    <div class="sub">첨삭 대화에서 "저장해줘"라고 하면 새 문장이 채워집니다.</div>
+    <button id="again">다시 불러오기</button>
+  </div>`;
+  document.getElementById('again').onclick = start;
+}
+
+function renderDone(count) {
+  counterEl.textContent = '';
+  barFill.style.width = '100%';
+  stageEl.innerHTML = `<div class="state">
+    <div class="big">오늘 완료</div>
+    ${count}문장을 끝냈어요.
+    <div class="sub">복습할 문장은 정해진 날짜에 다시 나타납니다.</div>
+    <button id="more">더 할래요</button>
+  </div>`;
+  document.getElementById('more').onclick = () => {
+    // 오늘 이미 한 것 말고, 남은 카드로 한 판 더
+    queue = buildQueue();
+    idx = 0;
+    if (!queue.length) renderEmpty(); else renderCard();
+  };
+}
+
+// 빈칸 모드용: 정답 문장에서 핵심 부분을 밑줄로 가림
+function modelText(card) {
+  if (!settings.blankMode || !card.blank) return escapeHtml(card.sentence);
+  let html = escapeHtml(card.sentence);
+  const chunks = card.blank.split(',').map(s => s.trim()).filter(Boolean);
+  for (const chunk of chunks) {
+    const safe = escapeHtml(chunk);
+    const i = html.indexOf(safe);
+    if (i === -1) continue;
+    const mask = '_'.repeat(chunk.length);
+    html = html.slice(0, i) + `<span class="blanked">${mask}</span>` + html.slice(i + safe.length);
+  }
+  return html;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function renderCard() {
+  const card = queue[idx];
+  typed = '';
+  mistakes = 0;
+  hintOpen = false;
+
+  counterEl.innerHTML = `<b>${idx + 1}</b> / ${queue.length}`;
+  barFill.style.width = `${(idx / queue.length) * 100}%`;
+
+  const stage = card.stage || 0;
+  const dots = Array.from({ length: MAX_STAGE }, (_, i) =>
+    `<span class="dot ${i < stage ? 'on' : ''}"></span>`).join('');
+
+  stageEl.innerHTML = `
+    <div class="card" id="card">
+      <div class="card-top">
+        <span class="chip ${card.category ? '' : 'gray'}">${escapeHtml(card.category || '표현')}</span>
+        <span class="stage-dots" title="복습 단계 ${stage}/${MAX_STAGE}">${dots}</span>
+      </div>
+
+      <div class="type-area" id="typeArea">
+        <div class="line model">${modelText(card)}</div>
+        <div class="rule-line"></div>
+        <div class="line typed" id="typedLine"><span class="caret"></span></div>
+        <textarea id="entry" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+      </div>
+
+      <div class="hint-row">
+        <button class="ghost-btn" id="hintBtn">뜻 힌트</button>
+        <span class="dot-sep">·</span>
+        <button class="ghost-btn" id="resetBtn">처음부터</button>
+      </div>
+      <div class="hint-body" id="hintBody">
+        ${escapeHtml(card.meaning || '뜻이 비어 있어요.')}
+        ${card.note ? `<div class="note">${escapeHtml(card.note)}</div>` : ''}
+      </div>
+
+      <div class="foot-note" id="footNote"></div>
+    </div>`;
+
+  const entry = document.getElementById('entry');
+  document.getElementById('typeArea').addEventListener('mousedown', (e) => {
+    if (e.target.id !== 'entry') { e.preventDefault(); entry.focus(); }
+  });
+  entry.addEventListener('input', onType);
+  entry.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
+  entry.focus();
+
+  document.getElementById('hintBtn').onclick = () => {
+    hintOpen = !hintOpen;
+    document.getElementById('hintBody').classList.toggle('show', hintOpen);
+    document.getElementById('hintBtn').textContent = hintOpen ? '뜻 숨기기' : '뜻 힌트';
+    entry.focus();
+  };
+  document.getElementById('resetBtn').onclick = () => {
+    entry.value = '';
+    typed = '';
+    paintTyped();
+    entry.focus();
+  };
+
+  paintTyped();
+}
+
+function onType(e) {
+  const card = queue[idx];
+  const prev = typed;
+  typed = e.target.value;
+
+  // 글자가 새로 들어왔는데 그 자리가 틀렸으면 오타 1회로 셈
+  if (typed.length > prev.length) {
+    const i = typed.length - 1;
+    if (typed[i] !== card.sentence[i]) mistakes++;
+  }
+
+  paintTyped();
+
+  if (typed === card.sentence) finishCard();
+}
+
+function paintTyped() {
+  const card = queue[idx];
+  const el = document.getElementById('typedLine');
+  if (!el) return;
+  let html = '';
+  for (let i = 0; i < typed.length; i++) {
+    const ch = typed[i];
+    const ok = ch === card.sentence[i];
+    const shown = ch === ' ' ? '&nbsp;' : escapeHtml(ch);
+    html += ok ? shown : `<span class="bad${ch === ' ' ? ' space' : ''}">${shown}</span>`;
+  }
+  el.innerHTML = html + '<span class="caret"></span>';
+}
+
+async function finishCard() {
+  const card = queue[idx];
+  const entry = document.getElementById('entry');
+  entry.disabled = true;
+
+  const passed = mistakes <= MISTAKE_ALLOWANCE;
+  applyResult(card, passed);
+
+  const cardEl = document.getElementById('card');
+  cardEl.classList.add('flash');
+
+  const foot = document.getElementById('footNote');
+  foot.className = 'foot-note';
+  foot.textContent = passed
+    ? (card.done ? '다 익혔어요. 목록에서 빠집니다.' : `좋아요 · 다음 복습 ${card.nextDate}`)
+    : `오타 ${mistakes}번 · 내일 한 번 더 나옵니다`;
+
+  // 오늘 끝낸 목록에 기록 (새로고침해도 다시 안 나오게)
+  const doneIds = loadSession();
+  doneIds.push(card.notionPageId);
+  saveSession(doneIds);
+
+  // 노션 저장은 화면을 막지 않고 뒤에서 처리
+  pushCard(card).catch(() => {
+    stashPending(card);
+    foot.className = 'foot-note warn';
+    foot.textContent = '노션 저장이 늦어지고 있어요. 다음에 자동으로 다시 보냅니다.';
+  });
+
+  setTimeout(() => {
+    idx++;
+    if (idx >= queue.length) renderDone(queue.length);
+    else renderCard();
+  }, 850);
+}
+
+/* ---------- 설정 모달 ---------- */
+const overlay = document.getElementById('overlay');
+const setNew = document.getElementById('setNew');
+const setReview = document.getElementById('setReview');
+const setBlank = document.getElementById('setBlank');
+
+document.getElementById('settingsBtn').onclick = () => {
+  setNew.value = settings.newLimit;
+  setReview.value = settings.reviewLimit;
+  setBlank.classList.toggle('on', settings.blankMode);
+  overlay.classList.add('show');
+};
+setBlank.onclick = () => setBlank.classList.toggle('on');
+document.getElementById('closeSettings').onclick = () => {
+  const n = parseInt(setNew.value, 10);
+  const r = parseInt(setReview.value, 10);
+  settings.newLimit = (n > 0 && n <= 50) ? n : 10;
+  settings.reviewLimit = (r > 0 && r <= 50) ? r : 10;
+  settings.blankMode = setBlank.classList.contains('on');
+  saveSettings();
+  overlay.classList.remove('show');
+  // 개수나 빈칸 모드를 바꿨으니 오늘 목록을 다시 짜요
+  queue = buildQueue();
+  idx = 0;
+  if (!queue.length) renderEmpty();
+  else renderCard();
+};
+overlay.onclick = (e) => { if (e.target === overlay) document.getElementById('closeSettings').click(); };
+
+/* ---------- 시작 ---------- */
+async function start() {
+  renderLoading();
+  try {
+    cards = await pullCards();
+    flushPending();
+    queue = buildQueue();
+    idx = 0;
+    if (!queue.length) renderEmpty();
+    else renderCard();
+  } catch (err) {
+    renderError(err.message || '문장을 가져오지 못했어요.');
+  }
+}
+
+loadSettings();
+start();
+</script>
+</body>
+</html>

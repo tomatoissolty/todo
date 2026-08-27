@@ -5,6 +5,7 @@
 //   NOTION_SECRET            — 노션 인테그레이션의 Internal Integration Secret (공용)
 //   NOTION_DATABASE_ID       — "✅ Daily 할 일" 데이터베이스 ID (todo 앱, 기존 이름 유지)
 //   NOTION_DATABASE_ID_MOVIE — "🎬 REEL 영화 기록" 데이터베이스 ID
+//   NOTION_DATABASE_ID_TRACE — "✏️ TRACE 영어 학습" 데이터베이스 ID
 //
 // 사용법: /api/notion?app=todo  또는  /api/notion?app=movie  (app 생략 시 todo)
 //   GET    → 해당 DB의 모든 항목을 가져옴 (pull)
@@ -469,6 +470,43 @@ function storageFromPage(page) {
 }
 
 
+// --- Trace(TRACE 영어 학습 앱) 매핑 ---
+// 카드는 첨삭 대화에서 노션에 직접 만들어지고, 앱은 학습 결과(복습단계/다음복습일/완료/오답횟수)만 되돌려 써요.
+// '원문'은 앱이 건드리지 않으므로 저장 속성에서 일부러 뺐어요(노션 값이 그대로 보존됨).
+function traceToProperties(item) {
+  return {
+    '문장': { title: [{ text: { content: item.sentence || '(문장 없음)' } }] },
+    '뜻': { rich_text: item.meaning ? [{ text: { content: item.meaning } }] : [] },
+    '설명': { rich_text: item.note ? [{ text: { content: item.note } }] : [] },
+    '분류': item.category ? { select: { name: item.category } } : { select: null },
+    '빈칸': { rich_text: item.blank ? [{ text: { content: item.blank } }] : [] },
+    '출처날짜': item.sourceDate ? { date: { start: item.sourceDate } } : { date: null },
+    '복습단계': { number: typeof item.stage === 'number' ? item.stage : 0 },
+    '다음복습일': item.nextDate ? { date: { start: item.nextDate } } : { date: null },
+    '완료': { checkbox: !!item.done },
+    '오답횟수': { number: typeof item.wrongCount === 'number' ? item.wrongCount : 0 }
+  };
+}
+function traceFromPage(page) {
+  const p = page.properties || {};
+  const richText = (prop) => (prop?.rich_text || []).map(t => t.plain_text).join('');
+  const titleText = (prop) => (prop?.title || []).map(t => t.plain_text).join('');
+  return {
+    notionPageId: page.id,
+    sentence: titleText(p['문장']),
+    meaning: richText(p['뜻']),
+    original: richText(p['원문']),
+    note: richText(p['설명']),
+    category: p['분류']?.select?.name || '',
+    blank: richText(p['빈칸']),
+    sourceDate: p['출처날짜']?.date?.start || null,
+    stage: typeof p['복습단계']?.number === 'number' ? p['복습단계'].number : 0,
+    nextDate: p['다음복습일']?.date?.start || null,
+    done: !!p['완료']?.checkbox,
+    wrongCount: typeof p['오답횟수']?.number === 'number' ? p['오답횟수'].number : 0
+  };
+}
+
 const APPS = {
   todo: {
     databaseId: () => process.env.NOTION_DATABASE_ID_TODO || process.env.NOTION_DATABASE_ID,
@@ -534,6 +572,12 @@ const APPS = {
     databaseId: () => process.env.NOTION_DATABASE_ID_WRITING,
     toProperties: writingToProperties,
     fromPage: writingFromPage,
+    useCover: false
+  },
+  trace: {
+    databaseId: () => process.env.NOTION_DATABASE_ID_TRACE,
+    toProperties: traceToProperties,
+    fromPage: traceFromPage,
     useCover: false
   }
 };
