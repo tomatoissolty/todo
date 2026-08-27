@@ -8,13 +8,13 @@
 <style>
   @font-face {
     font-family: 'DreamHeumul';
-    src: url('fonts/DreamHeumulKR.woff2') format('woff2');
+    src: url('/trace/fonts/DreamHeumulKR.woff2') format('woff2');
     font-weight: normal;
     font-display: swap;
   }
   @font-face {
     font-family: 'NeoDunggeunmo';
-    src: url('fonts/NeoDunggeunmo.woff2') format('woff2');
+    src: url('/trace/fonts/NeoDunggeunmo.woff2') format('woff2');
     font-weight: normal;
     font-display: swap;
   }
@@ -47,7 +47,7 @@
     padding: 28px 18px 40px;
   }
 
-  .shell { width: 100%; max-width: 720px; }
+  .shell { width: 100%; max-width: 1080px; }
 
   /* ---------- 헤더 ---------- */
   header {
@@ -64,7 +64,6 @@
     margin: 0;
     line-height: 1;
   }
-  .tagline { font-size: 12px; color: var(--muted); letter-spacing: 0.5px; }
   .head-right { display: flex; align-items: center; gap: 14px; }
   .counter { font-size: 13px; color: var(--muted); letter-spacing: 1px; }
   .counter b { color: var(--ink); font-size: 15px; }
@@ -136,7 +135,7 @@
     min-height: 44px;
   }
   .line.model { color: var(--ghost); }
-  .line.model .blanked { color: var(--coral); opacity: .55; }
+  .line.model .blanked { color: var(--coral); opacity: .75; letter-spacing: 2px; }
   .rule-line { height: 1px; background: var(--rule); margin: 6px 0 14px; }
   .line.typed { color: var(--ink); }
   .line.typed .bad { color: var(--coral); background: var(--coral-soft); border-radius: 2px; }
@@ -208,6 +207,13 @@
     min-height: 18px;
   }
   .foot-note.warn { color: var(--coral); }
+
+  .keys {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--ghost);
+    letter-spacing: 0.3px;
+  }
 
   /* ---------- 상태 화면 ---------- */
   .state {
@@ -283,7 +289,6 @@
   @media (max-width: 560px) {
     body { padding: 20px 14px 32px; }
     h1 { font-size: 28px; }
-    .tagline { display: none; }
     .line { font-size: 20px; }
     .card { padding: 22px 18px 18px 28px; min-height: 230px; }
   }
@@ -299,7 +304,6 @@
   <header>
     <div class="brand">
       <h1>TRACE</h1>
-      <span class="tagline">따라 쓰며 익히는 영어</span>
     </div>
     <div class="head-right">
       <span class="counter" id="counter"></span>
@@ -352,8 +356,33 @@ const LS_PENDING  = 'trace_pending';
 // 망각곡선 간격 (단계 1~5 진입 시 다음 복습까지 며칠)
 const INTERVALS = [1, 3, 7, 14, 30];
 const MAX_STAGE = 5;
-// 한 문장에서 오타가 이 횟수 이하면 통과로 봐요
-const MISTAKE_ALLOWANCE = 2;
+// 오타는 한 번도 허용하지 않아요 (아래 normChar로 걸러지는 건 오타로 안 침)
+const MISTAKE_ALLOWANCE = 0;
+
+/* ---------- 채점용 글자 정규화 ----------
+   대소문자와 '겉모양만 다른 글자'는 같은 것으로 봐요.
+   - 각종 대시(– — ‐ − 등) → 일반 하이픈 -
+   - 둥근 따옴표(' ' " ") → 곧은 따옴표 ' "
+   마침표/반점/따옴표 자체를 빼먹는 건 여전히 틀린 걸로 처리됩니다.
+   글자 수가 변하지 않는 1:1 치환만 해서 위치 비교가 안 어긋나요. */
+const DASHES = /[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D]/;
+const SINGLE_QUOTES = /[\u2018\u2019\u201B\u2032\u00B4\u0060]/;
+const DOUBLE_QUOTES = /[\u201C\u201D\u201F\u2033]/;
+
+function normChar(ch) {
+  if (!ch) return ch;
+  if (DASHES.test(ch)) return '-';
+  if (SINGLE_QUOTES.test(ch)) return "'";
+  if (DOUBLE_QUOTES.test(ch)) return '"';
+  return ch.toLowerCase();
+}
+function normText(s) {
+  let out = '';
+  for (const ch of String(s)) out += normChar(ch);
+  return out;
+}
+// 문장 끝 마침표/느낌표/물음표는 생략하고 엔터를 눌러도 통과시켜요
+function stripTail(s) { return s.replace(/[.!?]+$/, ''); }
 
 let settings = { newLimit: 10, reviewLimit: 10, blankMode: false };
 let cards = [];       // 노션에서 받은 전체 카드
@@ -362,6 +391,7 @@ let idx = 0;
 let typed = '';
 let mistakes = 0;
 let hintOpen = false;
+let reveal = 0;   // 빈칸 모드에서 열어준 앞글자 수
 
 /* ---------- 날짜 유틸 (한국 로컬 기준 — UTC 쓰면 새벽에 날짜가 밀려요) ---------- */
 function todayStr(offsetDays = 0) {
@@ -519,19 +549,33 @@ function renderDone(count) {
   };
 }
 
-// 빈칸 모드용: 정답 문장에서 핵심 부분을 밑줄로 가림
-function modelText(card) {
-  if (!settings.blankMode || !card.blank) return escapeHtml(card.sentence);
-  let html = escapeHtml(card.sentence);
-  const chunks = card.blank.split(',').map(s => s.trim()).filter(Boolean);
+// 빈칸 모드: 핵심 부분을 밑줄로 가림. 밑줄 개수가 곧 글자 수 힌트예요.
+// reveal 값만큼 앞글자를 열어줍니다 (Tab을 누를 때마다 한 글자씩).
+function modelText(card, reveal) {
+  const s = card.sentence || '';
+  if (!settings.blankMode || !card.blank) return escapeHtml(s);
+
+  const chunks = card.blank.split(',').map(x => x.trim()).filter(Boolean);
+  const ranges = [];
   for (const chunk of chunks) {
-    const safe = escapeHtml(chunk);
-    const i = html.indexOf(safe);
-    if (i === -1) continue;
-    const mask = '_'.repeat(chunk.length);
-    html = html.slice(0, i) + `<span class="blanked">${mask}</span>` + html.slice(i + safe.length);
+    const i = s.indexOf(chunk);
+    if (i !== -1) ranges.push([i, i + chunk.length]);
   }
-  return html;
+  if (!ranges.length) return escapeHtml(s);
+  ranges.sort((a, b) => a[0] - b[0]);
+
+  let out = '', pos = 0;
+  for (const [a, b] of ranges) {
+    if (a < pos) continue; // 겹치는 구간은 건너뜀
+    out += escapeHtml(s.slice(pos, a));
+    const word = s.slice(a, b);
+    const shown = word.slice(0, reveal);
+    const hidden = '_'.repeat(Math.max(0, word.length - reveal));
+    out += `<span class="blanked">${escapeHtml(shown)}${hidden}</span>`;
+    pos = b;
+  }
+  out += escapeHtml(s.slice(pos));
+  return out;
 }
 
 function escapeHtml(s) {
@@ -542,7 +586,9 @@ function renderCard() {
   const card = queue[idx];
   typed = '';
   mistakes = 0;
-  hintOpen = false;
+  reveal = 0;
+  // 빈칸 모드에서는 뜻이 항상 보이게 시작해요
+  hintOpen = !!settings.blankMode;
 
   counterEl.innerHTML = `<b>${idx + 1}</b> / ${queue.length}`;
   barFill.style.width = `${(idx / queue.length) * 100}%`;
@@ -559,23 +605,24 @@ function renderCard() {
       </div>
 
       <div class="type-area" id="typeArea">
-        <div class="line model">${modelText(card)}</div>
+        <div class="line model" id="modelLine">${modelText(card, reveal)}</div>
         <div class="rule-line"></div>
         <div class="line typed" id="typedLine"><span class="caret"></span></div>
         <textarea id="entry" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
       </div>
 
       <div class="hint-row">
-        <button class="ghost-btn" id="hintBtn">뜻 힌트</button>
+        <button class="ghost-btn" id="hintBtn">${hintOpen ? '뜻 숨기기' : '뜻 힌트'}</button>
         <span class="dot-sep">·</span>
         <button class="ghost-btn" id="resetBtn">처음부터</button>
       </div>
-      <div class="hint-body" id="hintBody">
+      <div class="hint-body ${hintOpen ? 'show' : ''}" id="hintBody">
         ${escapeHtml(card.meaning || '뜻이 비어 있어요.')}
         ${card.note ? `<div class="note">${escapeHtml(card.note)}</div>` : ''}
       </div>
 
       <div class="foot-note" id="footNote"></div>
+      <div class="keys">Enter 뜻 보기${settings.blankMode ? ' · Tab 빈칸 한 글자 열기' : ''} · 마침표는 빼고 Enter 쳐도 넘어가요</div>
     </div>`;
 
   const entry = document.getElementById('entry');
@@ -583,15 +630,10 @@ function renderCard() {
     if (e.target.id !== 'entry') { e.preventDefault(); entry.focus(); }
   });
   entry.addEventListener('input', onType);
-  entry.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
+  entry.addEventListener('keydown', onKey);
   entry.focus();
 
-  document.getElementById('hintBtn').onclick = () => {
-    hintOpen = !hintOpen;
-    document.getElementById('hintBody').classList.toggle('show', hintOpen);
-    document.getElementById('hintBtn').textContent = hintOpen ? '뜻 숨기기' : '뜻 힌트';
-    entry.focus();
-  };
+  document.getElementById('hintBtn').onclick = () => { toggleHint(); entry.focus(); };
   document.getElementById('resetBtn').onclick = () => {
     entry.value = '';
     typed = '';
@@ -602,6 +644,45 @@ function renderCard() {
   paintTyped();
 }
 
+function toggleHint() {
+  hintOpen = !hintOpen;
+  const body = document.getElementById('hintBody');
+  const btn = document.getElementById('hintBtn');
+  if (!body || !btn) return;
+  body.classList.toggle('show', hintOpen);
+  btn.textContent = hintOpen ? '뜻 숨기기' : '뜻 힌트';
+}
+
+function revealMore() {
+  const card = queue[idx];
+  if (!settings.blankMode || !card.blank) return;
+  reveal++;
+  const el = document.getElementById('modelLine');
+  if (el) el.innerHTML = modelText(card, reveal);
+}
+
+function onKey(e) {
+  const card = queue[idx];
+
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    revealMore();
+    return;
+  }
+
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    // 마침표만 빼고 다 쳤으면 통과로 보고 넘어가요
+    const nTyped = normText(typed);
+    const nTarget = normText(card.sentence);
+    if (nTyped.length && (nTyped === nTarget || nTyped === stripTail(nTarget))) {
+      finishCard();
+    } else {
+      toggleHint();
+    }
+  }
+}
+
 function onType(e) {
   const card = queue[idx];
   const prev = typed;
@@ -610,12 +691,12 @@ function onType(e) {
   // 글자가 새로 들어왔는데 그 자리가 틀렸으면 오타 1회로 셈
   if (typed.length > prev.length) {
     const i = typed.length - 1;
-    if (typed[i] !== card.sentence[i]) mistakes++;
+    if (normChar(typed[i]) !== normChar(card.sentence[i])) mistakes++;
   }
 
   paintTyped();
 
-  if (typed === card.sentence) finishCard();
+  if (normText(typed) === normText(card.sentence)) finishCard();
 }
 
 function paintTyped() {
@@ -625,7 +706,7 @@ function paintTyped() {
   let html = '';
   for (let i = 0; i < typed.length; i++) {
     const ch = typed[i];
-    const ok = ch === card.sentence[i];
+    const ok = normChar(ch) === normChar(card.sentence[i]);
     const shown = ch === ' ' ? '&nbsp;' : escapeHtml(ch);
     html += ok ? shown : `<span class="bad${ch === ' ' ? ' space' : ''}">${shown}</span>`;
   }
@@ -647,7 +728,7 @@ async function finishCard() {
   foot.className = 'foot-note';
   foot.textContent = passed
     ? (card.done ? '다 익혔어요. 목록에서 빠집니다.' : `좋아요 · 다음 복습 ${card.nextDate}`)
-    : `오타 ${mistakes}번 · 내일 한 번 더 나옵니다`;
+    : `틀린 곳이 있었어요 · 내일 한 번 더 나옵니다`;
 
   // 오늘 끝낸 목록에 기록 (새로고침해도 다시 안 나오게)
   const doneIds = loadSession();
