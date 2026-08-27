@@ -22,6 +22,7 @@
     font-display: swap;
   }
 
+  /* 기본 테마 — 실제 값은 JS가 골라둔 테마로 덮어써요 */
   :root {
     --paper: #FBF9F1;
     --card: #FFFFFF;
@@ -29,10 +30,12 @@
     --ghost: #C3CCC5;
     --rule: #E4EAE4;
     --edge: #E8E3D5;
-    --mint: #6FBF9A;
-    --mint-soft: #E6F4EC;
-    --coral: #E36B58;
-    --coral-soft: #FBE7E2;
+    --accent: #6FBF9A;
+    --accent-soft: #E6F4EC;
+    --point: #6FBF9A;
+    --point-soft: #E6F4EC;
+    --alert: #E36B58;
+    --alert-soft: #FBE7E2;
     --muted: #8A968F;
   }
 
@@ -47,7 +50,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 28px 18px 40px;
+    justify-content: center;
+    padding: 30px 18px;
+    transition: background .25s ease, color .25s ease;
   }
 
   .shell { width: 100%; max-width: 1080px; }
@@ -79,32 +84,23 @@
     color: var(--muted);
     display: flex;
     align-items: center;
-    border-radius: 6px;
   }
   .icon-btn:hover { color: var(--ink); }
-  .icon-btn:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
+  .icon-btn:focus-visible { outline: 2px solid var(--point); outline-offset: 2px; }
 
   /* ---------- 진행바 ---------- */
-  .bar { height: 3px; background: var(--rule); border-radius: 2px; overflow: hidden; margin-bottom: 24px; }
-  .bar-fill { height: 100%; width: 0; background: var(--mint); transition: width .35s ease; }
+  .bar { height: 3px; background: var(--rule); overflow: hidden; margin-bottom: 24px; }
+  .bar-fill { height: 100%; width: 0; background: var(--accent); transition: width .35s ease; }
 
   /* ---------- 카드 ---------- */
   .card {
     position: relative;
     background: var(--card);
     border: 1px solid var(--edge);
-    border-radius: 14px;
-    padding: 26px 26px 22px 34px;
+    padding: 26px 28px 22px;
     min-height: 260px;
     overflow: hidden;
-  }
-  /* 공책 여백선 */
-  .card::before {
-    content: '';
-    position: absolute;
-    left: 20px; top: 0; bottom: 0;
-    width: 1px;
-    background: rgba(227, 107, 88, 0.28);
+    transition: background .25s ease, border-color .25s ease;
   }
 
   .card-top {
@@ -117,14 +113,12 @@
     font-size: 11px;
     letter-spacing: 1px;
     padding: 4px 10px;
-    border-radius: 20px;
-    background: var(--mint-soft);
-    color: #46836A;
+    background: var(--point-soft);
+    color: var(--point);
   }
-  .chip.gray { background: #F1F0EA; color: var(--muted); }
   .stage-dots { display: flex; gap: 5px; align-items: center; }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--rule); }
-  .dot.on { background: var(--mint); }
+  .dot.on { background: var(--accent); }
 
   /* ---------- 따라쓰기 영역 ---------- */
   .type-area { position: relative; cursor: text; }
@@ -138,10 +132,10 @@
     min-height: 44px;
   }
   .line.model { color: var(--ghost); }
-  .line.model .blanked { color: var(--coral); opacity: .75; letter-spacing: 2px; }
+  .line.model .blanked { color: var(--point); letter-spacing: 2px; }
   .rule-line { height: 1px; background: var(--rule); margin: 6px 0 14px; }
   .line.typed { color: var(--ink); }
-  .line.typed .bad { color: var(--coral); background: var(--coral-soft); border-radius: 2px; }
+  .line.typed .bad { color: var(--alert); background: var(--alert-soft); }
   .line.typed .bad.space { display: inline-block; min-width: 0.5em; }
   .caret {
     display: inline-block;
@@ -170,7 +164,7 @@
   .card.flash { animation: pass .45s ease; }
   @keyframes pass {
     0% { background: var(--card); }
-    30% { background: var(--mint-soft); }
+    30% { background: var(--accent-soft); }
     100% { background: var(--card); }
   }
 
@@ -187,14 +181,14 @@
     letter-spacing: 0.5px;
   }
   .ghost-btn:hover { color: var(--ink); }
-  .ghost-btn:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; border-radius: 4px; }
+  .ghost-btn:focus-visible { outline: 2px solid var(--point); outline-offset: 3px; }
   .dot-sep { color: var(--rule); font-size: 12px; }
 
   .hint-body {
     margin-top: 12px;
     padding: 14px 16px;
-    background: #F8F7F1;
-    border-radius: 10px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
     font-size: 14px;
     line-height: 1.7;
     display: none;
@@ -209,8 +203,7 @@
     letter-spacing: 0.3px;
     min-height: 18px;
   }
-  .foot-note.warn { color: var(--coral); }
-
+  .foot-note.warn { color: var(--alert); }
   .keys {
     margin-top: 4px;
     font-size: 11px;
@@ -226,7 +219,20 @@
     font-size: 15px;
     line-height: 1.9;
   }
-  .state .big { font-size: 30px; letter-spacing: 3px; color: var(--ink); margin-bottom: 14px; }
+  .state .big {
+    font-family: 'DreamHeumul', sans-serif;
+    font-size: 32px;
+    letter-spacing: 3px;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+  .state .count {
+    font-family: 'NeoDunggeunmo', monospace;
+    font-size: 40px;
+    color: var(--accent);
+    display: block;
+    margin: 6px 0 10px;
+  }
   .state .sub { font-size: 13px; }
   .state button {
     margin-top: 22px;
@@ -234,18 +240,17 @@
     font-size: 14px;
     background: none;
     border: 1px solid var(--edge);
-    border-radius: 20px;
     padding: 9px 20px;
     color: var(--ink);
     cursor: pointer;
   }
-  .state button:hover { border-color: var(--mint); color: #46836A; }
+  .state button:hover { border-color: var(--point); color: var(--point); }
 
   /* ---------- 설정 ---------- */
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(42, 59, 51, 0.28);
+    background: rgba(0, 0, 0, 0.28);
     display: none;
     align-items: center;
     justify-content: center;
@@ -255,14 +260,13 @@
   .overlay.show { display: flex; }
   .modal {
     background: var(--card);
-    border-radius: 14px;
     padding: 24px;
     width: 100%;
-    max-width: 340px;
+    max-width: 360px;
+    border: 1px solid var(--edge);
   }
   .modal h2 { font-size: 18px; margin: 0 0 18px; letter-spacing: 2px; }
-  .field { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #F2F0E9; }
-  .field:last-of-type { border-bottom: none; }
+  .field { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--rule); }
   .field label { font-size: 14px; }
   .field .sub { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
   .field input[type="number"] {
@@ -271,7 +275,6 @@
     font-size: 16px;
     text-align: center;
     border: 1px solid var(--edge);
-    border-radius: 8px;
     padding: 6px;
     color: var(--ink);
     background: var(--paper);
@@ -281,19 +284,35 @@
     border: none; cursor: pointer; position: relative; transition: background .2s;
   }
   .toggle span { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s; }
-  .toggle.on { background: var(--mint); }
+  .toggle.on { background: var(--accent); }
   .toggle.on span { transform: translateX(20px); }
+
+  .theme-block { padding: 14px 0 4px; }
+  .theme-block .label { font-size: 14px; margin-bottom: 10px; }
+  .swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+  .swatch {
+    width: 34px; height: 34px;
+    border: 1px solid rgba(0,0,0,.12);
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+    display: flex;
+    overflow: hidden;
+  }
+  .swatch i { flex: 1; display: block; }
+  .swatch.on { outline: 2px solid var(--ink); outline-offset: 2px; }
+
   .modal .close {
     width: 100%; margin-top: 20px; padding: 11px;
     font-family: 'Nanum Gothic', sans-serif; font-size: 14px;
-    border: none; border-radius: 10px; background: var(--ink); color: #fff; cursor: pointer;
+    border: none; background: var(--ink); color: var(--card); cursor: pointer;
   }
 
   @media (max-width: 560px) {
-    body { padding: 20px 14px 32px; }
+    body { padding: 20px 14px; }
     h1 { font-size: 28px; }
     .line { font-size: 20px; }
-    .card { padding: 22px 18px 18px 28px; min-height: 230px; }
+    .card { padding: 22px 18px 18px; min-height: 230px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -341,6 +360,10 @@
       <label>빈칸 모드<span class="sub">핵심 부분을 가리고 맞추기</span></label>
       <button class="toggle" id="setBlank"><span></span></button>
     </div>
+    <div class="theme-block">
+      <div class="label">테마</div>
+      <div class="swatches" id="swatches"></div>
+    </div>
     <button class="close" id="closeSettings">저장하고 닫기</button>
   </div>
 </div>
@@ -355,12 +378,88 @@ const API = '/api/notion?app=trace';
 const LS_SETTINGS = 'trace_settings';
 const LS_SESSION  = 'trace_session';
 const LS_PENDING  = 'trace_pending';
+const LS_THEME    = 'trace_theme';
 
 // 망각곡선 간격 (단계 1~5 진입 시 다음 복습까지 며칠)
 const INTERVALS = [1, 3, 7, 14, 30];
 const MAX_STAGE = 5;
 // 오타는 한 번도 허용하지 않아요 (아래 normChar로 걸러지는 건 오타로 안 침)
 const MISTAKE_ALLOWANCE = 0;
+
+/* ---------- 테마 ---------- */
+const THEMES = {
+  cream: {
+    name: '크림 초록',
+    vars: { paper:'#FBF9F1', card:'#FFFFFF', ink:'#2A3B33', ghost:'#C3CCC5', rule:'#E4EAE4',
+            edge:'#E8E3D5', accent:'#6FBF9A', 'accent-soft':'#E6F4EC', point:'#6FBF9A',
+            'point-soft':'#E6F4EC', alert:'#E36B58', 'alert-soft':'#FBE7E2', muted:'#8A968F' }
+  },
+  ember: {
+    name: '크림 주황',
+    vars: { paper:'#FBF9F1', card:'#FFFFFF', ink:'#2A3B33', ghost:'#C6C2B6', rule:'#E9E4D8',
+            edge:'#E8E3D5', accent:'#6FBF9A', 'accent-soft':'#E6F4EC', point:'#D97757',
+            'point-soft':'#F8E9E1', alert:'#D9544A', 'alert-soft':'#FBE4E1', muted:'#93897C' }
+  },
+  sky: {
+    name: '하늘 분홍',
+    vars: { paper:'#E7F0FA', card:'#FFFFFF', ink:'#3B4A5C', ghost:'#BFCEDD', rule:'#DCE7F2',
+            edge:'#D4E2F0', accent:'#7FA9D9', 'accent-soft':'#E3EDF8', point:'#E093AC',
+            'point-soft':'#F8E4EA', alert:'#D9738C', 'alert-soft':'#F9E3E8', muted:'#8494A6' }
+  },
+  lavender: {
+    name: '라벤더',
+    vars: { paper:'#EDEDF6', card:'#FFFFFF', ink:'#414765', ghost:'#C3C6DC', rule:'#DEE0EF',
+            edge:'#D6D9EC', accent:'#8E96C9', 'accent-soft':'#E7E9F6', point:'#7C84BE',
+            'point-soft':'#E4E6F5', alert:'#C97095', 'alert-soft':'#F6E3EC', muted:'#8A8FAD' }
+  },
+  apricot: {
+    name: '살구',
+    vars: { paper:'#FDF1E7', card:'#FFFFFF', ink:'#4A3A33', ghost:'#D6C2B4', rule:'#F0E2D6',
+            edge:'#EBDACB', accent:'#E0A375', 'accent-soft':'#FAEADD', point:'#C4756A',
+            'point-soft':'#F8E5E1', alert:'#BF5B4C', 'alert-soft':'#F9E1DC', muted:'#9C8477' }
+  },
+  night: {
+    name: '밤',
+    vars: { paper:'#565C7E', card:'#4A5070', ink:'#F5F2E4', ghost:'#8B90AC', rule:'#646A8B',
+            edge:'#646A8B', accent:'#B9BEE8', 'accent-soft':'#5E648A', point:'#F0E4A8',
+            'point-soft':'#5E648A', alert:'#F0A08F', 'alert-soft':'#6B5F73', muted:'#AFB3C8' }
+  }
+};
+
+let themeKey = 'cream';
+
+function applyTheme(key) {
+  const t = THEMES[key] || THEMES.cream;
+  themeKey = THEMES[key] ? key : 'cream';
+  for (const [k, v] of Object.entries(t.vars)) {
+    document.documentElement.style.setProperty(`--${k}`, v);
+  }
+  try { localStorage.setItem(LS_THEME, themeKey); } catch (e) {}
+  paintSwatches();
+}
+
+function paintSwatches() {
+  const box = document.getElementById('swatches');
+  if (!box) return;
+  box.innerHTML = Object.entries(THEMES).map(([key, t]) => `
+    <button class="swatch ${key === themeKey ? 'on' : ''}" data-key="${key}" title="${t.name}" aria-label="${t.name}">
+      <i style="background:${t.vars.paper}"></i>
+      <i style="background:${t.vars.accent}"></i>
+      <i style="background:${t.vars.point}"></i>
+    </button>`).join('');
+  box.querySelectorAll('.swatch').forEach(b => {
+    b.onclick = () => applyTheme(b.dataset.key);
+  });
+}
+
+let settings = { newLimit: 10, reviewLimit: 10, blankMode: false };
+let cards = [];       // 노션에서 받은 전체 카드
+let queue = [];       // 오늘 학습할 카드
+let idx = 0;
+let typed = '';
+let mistakes = 0;
+let hintOpen = false;
+let reveal = 0;       // 빈칸 모드에서 열어준 앞글자 수
 
 /* ---------- 채점용 글자 정규화 ----------
    대소문자와 '겉모양만 다른 글자'는 같은 것으로 봐요.
@@ -387,15 +486,6 @@ function normText(s) {
 // 문장 끝 마침표/느낌표/물음표는 생략하고 엔터를 눌러도 통과시켜요
 function stripTail(s) { return s.replace(/[.!?]+$/, ''); }
 
-let settings = { newLimit: 10, reviewLimit: 10, blankMode: false };
-let cards = [];       // 노션에서 받은 전체 카드
-let queue = [];       // 오늘 학습할 카드
-let idx = 0;
-let typed = '';
-let mistakes = 0;
-let hintOpen = false;
-let reveal = 0;   // 빈칸 모드에서 열어준 앞글자 수
-
 /* ---------- 날짜 유틸 (한국 로컬 기준 — UTC 쓰면 새벽에 날짜가 밀려요) ---------- */
 function todayStr(offsetDays = 0) {
   const d = new Date();
@@ -409,6 +499,10 @@ function loadSettings() {
     const raw = localStorage.getItem(LS_SETTINGS);
     if (raw) settings = { ...settings, ...JSON.parse(raw) };
   } catch (e) { /* 저장된 설정이 깨졌으면 기본값 사용 */ }
+  try {
+    const t = localStorage.getItem(LS_THEME);
+    if (t && THEMES[t]) themeKey = t;
+  } catch (e) {}
 }
 function saveSettings() {
   try { localStorage.setItem(LS_SETTINGS, JSON.stringify(settings)); } catch (e) {}
@@ -526,26 +620,27 @@ function renderError(msg) {
 function renderEmpty() {
   counterEl.textContent = '';
   barFill.style.width = '100%';
+  const todayCount = loadSession().length;
   stageEl.innerHTML = `<div class="state">
-    <div class="big">오늘 치 끝</div>
-    지금 학습할 문장이 없어요.
+    <div class="big">${todayCount ? '오늘 완료' : '학습할 문장 없음'}</div>
+    ${todayCount ? `<span class="count">${todayCount}</span>문장을 익혔어요.` : '지금 학습할 문장이 없어요.'}
     <div class="sub">첨삭 대화에서 "저장해줘"라고 하면 새 문장이 채워집니다.</div>
     <button id="again">다시 불러오기</button>
   </div>`;
   document.getElementById('again').onclick = start;
 }
 
-function renderDone(count) {
+function renderDone() {
   counterEl.textContent = '';
   barFill.style.width = '100%';
+  const todayCount = loadSession().length;
   stageEl.innerHTML = `<div class="state">
     <div class="big">오늘 완료</div>
-    ${count}문장을 끝냈어요.
+    <span class="count">${todayCount}</span>문장을 익혔어요.
     <div class="sub">복습할 문장은 정해진 날짜에 다시 나타납니다.</div>
     <button id="more">더 할래요</button>
   </div>`;
   document.getElementById('more').onclick = () => {
-    // 오늘 이미 한 것 말고, 남은 카드로 한 판 더
     queue = buildQueue();
     idx = 0;
     if (!queue.length) renderEmpty(); else renderCard();
@@ -553,7 +648,7 @@ function renderDone(count) {
 }
 
 // 빈칸 모드: 핵심 부분을 밑줄로 가림. 밑줄 개수가 곧 글자 수 힌트예요.
-// reveal 값만큼 앞글자를 열어줍니다 (Tab을 누를 때마다 한 글자씩).
+// reveal 값만큼 앞글자를 열어줍니다 (Shift+Tab을 누를 때마다 한 글자씩).
 function modelText(card, reveal) {
   const s = card.sentence || '';
   if (!settings.blankMode || !card.blank) return escapeHtml(s);
@@ -603,8 +698,8 @@ function renderCard() {
   stageEl.innerHTML = `
     <div class="card" id="card">
       <div class="card-top">
-        <span class="chip ${card.category ? '' : 'gray'}">${escapeHtml(card.category || '표현')}</span>
-        <span class="stage-dots" title="복습 단계 ${stage}/${MAX_STAGE}">${dots}</span>
+        <span class="chip">${escapeHtml(card.category || '표현')}</span>
+        <span class="stage-dots" title="복습 단계 ${stage} / ${MAX_STAGE}">${dots}</span>
       </div>
 
       <div class="type-area" id="typeArea">
@@ -724,14 +819,12 @@ async function finishCard() {
   const passed = mistakes <= MISTAKE_ALLOWANCE;
   applyResult(card, passed);
 
-  const cardEl = document.getElementById('card');
-  cardEl.classList.add('flash');
+  document.getElementById('card').classList.add('flash');
 
+  // 통과든 아니든 다음에 언제 볼지만 알려줘요
   const foot = document.getElementById('footNote');
   foot.className = 'foot-note';
-  foot.textContent = passed
-    ? (card.done ? '다 익혔어요. 목록에서 빠집니다.' : `좋아요 · 다음 복습 ${card.nextDate}`)
-    : `틀린 곳이 있었어요 · 내일 한 번 더 나옵니다`;
+  foot.textContent = card.done ? '다 익혔어요. 목록에서 빠집니다.' : `다음 복습 ${card.nextDate}`;
 
   // 오늘 끝낸 목록에 기록 (새로고침해도 다시 안 나오게)
   const doneIds = loadSession();
@@ -747,7 +840,7 @@ async function finishCard() {
 
   setTimeout(() => {
     idx++;
-    if (idx >= queue.length) renderDone(queue.length);
+    if (idx >= queue.length) renderDone();
     else renderCard();
   }, 850);
 }
@@ -762,6 +855,7 @@ document.getElementById('settingsBtn').onclick = () => {
   setNew.value = settings.newLimit;
   setReview.value = settings.reviewLimit;
   setBlank.classList.toggle('on', settings.blankMode);
+  paintSwatches();
   overlay.classList.add('show');
 };
 setBlank.onclick = () => setBlank.classList.toggle('on');
@@ -797,6 +891,7 @@ async function start() {
 }
 
 loadSettings();
+applyTheme(themeKey);
 start();
 </script>
 </body>
