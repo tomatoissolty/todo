@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>TRACE</title>
 <link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet">
 <style>
   @font-face {
     font-family: 'DreamHeumul';
@@ -39,7 +42,7 @@
     margin: 0;
     background: var(--paper);
     color: var(--ink);
-    font-family: 'DreamHeumul', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Nanum Gothic', -apple-system, BlinkMacSystemFont, sans-serif;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -174,7 +177,7 @@
   /* ---------- 힌트 ---------- */
   .hint-row { margin-top: 22px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .ghost-btn {
-    font-family: 'DreamHeumul', sans-serif;
+    font-family: 'Nanum Gothic', sans-serif;
     font-size: 13px;
     background: none;
     border: none;
@@ -227,7 +230,7 @@
   .state .sub { font-size: 13px; }
   .state button {
     margin-top: 22px;
-    font-family: 'DreamHeumul', sans-serif;
+    font-family: 'Nanum Gothic', sans-serif;
     font-size: 14px;
     background: none;
     border: 1px solid var(--edge);
@@ -282,7 +285,7 @@
   .toggle.on span { transform: translateX(20px); }
   .modal .close {
     width: 100%; margin-top: 20px; padding: 11px;
-    font-family: 'DreamHeumul', sans-serif; font-size: 14px;
+    font-family: 'Nanum Gothic', sans-serif; font-size: 14px;
     border: none; border-radius: 10px; background: var(--ink); color: #fff; cursor: pointer;
   }
 
@@ -622,7 +625,7 @@ function renderCard() {
       </div>
 
       <div class="foot-note" id="footNote"></div>
-      <div class="keys">Enter 뜻 보기${settings.blankMode ? ' · Tab 빈칸 한 글자 열기' : ''} · 마침표는 빼고 Enter 쳐도 넘어가요</div>
+      <div class="keys">Tab 뜻 보기${settings.blankMode ? ' · Shift+Tab 빈칸 한 글자 열기' : ''} · Enter 다음 문장 (마침표는 빼도 돼요)</div>
     </div>`;
 
   const entry = document.getElementById('entry');
@@ -664,21 +667,21 @@ function revealMore() {
 function onKey(e) {
   const card = queue[idx];
 
+  // Tab = 뜻 보기 / Shift+Tab = 빈칸 한 글자 열기
   if (e.key === 'Tab') {
     e.preventDefault();
-    revealMore();
+    if (e.shiftKey) revealMore();
+    else toggleHint();
     return;
   }
 
+  // Enter = 다음 문장으로 넘어가기 전용 (마침표는 빼도 통과)
   if (e.key === 'Enter') {
     e.preventDefault();
-    // 마침표만 빼고 다 쳤으면 통과로 보고 넘어가요
     const nTyped = normText(typed);
     const nTarget = normText(card.sentence);
     if (nTyped.length && (nTyped === nTarget || nTyped === stripTail(nTarget))) {
       finishCard();
-    } else {
-      toggleHint();
     }
   }
 }
