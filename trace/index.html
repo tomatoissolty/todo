@@ -556,13 +556,58 @@ function buildQueue() {
     .filter(c => (c.stage || 0) > 0 && c.nextDate && c.nextDate <= today)
     .sort((a, b) => (a.nextDate || '').localeCompare(b.nextDate || ''))
     .slice(0, settings.reviewLimit);
+  review.forEach(c => c._type = 'review');
 
   const fresh = alive
     .filter(c => !(c.stage > 0))
     .sort((a, b) => (a.sourceDate || '').localeCompare(b.sourceDate || ''))
     .slice(0, settings.newLimit);
+  fresh.forEach(c => c._type = 'fresh');
 
   return review.concat(fresh);
+}
+
+// 학습 도중 새/복습 개수를 바꿨을 때, 이미 지나갔거나 지금 진행 중인 문장은 그대로 두고
+// 앞으로 남은 부분(queue의 idx 뒤쪽)만 새 개수에 맞춰 더하거나 덜어내요.
+function adjustQueueForLimits() {
+  const today = todayStr();
+  const doneIds = loadSession();
+  const inQueueIds = new Set(queue.map(c => c.notionPageId));
+
+  const reviewInQueue = queue.filter(c => c._type === 'review').length;
+  const freshInQueue = queue.filter(c => c._type === 'fresh').length;
+
+  const tailStart = idx + 1; // idx까지는 손대지 않음(진행 중 포함)
+
+  // --- 개수가 줄었으면 남은 부분(tail)에서 초과분을 뒤에서부터 제거 ---
+  let needLessReview = reviewInQueue - settings.reviewLimit;
+  let needLessFresh = freshInQueue - settings.newLimit;
+  for (let i = queue.length - 1; i >= tailStart && (needLessReview > 0 || needLessFresh > 0); i--) {
+    const t = queue[i]._type;
+    if (t === 'review' && needLessReview > 0) { queue.splice(i, 1); needLessReview--; }
+    else if (t === 'fresh' && needLessFresh > 0) { queue.splice(i, 1); needLessFresh--; }
+  }
+
+  // --- 개수가 늘었으면 아직 큐에 없는 카드 중에서 더 채워넣기 ---
+  const needMoreReview = Math.max(0, settings.reviewLimit - Math.min(reviewInQueue, settings.reviewLimit + Math.max(0, needLessReview)));
+  const pool = cards.filter(c => !c.done && !doneIds.includes(c.notionPageId) && !inQueueIds.has(c.notionPageId));
+
+  const curReviewCount = queue.filter(c => c._type === 'review').length;
+  const curFreshCount = queue.filter(c => c._type === 'fresh').length;
+
+  const moreReview = pool
+    .filter(c => (c.stage || 0) > 0 && c.nextDate && c.nextDate <= today)
+    .sort((a, b) => (a.nextDate || '').localeCompare(b.nextDate || ''))
+    .slice(0, Math.max(0, settings.reviewLimit - curReviewCount));
+  moreReview.forEach(c => { c._type = 'review'; inQueueIds.add(c.notionPageId); });
+
+  const moreFresh = pool
+    .filter(c => !(c.stage > 0) && !moreReview.includes(c))
+    .sort((a, b) => (a.sourceDate || '').localeCompare(b.sourceDate || ''))
+    .slice(0, Math.max(0, settings.newLimit - curFreshCount));
+  moreFresh.forEach(c => { c._type = 'fresh'; });
+
+  queue = queue.concat(moreReview, moreFresh);
 }
 
 /* ---------- 채점 후 다음 일정 계산 ---------- */
@@ -844,16 +889,33 @@ setBlank.onclick = () => setBlank.classList.toggle('on');
 document.getElementById('closeSettings').onclick = () => {
   const n = parseInt(setNew.value, 10);
   const r = parseInt(setReview.value, 10);
+  const prev = { newLimit: settings.newLimit, reviewLimit: settings.reviewLimit, blankMode: settings.blankMode };
+
   settings.newLimit = (n > 0 && n <= 50) ? n : 10;
   settings.reviewLimit = (r > 0 && r <= 50) ? r : 10;
   settings.blankMode = setBlank.classList.contains('on');
   saveSettings();
   overlay.classList.remove('show');
-  // 개수나 빈칸 모드를 바꿨으니 오늘 목록을 다시 짜요
-  queue = buildQueue();
-  idx = 0;
-  if (!queue.length) renderEmpty();
-  else renderCard();
+
+  const limitsChanged = prev.newLimit !== settings.newLimit || prev.reviewLimit !== settings.reviewLimit;
+  const blankChanged = prev.blankMode !== settings.blankMode;
+
+  // 테마만 바꾼 경우 등, 학습량/빈칸 모드가 그대로면 진행 중이던 화면은 그대로 둬요
+  if (!limitsChanged && !blankChanged) return;
+
+  // 아직 학습을 시작 전이거나(비어있는 화면) 오늘 치가 끝난 상태면 처음부터 다시 짜도 무방
+  if (!queue.length || idx >= queue.length) {
+    queue = buildQueue();
+    idx = 0;
+    if (!queue.length) renderEmpty(); else renderCard();
+    return;
+  }
+
+  // 학습 도중이면 지금 쓰던 문장(typed)은 그대로 두고, 개수만 남은 분량에 반영
+  if (limitsChanged) adjustQueueForLimits();
+  counterEl.innerHTML = `<b>${idx + 1}</b> / ${queue.length}`;
+  barFill.style.width = `${(idx / queue.length) * 100}%`;
+  // 빈칸 모드는 다음 문장부터 적용 — 지금 치고 있는 문장 표시는 그대로 둡니다
 };
 overlay.onclick = (e) => { if (e.target === overlay) document.getElementById('closeSettings').click(); };
 
