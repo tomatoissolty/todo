@@ -50,8 +50,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 30px 18px;
+    /* 뜻 힌트를 열고 닫을 때 카드 높이가 바뀌어도 위쪽(문장 줄)이 안 움직이도록,
+       화면 가운데 정렬 대신 위쪽을 고정 지점으로 씁니다. */
+    justify-content: flex-start;
+    padding: 8vh 18px 30px;
     transition: background .25s ease, color .25s ease;
   }
 
