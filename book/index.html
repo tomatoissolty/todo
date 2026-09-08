@@ -702,11 +702,19 @@ async function pullFromNotion() {
     const remoteTime = row.lastUpdated ? new Date(row.lastUpdated).getTime() : 0;
     const existing = localById[row.appId];
     if (existing) {
+      // 노션에 올린 파일(Cover)의 주소는 노션이 요청마다 새로 서명해서 주는 임시 링크예요(약 1시간 뒤 만료).
+      // 그래서 다른 값과 달리 "노션이 더 최근에 고쳤을 때만" 갱신하면 안 되고, 받아올 때마다 항상
+      // 최신 걸로 덮어써야 해요. 여태 이걸 remoteTime 조건 안에 묶어놔서, 한 번 저장되고 나면
+      // 다시는 안 새로고침돼서 시간이 지나면 표지가 무조건 깨졌던 거예요 — 알라딘 종료랑은 무관해요.
+      let coverRefreshed = false;
+      if (row.cover && row.cover !== existing.cover) { existing.cover = row.cover; coverRefreshed = true; }
       if (remoteTime > (existing.updatedAt || 0)) {
         existing.title = row.name; existing.author = row.author; existing.publisher = row.publisher;
         existing.isbn = row.isbn; existing.rating = row.rating || 0; existing.status = row.status || existing.status;
-        existing.review = row.review || ''; existing.cover = row.cover || existing.cover;
+        existing.review = row.review || '';
         existing.notionPageId = row.notionPageId; existing.updatedAt = remoteTime;
+        changed = true;
+      } else if (coverRefreshed) {
         changed = true;
       }
     } else {
