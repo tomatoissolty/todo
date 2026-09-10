@@ -296,13 +296,16 @@ function rollover() {
   oldest.setDate(oldest.getDate() - ROLLOVER_MAX_DAYS);
   const oldestStr = `${oldest.getFullYear()}-${String(oldest.getMonth() + 1).padStart(2, '0')}-${String(oldest.getDate()).padStart(2, '0')}`;
   let changed = false;
+  // 표시(routineId/isRoutine)가 어떤 이유로든 빠져있어도, 이름이 현재 루틴과 같으면 루틴으로 봅니다.
+  // 이월은 되돌리기 어려운 동작이라 판단 근거를 하나에만 의존하지 않게 이중으로 막아요.
+  const routineTexts = new Set((appSettings.routines || []).map(r => r.text));
   Object.keys(todos).forEach(dateStr => {
     if (dateStr >= t || dateStr < oldestStr) return;
     const dayList = todos[dateStr] || [];
     for (let i = dayList.length - 1; i >= 0; i--) {
       const item = dayList[i];
       // isRoutine은 노션에서 내려온 값이라 로컬 설정이 지워져도 살아있어요 — 루틴은 절대 이월 안 함
-      if (item.completed || item.routineId || item.isRoutine) continue;
+      if (item.completed || item.routineId || item.isRoutine || routineTexts.has(item.text)) continue;
       dayList.splice(i, 1);
       item.deferred = true;
       item.updatedAt = Date.now();
@@ -577,6 +580,10 @@ async function pullFromNotion(forceRefresh) {
     );
     if (existing) {
       const localTime = existing.todo.updatedAt || 0;
+      // 루틴 표시는 "노션이 더 최신일 때만" 붙이면 안 돼요. 이미 이 기기에 있고 시각이 같은 항목은
+      // 표시가 영영 안 붙어서, 이월 로직이 루틴을 못 알아보고 오늘로 끌어와 버려요(실제로 사고 남).
+      // 노션의 Routine 체크는 언제 봐도 맞는 값이라 조건 없이 항상 반영합니다.
+      if (row.routine && !existing.todo.isRoutine) { existing.todo.isRoutine = true; changed = true; }
       if (remoteTime > localTime) {
         existing.todo.text = row.name;
         existing.todo.completed = row.completed;
@@ -621,31 +628,33 @@ async function pullFromNotion(forceRefresh) {
 }
 
 /* ═══════════ 1회성 정리 ═══════════
-   사파리가 저장소를 지워버린 탓에 과거 루틴들이 "밀린 항목"으로 오인돼 오늘로 잔뜩 끌려왔어요.
-   실제로 살아있어야 할 밀린 항목은 아래 3개뿐이라, 그것만 남기고 나머지 밀린 항목을 정리합니다.
-   (루틴 항목과 오늘 새로 쓴 항목은 건드리지 않아요) */
-const CLEANUP_KEY = 'receipt-cleanup-deferred-v2';
-const KEEP_DEFERRED_IDS = new Set([
-  's126s4a0w',      // 에어컨 필터 청소
-  'msifqy4dwryqpe', // 데이터 시험 교재,강의 정보 찾기
-  'msr4zgxblu596e'  // 베개 커버 빨래
+   이월 로직이 루틴을 못 알아봐서, 9/6~9/9의 완료 안 한 루틴들이 오늘로 끌려와 쌓였어요.
+   그 18개만 골라서 앱과 노션에서 지웁니다. (진짜 밀린 일과 오늘 루틴은 건드리지 않아요) */
+const CLEANUP_KEY = 'receipt-cleanup-routine-rollover-v3';
+const CLEANUP_IDS = new Set([
+  'mtpcvj0myezph9', 'mtquaj6fu4r9mp', 'mts9z4xy9ozpp3', 'mttsvn4jpfcrrb', // 듀오링고
+  'mttsvn4j8e8fwz',                                                        // 말해보카
+  'mtquaj6fuiywq6',                                                        // 야옹 화장실 청소
+  'mts9z4xyext7cv',                                                        // 영어 강의 듣기
+  'mtpcvj0m7vfqv5', 'mtquaj6fo7cyxf', 'mts9z4xy3fkqhz', 'mttsvn4j71tlbh', // 영어 복습
+  'mtquaj6f3z6xiq', 'mttsvn4jph721q',                                      // 일기 문법 수정
+  'mtpcvj0m5lfw25', 'mttsvn4js9qbvj',                                      // 일기 쓰기 eng
+  'mtpcvj0mt5hu9a', 'mtquaj6f8gj25c', 'mttsvn4jjbjoo3'                     // 헤이링
 ]);
 function cleanupDeferredMess() {
   if (localStorage.getItem(CLEANUP_KEY)) return false;
-  const t = todayStr();
-  const list = todos[t] || [];
   let removed = 0;
-  for (let i = list.length - 1; i >= 0; i--) {
-    const item = list[i];
-    if (item.routineId || item.isRoutine) continue; // 루틴은 그대로
-    if (!item.deferred) continue;                   // 오늘 새로 쓴 항목은 그대로
-    if (KEEP_DEFERRED_IDS.has(item.id)) continue;   // 살려둘 3개
-    list.splice(i, 1);
-    markDeleted(item);
-    removed++;
-  }
+  Object.values(todos).forEach(list => {
+    for (let i = (list || []).length - 1; i >= 0; i--) {
+      const item = list[i];
+      if (!CLEANUP_IDS.has(item.id)) continue;
+      list.splice(i, 1);
+      markDeleted(item);
+      removed++;
+    }
+  });
   localStorage.setItem(CLEANUP_KEY, String(Date.now()));
-  if (removed) { saveTodos(); console.log(`[정리] 잘못 밀려온 항목 ${removed}개 삭제`); }
+  if (removed) { saveTodos(); console.log(`[정리] 잘못 밀려온 루틴 ${removed}개 삭제`); }
   return removed > 0;
 }
 
