@@ -6,6 +6,7 @@
 //   NOTION_DATABASE_ID       — "✅ Daily 할 일" 데이터베이스 ID (todo 앱, 기존 이름 유지)
 //   NOTION_DATABASE_ID_MOVIE — "🎬 REEL 영화 기록" 데이터베이스 ID
 //   NOTION_DATABASE_ID_TRACE — "✏️ TRACE 영어 학습" 데이터베이스 ID (/trace 앱)
+//   NOTION_DATABASE_ID_HABITLOG — 12 Week Year "Habit Log" 데이터베이스 ID (할 일 → 해빗 트래커 연동)
 //
 // 사용법: /api/notion?app=todo  또는  /api/notion?app=movie  (app 생략 시 todo)
 //   GET    → 해당 DB의 모든 항목을 가져옴 (pull)
@@ -508,6 +509,85 @@ function traceFromPage(page) {
   };
 }
 
+// --- 할 일 → 12 Week Year 해빗 트래커 연동 ---
+// 아래 이름의 할 일을 체크하면 해빗 트래커(Habit Log)에 그날 기록을 자동으로 남기고,
+// 체크를 풀면 자동으로 만든 기록만 지워요. (트래커에서 직접 누른 기록은 절대 안 건드림)
+// 이름은 띄어쓰기/대소문자 무시하고 비교해요.
+const HABIT_LINKS = [
+  { names: ['헤이링'], habitId: 'fdca2001-420a-82dc-aaf5-81c5957bbb25', label: '🎧 Use Heyring for 15 minutes' },
+  { names: ['말해보카'], habitId: '3e7a2001-420a-8100-84ee-f33925ce33c5', label: '🏆 Earn at least 1 trophy' },
+  // 일기 쓰기 / 문법 수정은 둘 중 하나만 해도 같은 습관 1회로 쳐요
+  { names: ['일기 쓰기 eng', '일기 문법 수정'], habitId: '12da2001-420a-837b-ad86-010dce9ca18b', label: '✏️ Write a journal entry or fix its grammar' },
+  { names: ['영어 강의 듣기'], habitId: '3e7a2001-420a-812b-9a94-c8c5eeaeee34', label: '📺 Watch English lessons (2+ videos)' }
+];
+const normName = (s) => String(s || '').replace(/\s+/g, '').toLowerCase();
+function findHabitLink(name) {
+  const n = normName(name);
+  return HABIT_LINKS.find(l => l.names.some(x => normName(x) === n)) || null;
+}
+
+async function notionQuery(dbId, filter) {
+  const r = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
+    method: 'POST', headers: notionHeaders(), body: JSON.stringify({ filter, page_size: 100 })
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.message || '노션 조회 실패');
+  return data.results || [];
+}
+
+async function syncHabitLog(item, todoDbId) {
+  const habitDbId = process.env.NOTION_DATABASE_ID_HABITLOG;
+  if (!habitDbId || !item || !item.date) return;
+  const link = findHabitLink(item.name);
+  if (!link) return;
+  const date = String(item.date).slice(0, 10);
+
+  const logsThatDay = await notionQuery(habitDbId, {
+    and: [
+      { property: 'Habit', relation: { contains: link.habitId } },
+      { property: 'Date', date: { equals: date } }
+    ]
+  });
+
+  if (item.completed) {
+    if (logsThatDay.length > 0) return; // 이미 그날 기록이 있으면 또 만들지 않음 (하루 1회)
+    const r = await fetch('https://api.notion.com/v1/pages', {
+      method: 'POST', headers: notionHeaders(),
+      body: JSON.stringify({
+        parent: { database_id: habitDbId },
+        properties: {
+          'Name': { title: [{ text: { content: link.label } }] },
+          'Date': { date: { start: date } },
+          'Habit': { relation: [{ id: link.habitId }] },
+          'From Todo': { checkbox: true }
+        }
+      })
+    });
+    if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.message || '해빗 기록 생성 실패'); }
+    return;
+  }
+
+  // 체크 해제: 같은 습관에 묶인 다른 할 일(예: 일기 쓰기 ↔ 문법 수정)이 그날 완료돼 있으면 기록 유지
+  const autoLogs = logsThatDay.filter(p => p.properties?.['From Todo']?.checkbox);
+  if (autoLogs.length === 0) return;
+  if (link.names.length > 1) {
+    const doneThatDay = await notionQuery(todoDbId, {
+      and: [
+        { property: 'Date', date: { equals: date } },
+        { property: 'Completed', checkbox: { equals: true } }
+      ]
+    });
+    const siblingDone = doneThatDay.some(p => {
+      const t = (p.properties?.['Name']?.title || []).map(x => x.plain_text).join('');
+      return link.names.some(x => normName(x) === normName(t));
+    });
+    if (siblingDone) return;
+  }
+  await Promise.all(autoLogs.map(p => fetch(`https://api.notion.com/v1/pages/${p.id}`, {
+    method: 'PATCH', headers: notionHeaders(), body: JSON.stringify({ archived: true })
+  })));
+}
+
 const APPS = {
   todo: {
     databaseId: () => process.env.NOTION_DATABASE_ID_TODO || process.env.NOTION_DATABASE_ID,
@@ -735,6 +815,11 @@ module.exports = async (req, res) => {
           const data = await r.json();
           if (!r.ok) throw new Error(data.message || '노션 생성 실패');
           results.push({ appId: item.appId, notionPageId: data.id });
+        }
+        // 할 일 저장이 끝난 뒤 해빗 트래커 연동 - 실패해도 할 일 동기화는 절대 막지 않음
+        if (appKey === 'todo') {
+          try { await syncHabitLog(item, databaseId); }
+          catch (e) { console.error('[habit-sync]', e.message); }
         }
       }
       res.status(200).json({ results });
