@@ -30,7 +30,9 @@ function todoToProperties(item) {
     'Date': item.date ? { date: { start: item.date } } : { date: null },
     'Completed': { checkbox: !!item.completed },
     'Category': { rich_text: item.category ? [{ text: { content: item.category } }] : [] },
-    'Routine': { checkbox: !!item.routine },
+    // Routine은 켜기만 하고 끄지는 않아요. 어떤 앱이 루틴 표시를 잃어버린 채 저장해도
+    // 노션의 루틴 표시가 지워지지 않게 하려는 안전장치예요. (9/26 사고: 앱이 false로 덮어씀)
+    ...(item.routine ? { 'Routine': { checkbox: true } } : {}),
     'Deferred': { checkbox: !!item.deferred },
     'Subtasks': { rich_text: item.subtasks ? [{ text: { content: item.subtasks } }] : [] },
     'App ID': { rich_text: [{ text: { content: String(item.appId || '') } }] },
@@ -786,6 +788,18 @@ module.exports = async (req, res) => {
       }
       const results = [];
       for (const item of items) {
+        // 서버 쪽 최종 안전장치: 노션에 루틴으로 저장된 항목을 "밀린 일"로 다른 날짜에 옮기려는 저장은 막아요.
+        // 앱 쪽 버그가 또 생겨도 루틴이 오늘로 쏟아지는 일은 없게 됩니다.
+        if (appKey === 'todo' && item.notionPageId && item.deferred && !item.routine) {
+          try {
+            const cur = await fetch(`https://api.notion.com/v1/pages/${item.notionPageId}`, { headers: notionHeaders() });
+            const curData = await cur.json();
+            if (cur.ok && curData.properties?.['Routine']?.checkbox) {
+              results.push({ appId: item.appId, notionPageId: item.notionPageId, skipped: 'routine-rollover-blocked' });
+              continue;
+            }
+          } catch (e) { /* 확인 실패 시엔 평소대로 저장 */ }
+        }
         // SHELF 표지는 외부 링크로 두면 노션 갤러리에서 안 보여서, 저장할 때 노션 저장소로 옮겨요.
         // 이미 노션이 갖고 있는 주소(재저장 시 되돌아온 것)면 다시 올릴 필요 없어요.
         if (appKey === 'book' && item.cover && !item.coverFileUploadId
