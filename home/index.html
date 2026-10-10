@@ -5,6 +5,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=5">
 <link rel="manifest" href="manifest.json?v=5">
 <meta name="apple-mobile-web-app-title" content="toisty">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1d1c20">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>toisty</title>
@@ -169,6 +170,29 @@ main{flex:1;position:relative;overflow-y:auto;background:var(--card-bg)}
 .theme-swatch.selected{border-color:var(--ink)}
 .theme-swatch .sw-half{position:absolute; inset:0}
 .theme-swatch .sw-active{position:absolute; left:0; right:0; bottom:0; height:50%}
+
+/* 선택 표시: 메뉴마다 색을 칠하는 대신, 하나의 조각이 스프링으로 미끄러져 다음 메뉴로 이동해요.
+   앞쪽 끝이 먼저 달려가고 뒤쪽 끝이 따라와서 물방울처럼 늘어났다 줄어들어요. */
+nav{position:relative;background:var(--menu-inactive-bg)}
+nav.has-indicator .nav-item{background:transparent;position:relative;z-index:1}
+nav.has-indicator .nav-item:hover:not(.active){filter:none;background:rgba(0,0,0,.03)}
+.nav-indicator{position:absolute;left:0;top:0;width:100%;height:0;background:var(--menu-active-bg);z-index:0;pointer-events:none}
+.pane.swap-in{animation:paneIn .22s cubic-bezier(.2,.8,.2,1)}
+@keyframes paneIn{from{opacity:0;filter:blur(6px)}to{opacity:1;filter:blur(0)}}
+@media (prefers-reduced-motion:reduce){.pane.swap-in{animation:none}}
+
+/* 모바일 다크모드: 폰이 다크모드일 때만. 포인트색(메뉴 파스텔, 강조색)은 그대로, 흰색 계열 배경만 어둡게 */
+@media (max-width:700px) and (prefers-color-scheme:dark){
+  :root{
+    --card-bg:#1d1c20 !important; --ink:#ebe7e1 !important; --ink-soft:#9b968f !important;
+    --outer-bg:#141316 !important; --line:#2f2d33 !important;
+  }
+  html,body{background:var(--outer-bg)}
+  .mini-card:hover{background:#25232a}
+  nav.has-indicator .nav-item:hover:not(.active){background:rgba(0,0,0,.06)}
+  .storage-upload-row input[type="text"]{background:#25232a;color:var(--ink)}
+  .theme-panel{box-shadow:0 8px 24px rgba(0,0,0,.5)}
+}
 </style>
 </head>
 <body>
@@ -223,10 +247,12 @@ function showTab(appKey) {
 
   if (appKey === 'toisty') loadRandomSidebarPhoto(); // 홈으로 돌아올 때마다 무작위로 새로 뽑음
 
-  if (loadedPanes[appKey]) { loadedPanes[appKey].classList.add('active'); return; }
+  moveIndicator(appKey);
+  if (loadedPanes[appKey]) { swapIn(loadedPanes[appKey]); return; }
 
   const pane = document.createElement('div');
   pane.className = 'pane active';
+  swapIn(pane);
 
   if (appKey === 'toisty') {
     pane.innerHTML = toistyHTML();
@@ -254,6 +280,74 @@ function showTab(appKey) {
     setTimeout(hideLoading, 4000); // 사파리 등에서 load 이벤트가 늦게 오거나 안 오는 경우를 대비한 안전장치
   }
 }
+
+
+// ── 메뉴 선택 표시 (두 끝이 서로 다른 스프링) ──
+const navList = document.getElementById('navList');
+const navIndicator = document.createElement('div');
+navIndicator.className = 'nav-indicator';
+navList.prepend(navIndicator);
+navList.classList.add('has-indicator');
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const edgeA = { x: 0, v: 0, target: 0 }; // 위(가로 메뉴에선 왼쪽) 끝
+const edgeB = { x: 0, v: 0, target: 0 }; // 아래(오른쪽) 끝
+let indicatorKey = null, indicatorRaf = null, indicatorReady = false;
+const FAST = { k: 520, c: 42 }; // 앞서 가는 끝: 빠르고 살짝만 넘침
+const SLOW = { k: 240, c: 31 }; // 따라오는 끝: 천천히, 넘침 없음
+
+function navIsHorizontal() { return getComputedStyle(navList).flexDirection === 'row'; }
+function itemSpan(el) {
+  const line = parseFloat(getComputedStyle(el).borderBottomWidth) || parseFloat(getComputedStyle(el).borderRightWidth) || 0;
+  return navIsHorizontal()
+    ? [el.offsetLeft, el.offsetLeft + el.offsetWidth - line]
+    : [el.offsetTop, el.offsetTop + el.offsetHeight - line];
+}
+function paintIndicator() {
+  const a = Math.min(edgeA.x, edgeB.x), b = Math.max(edgeA.x, edgeB.x);
+  if (navIsHorizontal()) {
+    Object.assign(navIndicator.style, { top: '0', height: '100%', left: a + 'px', width: (b - a) + 'px' });
+  } else {
+    Object.assign(navIndicator.style, { left: '0', width: '100%', top: a + 'px', height: (b - a) + 'px' });
+  }
+}
+function moveIndicator(appKey, instant) {
+  const el = navList.querySelector(`.nav-item[data-app="${appKey}"]`);
+  if (!el) return;
+  indicatorKey = appKey;
+  const [a, b] = itemSpan(el);
+  const goingForward = a > edgeA.target;
+  edgeA.target = a; edgeB.target = b;
+  if (instant || !indicatorReady || reduceMotion) {
+    edgeA.x = a; edgeB.x = b; edgeA.v = edgeB.v = 0; indicatorReady = true;
+    paintIndicator(); return;
+  }
+  // 아래로 갈 땐 아래 끝이, 위로 갈 땐 위 끝이 먼저 달려가요
+  edgeA.cfg = goingForward ? SLOW : FAST;
+  edgeB.cfg = goingForward ? FAST : SLOW;
+  if (!indicatorRaf) { let last = performance.now(); indicatorRaf = requestAnimationFrame(function step(now) {
+    let dt = Math.min((now - last) / 1000, 1 / 30); last = now;
+    let moving = false;
+    for (const e of [edgeA, edgeB]) {
+      // 작은 단계로 나눠 계산해서 프레임이 끊겨도 튀지 않게
+      for (let i = 0; i < 4; i++) {
+        const h = dt / 4;
+        e.v += (-e.cfg.k * (e.x - e.target) - e.cfg.c * e.v) * h;
+        e.x += e.v * h;
+      }
+      if (Math.abs(e.x - e.target) > 0.3 || Math.abs(e.v) > 2) moving = true;
+      else { e.x = e.target; e.v = 0; }
+    }
+    paintIndicator();
+    indicatorRaf = moving ? requestAnimationFrame(step) : null;
+  }); }
+}
+function swapIn(pane) {
+  pane.classList.add('active');
+  if (reduceMotion) return;
+  pane.classList.remove('swap-in'); void pane.offsetWidth; pane.classList.add('swap-in');
+}
+window.addEventListener('resize', () => { if (indicatorKey) moveIndicator(indicatorKey, true); });
+document.fonts && document.fonts.ready.then(() => { if (indicatorKey) moveIndicator(indicatorKey, true); });
 
 navItems.forEach(item => item.addEventListener('click', () => showTab(item.dataset.app)));
 
