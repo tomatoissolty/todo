@@ -286,9 +286,41 @@ function categoryColor(id) { const c = appSettings.categories.find(c => c.id ===
 function categoryNameById(id) { const c = appSettings.categories.find(c => c.id === id); return c ? c.name : ''; }
 function categoryIdByName(name) { const c = appSettings.categories.find(c => c.name === name); return c ? c.id : null; }
 
+/* ═══════════ 루틴이었던 이름 기억 ═══════════
+   루틴 이름을 바꾸면(예: 듀오링고 → Duolingo) 예전 이름으로 만들어진 항목들이
+   더 이상 "루틴"으로 안 보여서, 일반 할 일처럼 매일 이월됩니다.
+   그게 쌓여서 같은 이름이 8개씩 뜨는 '중복 폭증'의 직접 원인이었어요.
+   그래서 한 번이라도 루틴이었던 이름은 이 기기에 영구히 기억해 둡니다. */
+const ROUTINE_NAMES_KEY = 'receipt-routine-names-seen';
+const LEGACY_ROUTINE_NAMES = ['말해보카', '영어 강의 듣기', '영어 복습', '일기 쓰기 eng', '일기쓰기eng', '일기(eng) 쓰기',
+  '야옹 화장실 청소', '듀오링고', '일기 문법 수정', '플랭크', '헤이링', '영어 강의 복습'];
+let routineNamesSeen = new Set();
+try { routineNamesSeen = new Set(JSON.parse(localStorage.getItem(ROUTINE_NAMES_KEY) || '[]')); } catch (e) {}
+function rememberRoutineNames(names) {
+  let changed = false;
+  (names || []).forEach(n => {
+    const k = (n || '').trim();
+    if (k && !routineNamesSeen.has(k)) { routineNamesSeen.add(k); changed = true; }
+  });
+  if (changed) { try { localStorage.setItem(ROUTINE_NAMES_KEY, JSON.stringify([...routineNamesSeen])); } catch (e) {} }
+  return changed;
+}
+function collectRoutineNames() {
+  rememberRoutineNames(LEGACY_ROUTINE_NAMES);
+  rememberRoutineNames((appSettings.routines || []).map(r => r.text));
+  const fromHistory = [];
+  Object.values(todos).forEach(list => (list || []).forEach(it => { if (it.routineId || it.isRoutine) fromHistory.push(it.text); }));
+  rememberRoutineNames(fromHistory);
+  return routineNamesSeen;
+}
+
 /* ═══════════ 밀린 항목 이월 ═══════════ */
 const ROLLOVER_MAX_DAYS = 10; // 이월은 최근 며칠 것까지만 (오래된 게 한꺼번에 쏟아지는 걸 막음)
-const ROLLOVER_MAX_ITEMS = 12; // 한 번에 이월되는 개수 상한 — 이걸 넘으면 사고로 보고 아무것도 안 옮겨요
+// 한 번에 이월되는 개수 상한 — 이걸 넘으면 사고로 보고 아무것도 안 옮겨요.
+// 12는 너무 낮았어요: 실제로 미뤄둔 일이 20개쯤 쌓이면 이월이 영구히 막혀서
+// "미뤄진 항목이 아예 안 뜨는" 증상이 됩니다. 폭증 사고는 100개 단위였으니 40으로 둡니다.
+// 진짜 방어는 아래 루틴 이름 가드 + 중복 정리 + 삭제 기록이 합니다.
+const ROLLOVER_MAX_ITEMS = 40;
 function rollover() {
   const t = todayStr();
   // 아주 오래된 날짜까지 훑으면, 어떤 이유로든 과거 데이터가 한 번에 딸려올 때
@@ -300,7 +332,7 @@ function rollover() {
   const seenFromStr = dstr(seenFrom);
   // 표시(routineId/isRoutine)가 어떤 이유로든 빠져있어도, 이름이 현재 루틴과 같으면 루틴으로 봅니다.
   // 이름을 바꾸거나 목록이 비어도 막히도록, 최근 30일 안에 루틴 표시가 붙은 적 있는 이름도 루틴으로 봐요.
-  const routineTexts = new Set((appSettings.routines || []).map(r => r.text));
+  const routineTexts = new Set([...collectRoutineNames(), ...(appSettings.routines || []).map(r => r.text)]);
   Object.entries(todos).forEach(([d, list]) => {
     if (d < seenFromStr) return;
     (list || []).forEach(it => { if (it.routineId || it.isRoutine) routineTexts.add(it.text); });
@@ -334,6 +366,71 @@ function rollover() {
   });
   if (changed) saveTodos();
   return changed;
+}
+
+/* ═══════════ 오늘 목록 중복 정리 ═══════════
+   같은 이름이 여러 개 떠 있을 때, '미뤄짐' 표시가 붙은 옛 복사본을 지우고 하나만 남겨요.
+   - 루틴 이름(현재 목록 + 예전에 루틴이었던 이름)으로 된 미뤄진 항목은 전부 지웁니다.
+     오늘 할 루틴은 어차피 새로 만들어지니까요.
+   - 그 외 이름은 가장 최신 것 하나만 남기고, 나머지 미뤄진 복사본만 지웁니다.
+   완료 체크한 항목과, 미뤄짐이 아닌 항목은 절대 건드리지 않아요. */
+function dedupeToday() {
+  const t = todayStr();
+  const list = todos[t] || [];
+  if (!list.length) return false;
+  const routineNames = new Set([...collectRoutineNames(), ...(appSettings.routines || []).map(r => (r.text || '').trim())]);
+  const groups = new Map();
+  list.forEach(it => {
+    const k = (it.text || '').trim();
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(it);
+  });
+  const kill = [];
+  groups.forEach((items, name) => {
+    const isRoutineName = routineNames.has(name);
+    const live = items.filter(it => !it.deferred || it.completed || it.routineId || it.isRoutine);
+    const zombies = items.filter(it => it.deferred && !it.completed && !it.routineId && !it.isRoutine);
+    if (!zombies.length) return;
+    if (isRoutineName || live.length) {
+      // 제대로 된 복사본이 따로 있거나 루틴 이름이면, 미뤄진 옛 복사본은 전부 지움
+      zombies.forEach(it => kill.push(it));
+    } else if (zombies.length > 1) {
+      // 전부 미뤄진 복사본뿐이면 가장 최신 하나만 남김
+      zombies.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      zombies.slice(1).forEach(it => kill.push(it));
+    }
+  });
+  if (!kill.length) return false;
+  const killSet = new Set(kill);
+  for (let i = list.length - 1; i >= 0; i--) if (killSet.has(list[i])) list.splice(i, 1);
+  kill.forEach(it => markDeleted(it));
+  saveTodos();
+  console.log(`[중복 정리] 미뤄진 중복 ${kill.length}개 삭제`);
+  return true;
+}
+
+/* ═══════════ 지난 날짜에 쌓인 루틴 좀비 청소 ═══════════
+   이름이 루틴인데 루틴 표시가 빠진 채 '미뤄짐'으로 떠돌아다니는 항목들을 모든 날짜에서 지워요.
+   오늘 할 루틴은 어차피 새로 만들어지니, 이 복사본들은 중복일 뿐입니다.
+   완료 체크한 것과 루틴 표시가 살아있는 것은 건드리지 않아요(기록 보존). */
+function purgeRoutineZombies() {
+  const routineNames = new Set([...collectRoutineNames(), ...(appSettings.routines || []).map(r => (r.text || '').trim())]);
+  const kill = [];
+  Object.values(todos).forEach(list => {
+    for (let i = (list || []).length - 1; i >= 0; i--) {
+      const it = list[i];
+      if (it.completed || it.routineId || it.isRoutine) continue;
+      if (!it.deferred) continue;
+      if (!routineNames.has((it.text || '').trim())) continue;
+      list.splice(i, 1);
+      kill.push(it);
+    }
+  });
+  if (!kill.length) return false;
+  kill.forEach(it => markDeleted(it));
+  saveTodos();
+  console.log(`[루틴 중복 청소] ${kill.length}개 삭제`);
+  return true;
 }
 
 /* ═══════════ 루틴 생성 (간단화: 매일 반복만) ═══════════ */
@@ -546,7 +643,32 @@ function markDeleted(item) {
   saveDeletedIds();
   // 캐시에 지운 항목이 남아있으면 그걸로 되살아나므로 캐시를 버려요
   localStorage.removeItem(NOTION_CACHE_KEY);
-  if (item.notionPageId) autoDelete(item.notionPageId);
+  if (item.notionPageId) queueDelete(item.notionPageId);
+}
+
+/* 노션 삭제는 한꺼번에 많이 쏘면 속도 제한에 걸려서 몇 개가 안 지워지고 남아요.
+   (그 남은 페이지가 다음에 되살아나서 '중복 폭증'이 됩니다)
+   그래서 한 개씩 차례로, 실패하면 한 번 더 시도하는 큐로 보냅니다. */
+const delQueue = [];
+let delRunning = false;
+function queueDelete(pageId) { if (pageId) { delQueue.push(pageId); runDelQueue(); } }
+async function runDelQueue() {
+  if (delRunning) return;
+  delRunning = true;
+  while (delQueue.length) {
+    const pid = delQueue.shift();
+    let ok = false;
+    for (let attempt = 0; attempt < 3 && !ok; attempt++) {
+      try {
+        const r = await fetch('/api/notion?app=todo', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pageId: pid }) });
+        ok = r.ok;
+      } catch (e) { ok = false; }
+      if (!ok) await new Promise(res => setTimeout(res, 700 * (attempt + 1)));
+    }
+    if (!ok) console.warn('[삭제 실패] 노션 페이지', pid);
+    await new Promise(res => setTimeout(res, 180));
+  }
+  delRunning = false;
 }
 
 async function autoDelete(pageId) {
@@ -803,9 +925,9 @@ function renderRoutineList() {
     if (st) {
       const hm = new Date(st.at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
       statusHtml = st.ok
-        ? `<div class="r-empty" style="font-size:12px;padding:4px 0 8px">노션 동기화 정상 · ${st.count}개 · ${hm}</div>`
-        : `<div class="r-empty" style="font-size:12px;padding:4px 0 8px;color:#c0392b">노션 동기화 실패 (${hm}): ${esc(st.msg || '')}</div>`;
-    } else statusHtml = `<div class="r-empty" style="font-size:12px;padding:4px 0 8px">노션 동기화 기록 없음</div>`;
+        ? `<div class="r-empty" style="font-size:12px;padding:4px 0 8px">${BUILD_VERSION} · 노션 동기화 정상 · ${st.count}개 · ${hm}</div>`
+        : `<div class="r-empty" style="font-size:12px;padding:4px 0 8px;color:#c0392b">${BUILD_VERSION} · 노션 동기화 실패 (${hm}): ${esc(st.msg || '')}</div>`;
+    } else statusHtml = `<div class="r-empty" style="font-size:12px;padding:4px 0 8px">${BUILD_VERSION} · 노션 동기화 기록 없음</div>`;
   } catch (e) {}
   el.innerHTML = statusHtml + (appSettings.routines.length ? appSettings.routines.map(r => `
     <div class="modal-row"><span>🔁 ${esc(r.text)}</span><button class="modal-del" data-id="${r.id}">삭제</button></div>
@@ -836,6 +958,8 @@ document.getElementById('btnAddRoutine').addEventListener('click', () => {
    - 이 기기에만 있고 노션에 올린 적 없는 건 노션에 올림
    - 노션에 올린 적 있는데 노션에서 사라진 건 다른 기기에서 지운 것 → 이 기기에서도 지움 */
 const ROUTINE_PENDING_DEL_KEY = 'receipt-routine-pending-del';
+const BUILD_VERSION = 'v36';
+console.log('[toisty todo] build', BUILD_VERSION);
 const ROUTINE_STATUS_KEY = 'receipt-routine-sync-status';
 function setRoutineStatus(st) {
   try { localStorage.setItem(ROUTINE_STATUS_KEY, JSON.stringify(Object.assign({ at: Date.now() }, st))); } catch (e) {}
@@ -925,6 +1049,7 @@ async function syncRoutines() {
 
   appSettings.routines = merged;
   saveSettings();
+  rememberRoutineNames(merged.map(r => r.text));
 
   // 기기마다 다르게 만들어졌던 루틴 id를 하나로 맞추고, 이미 만들어진 오늘 항목들도 새 id로 이어붙임
   let todosChanged = false;
@@ -1015,13 +1140,15 @@ pullFromNotion(false).then(() => {
   return pullFromNotion(true);
 }).then(() => routineSync).then(() => {
   cleanupDeferredMess();
+  purgeRoutineZombies(); // 이월 전에 좀비를 치워야, 이월 상한에 걸려 멈추지 않아요
   rollover();
   spawnRoutines();
+  dedupeToday(); // 이월·루틴 생성까지 끝난 뒤 같은 이름 중복을 정리
   render();
 }).catch(err => {
   console.warn('초기 pull 실패:', err.message);
   // 노션을 못 불러온 상태에서 이월을 돌리면 과거 데이터를 오판할 수 있어서, 루틴 생성만 해요
-  return routineSync.then(() => { spawnRoutines(); render(); });
+  return routineSync.then(() => { spawnRoutines(); dedupeToday(); render(); }); // 노션을 못 읽었을 땐 지우지 않음
 });
 </script>
 </body>
