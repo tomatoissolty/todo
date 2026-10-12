@@ -797,9 +797,19 @@ document.getElementById('btnTheme').addEventListener('click', () => { renderThem
 /* 루틴 관리 */
 function renderRoutineList() {
   const el = document.getElementById('routineList');
-  el.innerHTML = appSettings.routines.length ? appSettings.routines.map(r => `
+  let statusHtml = '';
+  try {
+    const st = JSON.parse(localStorage.getItem(ROUTINE_STATUS_KEY) || 'null');
+    if (st) {
+      const hm = new Date(st.at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      statusHtml = st.ok
+        ? `<div class="r-empty" style="font-size:12px;padding:4px 0 8px">노션 동기화 정상 · ${st.count}개 · ${hm}</div>`
+        : `<div class="r-empty" style="font-size:12px;padding:4px 0 8px;color:#c0392b">노션 동기화 실패 (${hm}): ${esc(st.msg || '')}</div>`;
+    } else statusHtml = `<div class="r-empty" style="font-size:12px;padding:4px 0 8px">노션 동기화 기록 없음</div>`;
+  } catch (e) {}
+  el.innerHTML = statusHtml + (appSettings.routines.length ? appSettings.routines.map(r => `
     <div class="modal-row"><span>🔁 ${esc(r.text)}</span><button class="modal-del" data-id="${r.id}">삭제</button></div>
-  `).join('') : `<div class="r-empty">루틴이 없어요</div>`;
+  `).join('') : `<div class="r-empty">루틴이 없어요</div>`);
   el.querySelectorAll('.modal-del').forEach(b => b.addEventListener('click', () => {
     const gone = appSettings.routines.find(r => r.id === b.dataset.id);
     appSettings.routines = appSettings.routines.filter(r => r.id !== b.dataset.id);
@@ -811,7 +821,7 @@ document.getElementById('btnRoutines').addEventListener('click', () => { renderR
 document.getElementById('btnAddRoutine').addEventListener('click', () => {
   const text = document.getElementById('newRoutineName').value.trim();
   if (!text) return;
-  const newRoutine = { id: generateId(), text, days: [0, 1, 2, 3, 4, 5, 6], skipDates: [] };
+  const newRoutine = { id: generateId(), text, days: [0, 1, 2, 3, 4, 5, 6], skipDates: [], unsynced: true };
   appSettings.routines.push(newRoutine);
   saveSettings(); document.getElementById('newRoutineName').value = '';
   renderRoutineList(); spawnRoutines(); render();
@@ -826,6 +836,10 @@ document.getElementById('btnAddRoutine').addEventListener('click', () => {
    - 이 기기에만 있고 노션에 올린 적 없는 건 노션에 올림
    - 노션에 올린 적 있는데 노션에서 사라진 건 다른 기기에서 지운 것 → 이 기기에서도 지움 */
 const ROUTINE_PENDING_DEL_KEY = 'receipt-routine-pending-del';
+const ROUTINE_STATUS_KEY = 'receipt-routine-sync-status';
+function setRoutineStatus(st) {
+  try { localStorage.setItem(ROUTINE_STATUS_KEY, JSON.stringify(Object.assign({ at: Date.now() }, st))); } catch (e) {}
+}
 function routineApi(method, body) {
   return fetch('/api/notion?app=routine', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 }
@@ -836,7 +850,7 @@ async function pushRoutine(r, order) {
     if (!res.ok) throw new Error(data.error || '루틴 업로드 실패');
     const pid = data.results && data.results[0] && data.results[0].notionPageId;
     const cur = appSettings.routines.find(x => x.id === r.id);
-    if (cur && pid) { cur.notionPageId = pid; saveSettings(); }
+    if (cur && pid) { cur.notionPageId = pid; delete cur.unsynced; saveSettings(); }
   } catch (err) { console.warn('루틴 노션 업로드 실패(다음 실행 때 다시 시도):', err.message); }
 }
 async function deleteRoutineRemote(r) {
@@ -899,7 +913,11 @@ async function syncRoutines() {
   const leftovers = local.filter(l => !usedLocal.has(l.id));
   const remoteEmpty = remote.length === 0;
   leftovers.forEach(l => {
-    if (l.notionPageId && !remoteEmpty) return; // 노션에 올렸었는데 사라짐 = 다른 기기에서 삭제 → 여기서도 삭제
+    if (!remoteEmpty) {
+      // 노션에 목록이 있으면 노션이 기준이에요. 이 기기에만 있던 예전 목록(노션에 올린 적 없음)은 버립니다.
+      // 단, 방금 이 기기에서 추가했는데 올리기에 실패한 것(unsynced)은 지키고 다시 올려요.
+      if (!(l.unsynced && !l.notionPageId)) return;
+    }
     // 노션이 통째로 비어 보이는 건 오류일 수도 있어서, 지우지 않고 지킨 뒤 다시 올려요
     const item = Object.assign({}, l); delete item.notionPageId;
     merged.push(item); toPush.push(item);
@@ -920,6 +938,7 @@ async function syncRoutines() {
   if (todosChanged) saveTodos();
 
   for (const item of toPush) await pushRoutine(item, merged.indexOf(item));
+  setRoutineStatus({ ok: true, count: merged.length });
   return merged.length;
 }
 
@@ -990,7 +1009,7 @@ render();
 // 불완전한 로컬 정보만으로 판단하게 돼요. 이번 "항목 폭증" 사고의 원인 중 하나였습니다.
 // 이제는 항상 노션에서 받아온 뒤에 정리 → 이월 → 루틴 생성 순서로 처리합니다.
 // 루틴 목록은 노션 것을 기준으로 맞춰요(폰·맥북 공통). 투두 받아오기와 동시에 진행하고, 루틴 생성 전에 끝나길 기다려요.
-const routineSync = syncRoutines().catch(err => console.warn('루틴 목록 동기화 실패(이 기기 목록으로 진행):', err.message));
+const routineSync = syncRoutines().catch(err => { console.warn('루틴 목록 동기화 실패(이 기기 목록으로 진행):', err.message); setRoutineStatus({ ok: false, msg: err.message || String(err) }); });
 pullFromNotion(false).then(() => {
   render();
   return pullFromNotion(true);
