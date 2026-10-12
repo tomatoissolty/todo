@@ -288,32 +288,49 @@ function categoryIdByName(name) { const c = appSettings.categories.find(c => c.n
 
 /* ═══════════ 밀린 항목 이월 ═══════════ */
 const ROLLOVER_MAX_DAYS = 10; // 이월은 최근 며칠 것까지만 (오래된 게 한꺼번에 쏟아지는 걸 막음)
+const ROLLOVER_MAX_ITEMS = 12; // 한 번에 이월되는 개수 상한 — 이걸 넘으면 사고로 보고 아무것도 안 옮겨요
 function rollover() {
   const t = todayStr();
   // 아주 오래된 날짜까지 훑으면, 어떤 이유로든 과거 데이터가 한 번에 딸려올 때
   // 수십 개가 통째로 오늘로 밀려오는 사고가 나요. 최근 것만 이월합니다.
-  const oldest = new Date(t + 'T00:00:00');
-  oldest.setDate(oldest.getDate() - ROLLOVER_MAX_DAYS);
-  const oldestStr = `${oldest.getFullYear()}-${String(oldest.getMonth() + 1).padStart(2, '0')}-${String(oldest.getDate()).padStart(2, '0')}`;
-  let changed = false;
+  const dstr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const oldest = new Date(t + 'T00:00:00'); oldest.setDate(oldest.getDate() - ROLLOVER_MAX_DAYS);
+  const oldestStr = dstr(oldest);
+  const seenFrom = new Date(t + 'T00:00:00'); seenFrom.setDate(seenFrom.getDate() - 30);
+  const seenFromStr = dstr(seenFrom);
   // 표시(routineId/isRoutine)가 어떤 이유로든 빠져있어도, 이름이 현재 루틴과 같으면 루틴으로 봅니다.
-  // 이월은 되돌리기 어려운 동작이라 판단 근거를 하나에만 의존하지 않게 이중으로 막아요.
+  // 이름을 바꾸거나 목록이 비어도 막히도록, 최근 30일 안에 루틴 표시가 붙은 적 있는 이름도 루틴으로 봐요.
   const routineTexts = new Set((appSettings.routines || []).map(r => r.text));
+  Object.entries(todos).forEach(([d, list]) => {
+    if (d < seenFromStr) return;
+    (list || []).forEach(it => { if (it.routineId || it.isRoutine) routineTexts.add(it.text); });
+  });
+  const cands = [];
   Object.keys(todos).forEach(dateStr => {
     if (dateStr >= t || dateStr < oldestStr) return;
-    const dayList = todos[dateStr] || [];
-    for (let i = dayList.length - 1; i >= 0; i--) {
-      const item = dayList[i];
+    (todos[dateStr] || []).forEach(item => {
       // isRoutine은 노션에서 내려온 값이라 로컬 설정이 지워져도 살아있어요 — 루틴은 절대 이월 안 함
-      if (item.completed || item.routineId || item.isRoutine || routineTexts.has(item.text)) continue;
-      dayList.splice(i, 1);
-      item.deferred = true;
-      item.updatedAt = Date.now();
-      if (!todos[t]) todos[t] = [];
-      todos[t].push(item);
-      changed = true;
-      autoPush(item, t);
-    }
+      if (item.completed || item.routineId || item.isRoutine || routineTexts.has(item.text)) return;
+      cands.push({ dateStr, item });
+    });
+  });
+  // 안전장치: 진짜 밀린 일이 하루에 12개를 넘는 경우는 없어요. 넘으면 뭔가 잘못된 것이라 건드리지 않습니다.
+  if (cands.length > ROLLOVER_MAX_ITEMS) {
+    console.warn(`[이월 중단] 한 번에 ${cands.length}개가 이월 대상이라 비정상으로 보고 건너뜀`);
+    return false;
+  }
+  let changed = false;
+  cands.forEach(({ dateStr, item }) => {
+    const dayList = todos[dateStr] || [];
+    const at = dayList.indexOf(item);
+    if (at < 0) return;
+    dayList.splice(at, 1);
+    item.deferred = true;
+    item.updatedAt = Date.now();
+    if (!todos[t]) todos[t] = [];
+    todos[t].push(item);
+    changed = true;
+    autoPush(item, t);
   });
   if (changed) saveTodos();
   return changed;
@@ -624,6 +641,37 @@ async function pullFromNotion(forceRefresh) {
       changed = true;
     }
   });
+  // 노션에서 지워진 항목(앱에서 지웠거나 노션에서 직접 지운 것)이 이 기기에 남아있으면 정리해요.
+  // 안 그러면 이 기기에 남은 복사본이 이월·수정될 때 push되면서 지워진 노션 페이지를 되살려요
+  // (archived:false 로 복원되기 때문). 노션을 실제로 새로 받아온 경우에만 하고, 방금 만든 항목은 제외하고,
+  // 한꺼번에 많이 지워지면 이상으로 보고 멈춰요.
+  if (!isFresh && Array.isArray(pullData.items)) {
+    const remoteIds = new Set(), remotePages = new Set();
+    pullData.items.forEach(r => { if (r.appId) remoteIds.add(r.appId); if (r.notionPageId) remotePages.add(r.notionPageId); });
+    const dstr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const tt = todayStr();
+    const lo = new Date(tt + 'T00:00:00'); lo.setDate(lo.getDate() - 35);
+    const hi = new Date(tt + 'T00:00:00'); hi.setDate(hi.getDate() + 35);
+    const loStr = dstr(lo), hiStr = dstr(hi);
+    const stale = []; let inWindow = 0;
+    Object.entries(todos).forEach(([d, list]) => {
+      if (d < loStr || d > hiStr) return;
+      (list || []).forEach(item => {
+        inWindow++;
+        if (!item.notionPageId) return;
+        if (remoteIds.has(item.id) || remotePages.has(item.notionPageId)) return;
+        if (Date.now() - (item.updatedAt || 0) < 5 * 60 * 1000) return; // 방금 올린 것
+        stale.push({ d, item });
+      });
+    });
+    if (stale.length && stale.length <= 25 && stale.length <= inWindow * 0.4) {
+      stale.forEach(({ d, item }) => { const l = todos[d]; const at = l.indexOf(item); if (at > -1) l.splice(at, 1); });
+      changed = true;
+      console.log(`[동기화] 노션에서 지워진 항목 ${stale.length}개를 이 기기에서도 정리`);
+    } else if (stale.length) {
+      console.warn(`[동기화] 노션에 없는 항목이 ${stale.length}개로 비정상적으로 많아 정리를 건너뜀`);
+    }
+  }
   if (changed) saveTodos();
   return changed;
 }
@@ -642,6 +690,56 @@ const CLEANUP_IDS = new Set([
   'mtpcvj0m5lfw25', 'mttsvn4js9qbvj',                                      // 일기 쓰기 eng
   'mtpcvj0mt5hu9a', 'mtquaj6f8gj25c', 'mttsvn4jjbjoo3'                     // 헤이링
 ]);
+/* 2026-10-12 사고: 과거 루틴 항목 132개가 한꺼번에 '오늘로 미뤄진 항목'으로 되살아났어요.
+   그 132개의 App ID만 골라서 이 기기와 노션에서 지웁니다. (진짜 밀린 일 5개와 오늘 루틴·습관은 그대로) */
+const FLOOD_KEY = 'receipt-cleanup-flood-1012-v1';
+const FLOOD_IDS = [
+  'mtuwdb72rwwwci', 'mtwkngtak24fp4', 'mtxyj7p846r00w', 'mtxyj7p8ss9y3r', 'mtxyj7p8xehdmi', 'mtzcxeoxhopxkd',
+  'mtzcxeoxi7w3dh', 'mtzcxeoxlvut1f', 'mtzcxeoxomvo3g', 'mu0u0pv3cxuh9m', 'mu0u0pv3e2zd9v', 'mu0u0pv3zl5yp7',
+  'mu28fu8ijgvpbu', 'mu28fu8iuh9n20', 'mu28fu8jiy9p5f', 'mu28fu8joa2eey', 'mu6qed40f4j34w', 'mu6qed40gw7pnc',
+  'mu6qed40jdeeim', 'mu6qed40qahpq9', 'mu6qed40raokcn', 'mu7vlzw44dqgub', 'mu7vlzw45e7wsv', 'mu7vlzw4ft1eon',
+  'mu7vlzw4jsynw8', 'mu7vlzw4u5plv7', 'mu7vlzw4wv5uqh', 'mu7vlzw4y1pnl5', 'mu7vlzw4zabx58', 'mu9f54ip8dqxpj',
+  'mu9f54ipff6vku', 'mu9f54ipna7mf9', 'mu9f54ipppn4u0', 'mu9f54ipq543q5', 'mu9f54iprukq3h', 'mu9f54ipx7gg7w',
+  'muc7hzbwjtgo1k', 'muc7hzbwsujip8', 'mudmj60gmmjevk', 'muf4z7thgv6bsq', 'muf4z7tifj56gn', 'muf4z7tiqpuba3',
+  'muf4z7tix0n9rh', 'muf4z7tiy7ysxr', 'muf4z7tizvbao5', 'mugfyr2zcbsni3', 'mugfyr2zfydvr7', 'mugfyr2zhy0gc9',
+  'mugfyr2zm3u1bi', 'mugfyr2zp74dfh', 'muhvn7nk3meldm', 'muhvn7nkdpqstk', 'muhvn7nke1bhlw', 'muhvn7nked57pn',
+  'muhvn7nkiiq6xh', 'mujg6tza8qpxu8', 'mujg6tza9r8q2s', 'mujg6tzamedwb9', 'mujg6tzau23y2z', 'mujg6tzaxza96x',
+  'mul84p8l0t2949', 'mul84p8l4976zh', 'mul84p8lvr9cuu', 'mul84p8lw8d5ev', 'mul84p8lz5rtmx', 'mulxuuo739xuio',
+  'mulxuuo7gil5te', 'mulxuuo7tgsng4', 'mulxuuo7ut1c8u', 'mulxuuo7xsavtc', 'munt3ws14qh2a1', 'munt3ws1e5wv6q',
+  'munt3ws1j9ou5p', 'munt3ws1psavu8', 'mup26xgi8gyum0', 'mup26xgihqx5k7', 'mup26xgimkgl87', 'mup26xgiowpgpx',
+  'muqmkgio3rzrlg', 'muqmkgio5w8ael', 'muqmkgio6g537l', 'muqmkgio6pmgqq', 'muqmkgiogo9n77', 'muqmkgiokdljqe',
+  'muqmkgios78sxg', 'muqmkgiot254op', 'muqmkgioxqfjcz', 'muscx6fy5b7dee', 'muscx6fy6nheal', 'muscx6fyo908j9',
+  'muscx6fypp65q1', 'muscx6fyvstgqe', 'mutlbzsxztglbn', 'mutlbzsy0w4u7b', 'mutlbzsygyvec7', 'mutlbzsyp5dn6t',
+  'mutlbzsypbt560', 'muuv1jiu31hg2m', 'muuv1jiui662du', 'muuv1jiukc5y0k', 'muuv1jiul23wrb', 'muuv1jiunqfi7l',
+  'muuv1jiur752zr', 'muuv1jiuyla252', 'muuv1jiuzio4da', 'muuv1jiuzp9bab', 'muw3jqaw86zzmz', 'muw3jqaw8cj5gz',
+  'muw3jqawcjlhno', 'muw3jqawj9o4nx', 'muw3jqawyieo8q', 'muxkwxdvetn6wt', 'muxkwxdvg5jlhe', 'muxkwxdvni3ftm',
+  'muxkwxdvxwtnnq', 'muzldp8830xvah', 'muzldp88c8ep8y', 'muzldp88rv5q80', 'muzldp88wblase', 'muzldp88x4kryx',
+  'muzldp88xan61f', 'mv0kpjcy90smuy', 'mv0kpjcyf3qptc', 'mv0kpjcyse3luv', 'mv0kpjcyu7xiw1', 'mv0kpjcyyjqfcv',
+  'mv1wc00u2q0z7u', 'mv1wc00ub5m7kz', 'mv1wc00uhamsnw', 'mv1wc00uixto9v', 'mv41j8gyee9oo1', 'mv41j8gyj95cz5'
+];
+function cleanupFlood1012() {
+  if (localStorage.getItem(FLOOD_KEY)) return false;
+  const set = new Set(FLOOD_IDS);
+  const found = new Set();
+  Object.values(todos).forEach(list => {
+    for (let i = (list || []).length - 1; i >= 0; i--) {
+      const item = list[i];
+      if (!set.has(item.id)) continue;
+      list.splice(i, 1);
+      found.add(item.id);
+      markDeleted(item); // 지웠다는 기록 + (노션 페이지가 연결돼 있으면) 노션에서도 삭제
+    }
+  });
+  // 이 기기엔 없고 노션에만 남은 것도 지워지도록 '지움 기록'만 남김 → 받아올 때 노션 쪽을 한 번 더 삭제해요
+  FLOOD_IDS.forEach(id => { if (!found.has(id)) deletedIds[id] = { at: Date.now(), pageId: null }; });
+  saveDeletedIds();
+  localStorage.removeItem(NOTION_CACHE_KEY);
+  localStorage.setItem(FLOOD_KEY, String(Date.now()));
+  saveTodos();
+  console.log(`[정리] 되살아난 루틴 항목 정리 완료 (이 기기에서 ${found.size}개 제거)`);
+  return true;
+}
+
 function cleanupDeferredMess() {
   if (localStorage.getItem(CLEANUP_KEY)) return false;
   let removed = 0;
@@ -885,6 +983,7 @@ document.getElementById('btnSync').addEventListener('click', async () => {
 /* ═══════════ INIT ═══════════ */
 applyAccent();
 applyDarkMode();
+cleanupFlood1012(); // 되살아난 항목은 받아오기 전에 먼저 지움 기록을 남겨야, 받아올 때 다시 안 들어와요
 repairStaleTimestamps(); // 노션에서 받아오기 전에, 잘못 박힌 로컬 수정시각부터 되돌림
 render();
 // 예전엔 여기서 먼저 spawnRoutines()/rollover()를 돌렸는데, 그러면 노션 데이터를 받아보기도 전에
