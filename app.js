@@ -130,18 +130,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- ROLLOVER: 어제 이전 날짜에 완료 안 된(루틴 제외) 항목을 오늘로 자동으로 옮기고 '미뤄짐' 표시 ---
   const rolloverIncompleteTodos = () => {
     const todayStr = todayDate.format('YYYY-MM-DD');
-    // 최근 10일 것만 이월 (오래된 게 한꺼번에 쏟아지는 사고 방지 - 영수증 앱과 동일)
-    const oldestStr = todayDate.subtract(10, 'day').format('YYYY-MM-DD');
-    // 루틴 표시가 어떤 이유로 빠져도 이름이 루틴과 같으면 루틴으로 봄 (이중 안전장치)
-    const routineTexts = new Set((appSettings.routines || []).map(r => r.text));
     let changed = false;
     Object.keys(todos).forEach(dateStr => {
-      if (dateStr >= todayStr || dateStr < oldestStr) return; // 오늘/미래, 너무 오래된 건 그대로 둠
+      if (dateStr >= todayStr) return; // 오늘/미래는 그대로 둠
       const dayList = todos[dateStr] || [];
       for (let i = dayList.length - 1; i >= 0; i--) {
         const t = dayList[i];
-        // 노션에서 받아온 루틴(isRoutine)을 못 알아보고 전부 오늘로 끌고 오던 게 9/26 사고의 원인
-        if (t.completed || t.routineId || t.isRoutine || routineTexts.has(t.text)) continue;
+        if (t.completed || t.routineId) continue; // 완료했거나 루틴 생성 항목이면 안 옮김
         dayList.splice(i, 1);
         t.deferred = true;
         t.updatedAt = Date.now();
@@ -916,8 +911,7 @@ document.addEventListener('DOMContentLoaded', () => {
     date: dateStr,
     completed: todo.completed,
     category: categoryNameById(todo.categoryId),
-    // 노션에서 받아온 루틴은 routineId가 없고 isRoutine만 있어요 - 둘 다 봐야 루틴 표시가 안 지워져요
-    routine: !!(todo.routineId || todo.isRoutine),
+    routine: !!todo.routineId,
     deferred: !!todo.deferred,
     subtasks: serializeSubtasks(todo.subtasks),
     updatedAt: new Date(todo.updatedAt || Date.now()).toISOString()
@@ -1016,8 +1010,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (existing) {
         const localTime = existing.todo.updatedAt || 0;
-        // 노션의 Routine 체크는 항상 맞는 값이라 시각과 상관없이 반영
-        if (row.routine && !existing.todo.isRoutine) { existing.todo.isRoutine = true; changed = true; }
         if (remoteTime > localTime) {
           existing.todo.text = row.name;
           existing.todo.completed = row.completed;
@@ -1026,25 +1018,13 @@ document.addEventListener('DOMContentLoaded', () => {
           existing.todo.subtasks = parseSubtasks(row.subtasks);
           existing.todo.notionPageId = row.notionPageId;
           existing.todo.updatedAt = remoteTime;
-          // 다른 기기/노션에서 날짜가 바뀌었으면 이 기기에서도 그 날짜로 옮김
-          if (row.date && row.date !== existing.dateStr) {
-            const fromList = todos[existing.dateStr] || [];
-            const at = fromList.indexOf(existing.todo);
-            if (at > -1) fromList.splice(at, 1);
-            if (!todos[row.date]) todos[row.date] = [];
-            todos[row.date].push(existing.todo);
-            existing.dateStr = row.date;
-          }
           changed = true;
         }
       } else if (row.date) {
         if (!todos[row.date]) todos[row.date] = [];
         todos[row.date].push({
           id: row.appId, text: row.name, completed: row.completed,
-          // 루틴 여부를 버리지 않고 보관 - 이걸 null로만 두던 게 루틴이 오늘로 끌려온 원인
-          categoryId: categoryIdByName(row.category),
-          routineId: row.routine ? ((appSettings.routines.find(rt => rt.text === row.name) || {}).id || null) : null,
-          isRoutine: !!row.routine, deferred: !!row.deferred,
+          categoryId: categoryIdByName(row.category), routineId: null, deferred: !!row.deferred,
           linkColor: null, subtasks: parseSubtasks(row.subtasks),
           pomoTime: 0, pomoActive: false, pomoEndAt: null,
           updatedAt: remoteTime || Date.now(), notionPageId: row.notionPageId

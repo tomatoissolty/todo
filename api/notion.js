@@ -6,8 +6,6 @@
 //   NOTION_DATABASE_ID       — "✅ Daily 할 일" 데이터베이스 ID (todo 앱, 기존 이름 유지)
 //   NOTION_DATABASE_ID_MOVIE — "🎬 REEL 영화 기록" 데이터베이스 ID
 //   NOTION_DATABASE_ID_TRACE — "✏️ TRACE 영어 학습" 데이터베이스 ID (/trace 앱)
-//   NOTION_DATABASE_ID_HABITLOG — 12 Week Year "Habit Log" 데이터베이스 ID (할 일 → 해빗 트래커 연동, 없으면 기본값 사용)
-//   NOTION_DATABASE_ID_HABITS   — 12 Week Year "Weekly Actions" 데이터베이스 ID (장바구니, 없으면 기본값 사용)
 //
 // 사용법: /api/notion?app=todo  또는  /api/notion?app=movie  (app 생략 시 todo)
 //   GET    → 해당 DB의 모든 항목을 가져옴 (pull)
@@ -31,13 +29,9 @@ function todoToProperties(item) {
     'Date': item.date ? { date: { start: item.date } } : { date: null },
     'Completed': { checkbox: !!item.completed },
     'Category': { rich_text: item.category ? [{ text: { content: item.category } }] : [] },
-    // Routine은 켜기만 하고 끄지는 않아요. 어떤 앱이 루틴 표시를 잃어버린 채 저장해도
-    // 노션의 루틴 표시가 지워지지 않게 하려는 안전장치예요. (9/26 사고: 앱이 false로 덮어씀)
-    ...(item.routine ? { 'Routine': { checkbox: true } } : {}),
+    'Routine': { checkbox: !!item.routine },
     'Deferred': { checkbox: !!item.deferred },
     'Subtasks': { rich_text: item.subtasks ? [{ text: { content: item.subtasks } }] : [] },
-    // 장바구니로 담은 항목만 습관 ID를 가져요. 다른 앱이 이 값을 모르고 저장해도 지워지지 않게, 있을 때만 씁니다.
-    ...(item.habitId ? { 'Habit ID': { rich_text: [{ text: { content: String(item.habitId) } }] } } : {}),
     'App ID': { rich_text: [{ text: { content: String(item.appId || '') } }] },
     'Last Updated': item.updatedAt ? { date: { start: item.updatedAt } } : { date: null }
   };
@@ -56,7 +50,6 @@ function todoFromPage(page) {
     routine: !!p['Routine']?.checkbox,
     deferred: !!p['Deferred']?.checkbox,
     subtasks: richText(p['Subtasks']),
-    habitId: richText(p['Habit ID']) || null,
     lastUpdated: p['Last Updated']?.date?.start || null
   };
 }
@@ -515,179 +508,22 @@ function traceFromPage(page) {
   };
 }
 
-// --- 할 일 → 12 Week Year 해빗 트래커 연동 ---
-// 아래 이름의 할 일을 체크하면 해빗 트래커(Habit Log)에 그날 기록을 자동으로 남기고,
-// 체크를 풀면 자동으로 만든 기록만 지워요. (트래커에서 직접 누른 기록은 절대 안 건드림)
-// 이름은 띄어쓰기/대소문자 무시하고 비교해요.
-const HABIT_LINKS = [
-  { names: ['헤이링'], habitId: 'fdca2001-420a-82dc-aaf5-81c5957bbb25', label: '🎧 Use Heyring for 15 minutes' },
-  { names: ['말해보카'], habitId: '3e7a2001-420a-8100-84ee-f33925ce33c5', label: '🏆 Earn at least 1 trophy' },
-  // 일기 쓰기 / 문법 수정은 둘 중 하나만 해도 같은 습관 1회로 쳐요
-  { names: ['일기 쓰기 eng', '일기 문법 수정'], habitId: '12da2001-420a-837b-ad86-010dce9ca18b', label: '✏️ Write a journal entry or fix its grammar' },
-  { names: ['영어 강의 듣기'], habitId: '3e7a2001-420a-812b-9a94-c8c5eeaeee34', label: '📺 Watch English lessons' }
-];
-const normName = (s) => String(s || '').replace(/\s+/g, '').toLowerCase();
-const normId = (s) => String(s || '').replace(/-/g, '').toLowerCase();
-function findHabitLink(name) {
-  const n = normName(name);
-  return HABIT_LINKS.find(l => l.names.some(x => normName(x) === n)) || null;
+function routineToProperties(item) {
+  return {
+    '이름': { title: [{ text: { content: item.text || '(이름 없음)' } }] },
+    'App ID': { rich_text: item.appId ? [{ text: { content: item.appId } }] : [] },
+    '순서': { number: typeof item.order === 'number' ? item.order : 0 }
+  };
 }
-// 장바구니로 담은 항목은 습관 ID를 직접 갖고 있고, 루틴(헤이링 등)은 이름으로 습관을 찾아요.
-function resolveHabitLink(item) {
-  if (item.habitId) {
-    const known = HABIT_LINKS.find(l => normId(l.habitId) === normId(item.habitId));
-    return { habitId: item.habitId, label: known ? known.label : (item.name || ''), names: known ? known.names : [] };
-  }
-  return findHabitLink(item.name);
-}
-
-// 12 Week Year 데이터베이스 ID - 비밀값이 아니라서 환경변수가 없으면 이 값을 써요.
-const HABITS_DB_FALLBACK = 'e49a2001420a83cd9ddf01c77fe378bf';   // Weekly Actions (습관 목록)
-const HABITLOG_DB_FALLBACK = 'eb5a2001420a83c5a17f81c0f483b6bd'; // Habit Log (체크 기록)
-const habitLogDbId = () => process.env.NOTION_DATABASE_ID_HABITLOG || HABITLOG_DB_FALLBACK;
-const habitsDbId = () => process.env.NOTION_DATABASE_ID_HABITS || HABITS_DB_FALLBACK;
-
-async function notionQuery(dbId, filter) {
-  const r = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
-    method: 'POST', headers: notionHeaders(), body: JSON.stringify({ filter, page_size: 100 })
-  });
-  const data = await r.json();
-  if (!r.ok) throw new Error(data.message || '노션 조회 실패');
-  return data.results || [];
-}
-// 100개가 넘어도 끝까지 받아와요 (일주일치 체크 기록은 100개를 넘을 수 있음)
-async function notionQueryAll(dbId, filter) {
-  let all = [], cursor;
-  do {
-    const body = { page_size: 100 };
-    if (filter) body.filter = filter;
-    if (cursor) body.start_cursor = cursor;
-    const r = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
-      method: 'POST', headers: notionHeaders(), body: JSON.stringify(body)
-    });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.message || '노션 조회 실패');
-    all = all.concat(data.results || []);
-    cursor = data.has_more ? data.next_cursor : undefined;
-  } while (cursor);
-  return all;
-}
-
-async function syncHabitLog(item, todoDbId) {
-  const habitDbId = habitLogDbId();
-  if (!habitDbId || !item || !item.date) return;
-  const link = resolveHabitLink(item);
-  if (!link) return;
-  // 날짜는 할 일이 속한 날짜 그대로 써요. 앱이 하루를 새벽 기준으로 나누므로,
-  // 새벽에 체크해도 할 일이 속한 "어제" 날짜로 기록돼요.
-  const date = String(item.date).slice(0, 10);
-
-  const logsThatDay = await notionQuery(habitDbId, {
-    and: [
-      { property: 'Habit', relation: { contains: link.habitId } },
-      { property: 'Date', date: { equals: date } }
-    ]
-  });
-
-  if (item.completed) {
-    if (logsThatDay.length > 0) return; // 이미 그날 기록이 있으면 또 만들지 않음 (하루 1회)
-    const r = await fetch('https://api.notion.com/v1/pages', {
-      method: 'POST', headers: notionHeaders(),
-      body: JSON.stringify({
-        parent: { database_id: habitDbId },
-        properties: {
-          'Name': { title: [{ text: { content: link.label } }] },
-          'Date': { date: { start: date } },
-          'Habit': { relation: [{ id: link.habitId }] },
-          'From Todo': { checkbox: true }
-        }
-      })
-    });
-    if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.message || '해빗 기록 생성 실패'); }
-    return;
-  }
-
-  // 체크 해제(또는 미완료 상태로 저장): 자동으로 만든 기록만 지워요. 트래커에서 직접 누른 기록은 안 건드림.
-  const autoLogs = logsThatDay.filter(p => p.properties?.['From Todo']?.checkbox);
-  if (autoLogs.length === 0) return;
-  // 같은 습관에 묶인 다른 할 일이 그날 완료돼 있으면 기록 유지
-  // (일기 쓰기 ↔ 문법 수정, 루틴 "헤이링" ↔ 장바구니로 담은 헤이링 습관 등)
-  const doneThatDay = await notionQuery(todoDbId, {
-    and: [
-      { property: 'Date', date: { equals: date } },
-      { property: 'Completed', checkbox: { equals: true } }
-    ]
-  });
-  const siblingDone = doneThatDay.some(p => {
-    const appId = (p.properties?.['App ID']?.rich_text || []).map(x => x.plain_text).join('');
-    if (item.appId && appId === String(item.appId)) return false;
-    const hid = (p.properties?.['Habit ID']?.rich_text || []).map(x => x.plain_text).join('');
-    if (hid && normId(hid) === normId(link.habitId)) return true;
-    const t = (p.properties?.['Name']?.title || []).map(x => x.plain_text).join('');
-    return link.names.some(x => normName(x) === normName(t));
-  });
-  if (siblingDone) return;
-  await Promise.all(autoLogs.map(p => fetch(`https://api.notion.com/v1/pages/${p.id}`, {
-    method: 'PATCH', headers: notionHeaders(), body: JSON.stringify({ archived: true })
-  })));
-}
-
-// --- 오늘 할 일 장바구니: 이번 주 습관별 달성 현황 ---
-// date(YYYY-MM-DD, 앱 기준 "오늘")가 속한 월~일 한 주 동안 각 습관을 며칠 했는지 세요.
-// 쉬고 있는 습관(습관이나 목표가 On hold)은 Weekly Target이 0이라 빠져요.
-const CATEGORY_ORDER = ['English', 'Health', 'Blog', 'Stock Images', 'Video'];
-async function buildHabitCart(dateStr) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateStr || ''))) throw new Error('date 값이 필요해요 (YYYY-MM-DD)');
-  const d = new Date(dateStr + 'T00:00:00Z');
-  const mon = new Date(d); mon.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
-  const sun = new Date(mon); sun.setUTCDate(mon.getUTCDate() + 6);
-  const iso = (x) => x.toISOString().slice(0, 10);
-
-  const [habits, logs] = await Promise.all([
-    notionQueryAll(habitsDbId()),
-    notionQueryAll(habitLogDbId(), {
-      and: [
-        { property: 'Date', date: { on_or_after: iso(mon) } },
-        { property: 'Date', date: { on_or_before: iso(sun) } }
-      ]
-    })
-  ]);
-
-  // 습관별로 "기록이 있는 날"을 모아요 (같은 날 여러 번 눌러도 1회)
-  const daysByHabit = {};
-  logs.forEach(p => {
-    const day = String(p.properties?.['Date']?.date?.start || '').slice(0, 10);
-    if (!day) return;
-    (p.properties?.['Habit']?.relation || []).forEach(rel => {
-      const k = normId(rel.id);
-      (daysByHabit[k] = daysByHabit[k] || new Set()).add(day);
-    });
-  });
-
-  const items = habits.map(h => {
-    const p = h.properties || {};
-    const name = (p['Habit']?.title || []).map(t => t.plain_text).join('').trim();
-    let target = p['Weekly Target']?.formula?.number;
-    if (typeof target !== 'number') {
-      // 수식이 없을 때를 대비한 예비 계산: "3 Times / Week" → 3, On Hold면 0
-      const paused = p['Status']?.status?.name === 'On Hold';
-      target = paused ? 0 : (parseInt(p['Per Week']?.select?.name || '', 10) || 0);
-    }
-    const days = daysByHabit[normId(h.id)] || new Set();
-    const link = HABIT_LINKS.find(l => normId(l.habitId) === normId(h.id));
-    return {
-      id: h.id, name, target, count: days.size,
-      doneToday: days.has(dateStr),
-      category: p['Category']?.select?.name || '',
-      linkedNames: link ? link.names : []
-    };
-  }).filter(x => x.name && x.target > 0);
-
-  items.sort((a, b) => {
-    const ca = CATEGORY_ORDER.indexOf(a.category), cb = CATEGORY_ORDER.indexOf(b.category);
-    return (ca < 0 ? 99 : ca) - (cb < 0 ? 99 : cb);
-  });
-  return { weekStart: iso(mon), weekEnd: iso(sun), items };
+function routineFromPage(page) {
+  const p = page.properties || {};
+  return {
+    notionPageId: page.id,
+    appId: (p['App ID']?.rich_text || []).map(t => t.plain_text).join('') || '',
+    text: (p['이름']?.title || []).map(t => t.plain_text).join(''),
+    order: typeof p['순서']?.number === 'number' ? p['순서'].number : 0,
+    createdTime: page.created_time
+  };
 }
 
 const APPS = {
@@ -755,6 +591,12 @@ const APPS = {
     databaseId: () => process.env.NOTION_DATABASE_ID_WRITING,
     toProperties: writingToProperties,
     fromPage: writingFromPage,
+    useCover: false
+  },
+  routine: {
+    databaseId: () => process.env.NOTION_DATABASE_ID_ROUTINE,
+    toProperties: routineToProperties,
+    fromPage: routineFromPage,
     useCover: false
   },
   trace: {
@@ -829,16 +671,6 @@ module.exports = async (req, res) => {
       return;
     }
 
-    // 오늘 할 일 장바구니: 이번 주 습관 달성 현황 (/api/notion?app=todo&action=cart&date=YYYY-MM-DD)
-    if (appKey === 'todo' && req.method === 'GET' && req.query.action === 'cart') {
-      try {
-        res.status(200).json(await buildHabitCart(req.query.date));
-      } catch (e) {
-        res.status(500).json({ error: `습관 목록을 못 불러왔어요: ${e.message}` });
-      }
-      return;
-    }
-
     if (req.method === 'GET') {
       if (!appConfig.fromPage) {
         res.status(400).json({ error: `이 앱(${appKey})은 아직 노션에서 불러오기(pull)를 지원하지 않아요.` });
@@ -898,20 +730,6 @@ module.exports = async (req, res) => {
       }
       const results = [];
       for (const item of items) {
-        // 서버 쪽 최종 안전장치: 노션에 루틴으로 저장된 항목을 "밀린 일"로 다른 날짜에 옮기려는 저장은 막아요.
-        // 앱 쪽 버그가 또 생겨도 루틴이 오늘로 쏟아지는 일은 없게 됩니다.
-        if (appKey === 'todo' && item.notionPageId && item.deferred && !item.routine) {
-          try {
-            const cur = await fetch(`https://api.notion.com/v1/pages/${item.notionPageId}`, { headers: notionHeaders() });
-            const curData = await cur.json();
-            // 장바구니로 담은 항목(Habit ID 있음)도 그날만 유효해서 다른 날로 미루지 않아요
-            const isCartItem = (curData.properties?.['Habit ID']?.rich_text || []).length > 0;
-            if (cur.ok && (curData.properties?.['Routine']?.checkbox || isCartItem)) {
-              results.push({ appId: item.appId, notionPageId: item.notionPageId, skipped: 'routine-rollover-blocked' });
-              continue;
-            }
-          } catch (e) { /* 확인 실패 시엔 평소대로 저장 */ }
-        }
         // SHELF 표지는 외부 링크로 두면 노션 갤러리에서 안 보여서, 저장할 때 노션 저장소로 옮겨요.
         // 이미 노션이 갖고 있는 주소(재저장 시 되돌아온 것)면 다시 올릴 필요 없어요.
         if (appKey === 'book' && item.cover && !item.coverFileUploadId
@@ -941,11 +759,6 @@ module.exports = async (req, res) => {
           const data = await r.json();
           if (!r.ok) throw new Error(data.message || '노션 생성 실패');
           results.push({ appId: item.appId, notionPageId: data.id });
-        }
-        // 할 일 저장이 끝난 뒤 해빗 트래커 연동 - 실패해도 할 일 동기화는 절대 막지 않음
-        if (appKey === 'todo') {
-          try { await syncHabitLog(item, databaseId); }
-          catch (e) { console.error('[habit-sync]', e.message); }
         }
       }
       res.status(200).json({ results });
