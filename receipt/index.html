@@ -956,7 +956,9 @@ function alreadyInToday(h) {
   return (todos[todayStr()] || []).some(it =>
     (it.habitId && normId(it.habitId) === normId(h.id)) ||
     normName(it.text) === normName(h.name) ||
-    (h.linkedNames || []).some(n => normName(n) === normName(it.text)));
+    // keepInCart 습관(운동)은 연결된 루틴(플랭크)이 오늘 있어도 따로 담을 수 있어야 해요.
+    // 다른 운동을 한 날에도 고를 수 있어야 하니까요. 같은 날 둘 다 체크해도 기록은 1회예요.
+    (!h.keepInCart && (h.linkedNames || []).some(n => normName(n) === normName(it.text))));
 }
 function renderCart() {
   const list = document.getElementById('cartList');
@@ -966,8 +968,9 @@ function renderCart() {
 
   const fmt = (s) => s.slice(5).replace('-', '/');
   document.getElementById('cartSub').textContent = `이번 주 남은 일 · ${fmt(cartData.weekStart)} – ${fmt(cartData.weekEnd)}`;
-  // 루틴으로 매일 자동으로 담기는 습관(헤이링·말해보카·일기·영어 강의)은 장바구니에서 빼요
-  const pickable = cartData.items.filter(h => !(h.linkedNames || []).length);
+  // 루틴으로 매일 자동으로 담기는 습관(헤이링·말해보카·일기·영어 강의)은 장바구니에서 빼요.
+  // 단 운동은 플랭크 말고 다른 운동을 하는 날도 있어서 계속 보여줘요(keepInCart).
+  const pickable = cartData.items.filter(h => !(h.linkedNames || []).length || h.keepInCart);
   const remaining = pickable.filter(h => h.count < h.target);
   const finished = pickable.length - remaining.length;
 
@@ -1109,7 +1112,7 @@ document.getElementById('btnAddRoutine').addEventListener('click', () => {
    - 이 기기에만 있고 노션에 올린 적 없는 건 노션에 올림
    - 노션에 올린 적 있는데 노션에서 사라진 건 다른 기기에서 지운 것 → 이 기기에서도 지움 */
 const ROUTINE_PENDING_DEL_KEY = 'receipt-routine-pending-del';
-const BUILD_VERSION = 'v37';
+const BUILD_VERSION = 'v39';
 console.log('[toisty todo] build', BUILD_VERSION);
 const ROUTINE_STATUS_KEY = 'receipt-routine-sync-status';
 function setRoutineStatus(st) {

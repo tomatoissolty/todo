@@ -519,12 +519,18 @@ function traceFromPage(page) {
 // 아래 이름의 할 일을 체크하면 해빗 트래커(Habit Log)에 그날 기록을 자동으로 남기고,
 // 체크를 풀면 자동으로 만든 기록만 지워요. (트래커에서 직접 누른 기록은 절대 안 건드림)
 // 이름은 띄어쓰기/대소문자 무시하고 비교해요.
+// 고정항목(루틴) 이름 ↔ 12 Week Year 습관 연결.
+// 이름이 바뀌어도 끊기지 않도록, 한글 이름과 영어 이름을 모두 적어둬요.
+// (루틴을 영어 이름으로 바꾼 뒤 연결이 끊겨서 해빗트래커에 기록이 안 들어갔어요)
 const HABIT_LINKS = [
-  { names: ['헤이링'], habitId: 'fdca2001-420a-82dc-aaf5-81c5957bbb25', label: '🎧 Use Heyring for 15 minutes' },
+  { names: ['헤이링', 'Heyring'], habitId: 'fdca2001-420a-82dc-aaf5-81c5957bbb25', label: '🎧 Use Heyring for 15 minutes' },
   { names: ['말해보카'], habitId: '3e7a2001-420a-8100-84ee-f33925ce33c5', label: '🏆 Earn at least 1 trophy' },
   // 일기 쓰기 / 문법 수정은 둘 중 하나만 해도 같은 습관 1회로 쳐요
-  { names: ['일기 쓰기 eng', '일기 문법 수정'], habitId: '12da2001-420a-837b-ad86-010dce9ca18b', label: '✏️ Write a journal entry or fix its grammar' },
-  { names: ['영어 강의 듣기'], habitId: '3e7a2001-420a-812b-9a94-c8c5eeaeee34', label: '📺 Watch English lessons' }
+  { names: ['일기 쓰기 eng', '일기 문법 수정', 'Write English diary', 'Fix diary grammar'], habitId: '12da2001-420a-837b-ad86-010dce9ca18b', label: '✏️ Write a journal entry or fix its grammar' },
+  { names: ['영어 강의 듣기', 'English lecture'], habitId: '3e7a2001-420a-812b-9a94-c8c5eeaeee34', label: '📺 Watch English lessons (2+ videos)' },
+  // 운동 습관은 "플랭크 1분 이상"으로 정했으니 플랭크 체크를 운동 1회로 기록해요.
+  // keepInCart: 다른 운동을 하고 싶은 날도 있어서, 자동 기록되더라도 장바구니에는 계속 보여줘요.
+  { names: ['플랭크', 'Plank'], habitId: '38ca2001-420a-82e8-950b-01831bcc86f4', label: '🏃 Exercise', keepInCart: true }
 ];
 const normName = (s) => String(s || '').replace(/\s+/g, '').toLowerCase();
 const normId = (s) => String(s || '').replace(/-/g, '').toLowerCase();
@@ -679,7 +685,8 @@ async function buildHabitCart(dateStr) {
       id: h.id, name, target, count: days.size,
       doneToday: days.has(dateStr),
       category: p['Category']?.select?.name || '',
-      linkedNames: link ? link.names : []
+      linkedNames: link ? link.names : [],
+      keepInCart: !!(link && link.keepInCart)
     };
   }).filter(x => x.name && x.target > 0);
 
