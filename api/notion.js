@@ -526,8 +526,8 @@ const HABIT_LINKS = [
   { names: ['헤이링', 'Heyring'], habitId: 'fdca2001-420a-82dc-aaf5-81c5957bbb25', label: '🎧 Use Heyring for 15 minutes' },
   { names: ['말해보카'], habitId: '3e7a2001-420a-8100-84ee-f33925ce33c5', label: '🏆 Earn at least 1 trophy' },
   // 일기 쓰기 / 문법 수정은 둘 중 하나만 해도 같은 습관 1회로 쳐요
-  { names: ['일기 쓰기 eng', '일기 문법 수정', 'Write English diary', 'Fix diary grammar'], habitId: '12da2001-420a-837b-ad86-010dce9ca18b', label: '✏️ Write a journal entry or fix its grammar' },
-  { names: ['영어 강의 듣기', 'English lecture'], habitId: '3e7a2001-420a-812b-9a94-c8c5eeaeee34', label: '📺 Watch English lessons (2+ videos)' },
+  { names: ['일기 쓰기 eng', '일기 문법 수정', 'Write English diary', 'Fix diary grammar', 'Write eng Diary', 'fix Journal Grammar'], habitId: '12da2001-420a-837b-ad86-010dce9ca18b', label: '✏️ Write a journal entry or fix its grammar' },
+  { names: ['영어 강의 듣기', 'English lecture', 'eng Lecture'], habitId: '3e7a2001-420a-812b-9a94-c8c5eeaeee34', label: '📺 Watch English lessons (2+ videos)' },
   // 운동 습관은 "플랭크 1분 이상"으로 정했으니 플랭크 체크를 운동 1회로 기록해요.
   // keepInCart: 다른 운동을 하고 싶은 날도 있어서, 자동 기록되더라도 장바구니에는 계속 보여줘요.
   { names: ['플랭크', 'Plank'], habitId: '38ca2001-420a-82e8-950b-01831bcc86f4', label: '🏃 Exercise', keepInCart: true }
@@ -545,6 +545,20 @@ function resolveHabitLink(item) {
     return { habitId: item.habitId, label: known ? known.label : (item.name || ''), names: known ? known.names : [] };
   }
   return findHabitLink(item.name);
+}
+
+// 고정항목 설정에서 "어떤 습관에 연결할까" 고르는 목록 (진행 중인 습관만)
+async function listHabits() {
+  const habits = await notionQueryAll(habitsDbId());
+  return habits.map(h => {
+    const p = h.properties || {};
+    return {
+      id: h.id,
+      name: (p['Habit']?.title || []).map(t => t.plain_text).join('').trim(),
+      category: p['Category']?.select?.name || '',
+      onHold: p['Status']?.status?.name === 'On Hold'
+    };
+  }).filter(x => x.name && !x.onHold);
 }
 
 // 12 Week Year 데이터베이스 ID - 비밀값이 아니라서 환경변수가 없으면 이 값을 써요.
@@ -698,11 +712,16 @@ async function buildHabitCart(dateStr) {
 }
 
 function routineToProperties(item) {
-  return {
+  const props = {
     '이름': { title: [{ text: { content: item.text || '(이름 없음)' } }] },
     'App ID': { rich_text: item.appId ? [{ text: { content: item.appId } }] : [] },
     '순서': { number: typeof item.order === 'number' ? item.order : 0 }
   };
+  // 습관 연결은 앱에서 고른 값만 덮어써요. 보내지 않은 경우(undefined)엔 노션 값을 그대로 둬요.
+  if (item.habitId !== undefined) {
+    props['Habit ID'] = { rich_text: item.habitId ? [{ text: { content: item.habitId } }] : [] };
+  }
+  return props;
 }
 function routineFromPage(page) {
   const p = page.properties || {};
@@ -711,6 +730,7 @@ function routineFromPage(page) {
     appId: (p['App ID']?.rich_text || []).map(t => t.plain_text).join('') || '',
     text: (p['이름']?.title || []).map(t => t.plain_text).join(''),
     order: typeof p['순서']?.number === 'number' ? p['순서'].number : 0,
+    habitId: (p['Habit ID']?.rich_text || []).map(t => t.plain_text).join('') || '',
     createdTime: page.created_time
   };
 }
@@ -861,6 +881,10 @@ module.exports = async (req, res) => {
     }
 
     // 오늘 할 일 장바구니: 이번 주 습관 달성 현황 (/api/notion?app=todo&action=cart&date=YYYY-MM-DD)
+    if (appKey === 'todo' && req.method === 'GET' && req.query.action === 'habits') {
+      res.status(200).json({ items: await listHabits() });
+      return;
+    }
     if (appKey === 'todo' && req.method === 'GET' && req.query.action === 'cart') {
       try {
         res.status(200).json(await buildHabitCart(req.query.date));

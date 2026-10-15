@@ -105,6 +105,14 @@ body::before{
 .modal-row:last-child{border-bottom:none}
 .modal input, .modal select{font-family:var(--font-receipt); border:1px solid var(--line); border-radius:6px; padding:6px 8px; font-size:13px; background:transparent; color:var(--ink)}
 .modal-del{background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:13px}
+/* 고정항목 ↔ 12 Week Year 습관 연결 줄 */
+.routine-row{padding:8px 0; border-bottom:1px dashed var(--line)}
+.routine-row:last-of-type{border-bottom:none}
+.routine-head{display:flex; align-items:center; justify-content:space-between; font-size:13px}
+.routine-link{display:flex; align-items:center; gap:6px; margin-top:5px; font-size:11px; color:var(--ink-soft)}
+.routine-link select{flex:1; min-width:0; font-family:var(--font-receipt); font-size:11px; color:var(--ink);
+  background:transparent; border:none; border-bottom:1px solid var(--line); padding:3px 0; cursor:pointer}
+.routine-link select:disabled{opacity:.5; cursor:default}
 .modal-add-row{display:flex; gap:6px; margin-top:10px}
 .modal-add-row input{flex:1}
 .modal-add-row button{background:var(--accent); color:#fff; border:none; border-radius:6px; padding:6px 12px; font-family:var(--font-receipt); cursor:pointer; font-size:12px}
@@ -156,6 +164,8 @@ body::before{
   .r-empty{font-size:14px; padding:26px 0}
   .r-barcode-label{font-size:11px}
   .modal-add-row button{font-size:15px; padding:10px 16px}
+  .routine-head{font-size:15px}
+  .routine-link,.routine-link select{font-size:13px}
   .cart-name{font-size:15px}
   .cart-meta{font-size:12px}
   .cart-pct{font-size:15px}
@@ -480,6 +490,8 @@ function spawnRoutines() {
     if (already) return;
     const item = {
       id: generateId(), text: r.text, completed: false, categoryId: null, routineId: r.id,
+      // 습관 연결을 항목에 직접 심어요. 이러면 이름을 바꿔도 해빗트래커 기록이 끊기지 않아요.
+      habitId: r.habitId || null,
       linkColor: null, subtasks: [], pomoTime: 0, pomoActive: false, pomoEndAt: null,
       updatedAt: Date.now(), notionPageId: null, deferred: false
     };
@@ -970,7 +982,9 @@ function renderCart() {
   document.getElementById('cartSub').textContent = `이번 주 남은 일 · ${fmt(cartData.weekStart)} – ${fmt(cartData.weekEnd)}`;
   // 루틴으로 매일 자동으로 담기는 습관(헤이링·말해보카·일기·영어 강의)은 장바구니에서 빼요.
   // 단 운동은 플랭크 말고 다른 운동을 하는 날도 있어서 계속 보여줘요(keepInCart).
-  const pickable = cartData.items.filter(h => !(h.linkedNames || []).length || h.keepInCart);
+  const routineHabitIds = new Set((appSettings.routines || []).map(r => normId(r.habitId)).filter(Boolean));
+  const pickable = cartData.items.filter(h =>
+    h.keepInCart || (!(h.linkedNames || []).length && !routineHabitIds.has(normId(h.id))));
   const remaining = pickable.filter(h => h.count < h.target);
   const finished = pickable.length - remaining.length;
 
@@ -1071,6 +1085,41 @@ function renderThemeSwatches() {
 document.getElementById('btnTheme').addEventListener('click', () => { renderThemeSwatches(); openModal('modalTheme'); });
 
 /* 루틴 관리 */
+/* 연결할 습관 목록 — 루틴 관리 화면을 열 때 한 번만 불러와요 */
+let habitOptions = null;      // null=아직, []=불러왔지만 없음
+let habitOptionsError = '';
+async function loadHabitOptions() {
+  if (habitOptions) return habitOptions;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  try {
+    const r = await fetch('/api/notion?app=todo&action=habits', { signal: controller.signal });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || '습관 목록을 못 불러왔어요');
+    habitOptions = data.items || [];
+    habitOptionsError = '';
+  } catch (e) {
+    habitOptionsError = e.name === 'AbortError' ? '노션 응답이 늦어요' : e.message;
+  } finally { clearTimeout(timeoutId); }
+  renderRoutineList();
+  return habitOptions;
+}
+function habitSelectHtml(r) {
+  if (!habitOptions) {
+    const msg = habitOptionsError ? `연결 목록 실패: ${esc(habitOptionsError)}` : '습관 목록 불러오는 중...';
+    return `<span>${msg}</span>`;
+  }
+  if (!habitOptions.length) return `<span>연결할 습관이 없어요</span>`;
+  const cur = r.habitId || '';
+  const byCat = {};
+  habitOptions.forEach(h => { (byCat[h.category || '기타'] = byCat[h.category || '기타'] || []).push(h); });
+  const groups = Object.entries(byCat).map(([cat, hs]) => `<optgroup label="${esc(cat)}">` +
+    hs.map(h => `<option value="${esc(h.id)}" ${normId(h.id) === normId(cur) ? 'selected' : ''}>${esc(h.name)}</option>`).join('') +
+    `</optgroup>`).join('');
+  return `<span>12WY</span><select class="routine-habit" data-id="${r.id}">
+    <option value="" ${cur ? '' : 'selected'}>연결 안 함</option>${groups}</select>`;
+}
+
 function renderRoutineList() {
   const el = document.getElementById('routineList');
   let statusHtml = '';
@@ -1084,8 +1133,29 @@ function renderRoutineList() {
     } else statusHtml = `<div class="r-empty" style="font-size:12px;padding:4px 0 8px">${BUILD_VERSION} · 노션 동기화 기록 없음</div>`;
   } catch (e) {}
   el.innerHTML = statusHtml + (appSettings.routines.length ? appSettings.routines.map(r => `
-    <div class="modal-row"><span>🔁 ${esc(r.text)}</span><button class="modal-del" data-id="${r.id}">삭제</button></div>
+    <div class="routine-row">
+      <div class="routine-head"><span>🔁 ${esc(r.text)}</span><button class="modal-del" data-id="${r.id}">삭제</button></div>
+      <div class="routine-link">${habitSelectHtml(r)}</div>
+    </div>
   `).join('') : `<div class="r-empty">루틴이 없어요</div>`);
+  // 연결을 고르면 바로 저장하고 노션에도 올려요
+  el.querySelectorAll('.routine-habit').forEach(sel => sel.addEventListener('change', () => {
+    const r = appSettings.routines.find(x => x.id === sel.dataset.id);
+    if (!r) return;
+    r.habitId = sel.value || '';
+    saveSettings();
+    pushRoutine(r, appSettings.routines.indexOf(r));
+    // 오늘 이미 만들어진 항목에도 즉시 반영 (오늘 체크한 것부터 기록되게)
+    const t = todayStr();
+    (todos[t] || []).forEach(item => {
+      if (item.routineId !== r.id) return;
+      item.habitId = r.habitId || null;
+      item.updatedAt = Date.now();
+      autoPush(item, t);
+    });
+    saveTodos();
+    showToast(r.habitId ? '연결했어요' : '연결을 풀었어요', true);
+  }));
   el.querySelectorAll('.modal-del').forEach(b => b.addEventListener('click', () => {
     const gone = appSettings.routines.find(r => r.id === b.dataset.id);
     appSettings.routines = appSettings.routines.filter(r => r.id !== b.dataset.id);
@@ -1093,7 +1163,9 @@ function renderRoutineList() {
     if (gone) deleteRoutineRemote(gone);
   }));
 }
-document.getElementById('btnRoutines').addEventListener('click', () => { renderRoutineList(); openModal('modalRoutines'); });
+document.getElementById('btnRoutines').addEventListener('click', () => {
+  renderRoutineList(); openModal('modalRoutines'); loadHabitOptions();
+});
 document.getElementById('btnAddRoutine').addEventListener('click', () => {
   const text = document.getElementById('newRoutineName').value.trim();
   if (!text) return;
@@ -1112,7 +1184,7 @@ document.getElementById('btnAddRoutine').addEventListener('click', () => {
    - 이 기기에만 있고 노션에 올린 적 없는 건 노션에 올림
    - 노션에 올린 적 있는데 노션에서 사라진 건 다른 기기에서 지운 것 → 이 기기에서도 지움 */
 const ROUTINE_PENDING_DEL_KEY = 'receipt-routine-pending-del';
-const BUILD_VERSION = 'v39';
+const BUILD_VERSION = 'v41';
 console.log('[toisty todo] build', BUILD_VERSION);
 const ROUTINE_STATUS_KEY = 'receipt-routine-sync-status';
 function setRoutineStatus(st) {
@@ -1123,7 +1195,7 @@ function routineApi(method, body) {
 }
 async function pushRoutine(r, order) {
   try {
-    const res = await routineApi('POST', { items: [{ appId: r.id, text: r.text, order, notionPageId: r.notionPageId || undefined }] });
+    const res = await routineApi('POST', { items: [{ appId: r.id, text: r.text, order, habitId: r.habitId || '', notionPageId: r.notionPageId || undefined }] });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '루틴 업로드 실패');
     const pid = data.results && data.results[0] && data.results[0].notionPageId;
@@ -1179,15 +1251,20 @@ async function syncRoutines() {
   const merged = [];
   const idRemap = {};
   const toPush = [];
+  const toPushHabit = []; // 이 기기에만 있는 습관 연결은 노션에 올려줘요
   remote.forEach(rr => {
     const l = local.find(x => !usedLocal.has(x.id) && (x.id === rr.appId || x.text.trim() === rr.text.trim()));
     if (l) usedLocal.add(l.id);
     const id = rr.appId || (l ? l.id : generateId());
     if (l && l.id !== id) idRemap[l.id] = id;
     const item = { id, text: rr.text, days: (l && l.days) || [0, 1, 2, 3, 4, 5, 6], skipDates: (l && l.skipDates) || [], notionPageId: rr.notionPageId };
+    // 습관 연결은 노션이 기준이에요 (어느 기기에서 골라도 모든 기기에 적용되게)
+    if (rr.habitId) item.habitId = rr.habitId;
+    else if (l && l.habitId) { item.habitId = l.habitId; toPushHabit.push(item); }
     merged.push(item);
     if (!rr.appId) toPush.push(item); // 노션에서 직접 손으로 추가한 줄 → App ID를 채워 넣음
   });
+  for (const item of toPushHabit) if (!toPush.includes(item)) toPush.push(item);
   const leftovers = local.filter(l => !usedLocal.has(l.id));
   const remoteEmpty = remote.length === 0;
   leftovers.forEach(l => {
@@ -1214,6 +1291,16 @@ async function syncRoutines() {
       if (m) { item.routineId = m.id; todosChanged = true; }
     }
   }));
+  // 연결을 방금 골랐다면, 오늘 이미 만들어진 루틴 항목에도 채워줘요
+  const today = todayStr();
+  (todos[today] || []).forEach(item => {
+    if (!item.routineId) return;
+    const r = merged.find(x => x.id === item.routineId);
+    if (r && r.habitId && item.habitId !== r.habitId) {
+      item.habitId = r.habitId; item.updatedAt = Date.now(); todosChanged = true;
+      autoPush(item, today);
+    }
+  });
   if (todosChanged) saveTodos();
 
   for (const item of toPush) await pushRoutine(item, merged.indexOf(item));
